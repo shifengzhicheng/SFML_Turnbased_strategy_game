@@ -1,0 +1,141 @@
+﻿  AllUnit.cpp
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Button.h(24,53): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Button.h(24,31): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Game.h(26,2): warning C4091: “typedef ”: 没有声明变量时忽略“gameSeceneState”的左侧
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Game.h(29,2): warning C4091: “typedef ”: 没有声明变量时忽略“gamePlayer”的左侧
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\AllUnit.cpp(11,12): warning C4099: “Point”: 类型名称以前使用“struct”现在使用的是“class”
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Point.h(10,8): message : 参见“Point”的声明
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\AllUnit.cpp(26,52): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\AllUnit.cpp(26,36): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\AllUnit.cpp(42,52): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\AllUnit.cpp(42,36): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\AllUnit.cpp(60,52): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\AllUnit.cpp(60,36): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\AllUnit.cpp(87,95): warning C4244: “参数”: 从“int”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\AllUnit.cpp(87,67): warning C4244: “参数”: 从“int”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\AllUnit.cpp(429,44): warning C4244: “参数”: 从“int”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\AllUnit.cpp(429,29): warning C4244: “参数”: 从“int”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+  Astar.cpp
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Astar.cpp(138,34): warning C4018: “>=”: 有符号/无符号不匹配
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Astar.cpp(139,37): warning C4018: “>=”: 有符号/无符号不匹配
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Astar.cpp(183,136): warning C4244: “return”: 从“double”转换到“int”，可能丢失数据
+  Button.cpp
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Button.h(24,53): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Button.h(24,31): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+  Game.cpp
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Button.h(24,53): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Button.h(24,31): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Game.h(26,2): warning C4091: “typedef ”: 没有声明变量时忽略“gameSeceneState”的左侧
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Game.h(29,2): warning C4091: “typedef ”: 没有声明变量时忽略“gamePlayer”的左侧
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Game.cpp(379,52): warning C4244: “参数”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=int
+          ]
+          and
+          [
+              T=float
+          ]
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Game.cpp(379,40): warning C4244: “参数”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=int
+          ]
+          and
+          [
+              T=float
+          ]
+  main.cpp
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Button.h(24,53): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Button.h(24,31): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Game.h(26,2): warning C4091: “typedef ”: 没有声明变量时忽略“gameSeceneState”的左侧
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Game.h(29,2): warning C4091: “typedef ”: 没有声明变量时忽略“gamePlayer”的左侧
+  Map.cpp
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Map.cpp(26,38): warning C4244: “参数”: 从“time_t”转换到“unsigned int”，可能丢失数据
+  Tile.cpp
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Tile.cpp(7,57): warning C4244: “参数”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=int
+          ]
+          and
+          [
+              T=float
+          ]
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Tile.cpp(7,42): warning C4244: “参数”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=int
+          ]
+          and
+          [
+              T=float
+          ]
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Tile.cpp(11,43): warning C4244: “参数”: 从“T”转换到“float”，可能丢失数据
+          with
+          [
+              T=int
+          ]
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Tile.cpp(11,29): warning C4244: “参数”: 从“T”转换到“float”，可能丢失数据
+          with
+          [
+              T=int
+          ]
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Tile.cpp(26,39): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Tile.cpp(26,24): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Tile.cpp(41,36): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Tile.cpp(41,23): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Tile.cpp(55,26): warning C4244: “参数”: 从“const int”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Tile.cpp(55,22): warning C4244: “参数”: 从“const int”转换到“float”，可能丢失数据
+  Action.cpp
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Button.h(24,53): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Button.h(24,31): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Game.h(26,2): warning C4091: “typedef ”: 没有声明变量时忽略“gameSeceneState”的左侧
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Game.h(29,2): warning C4091: “typedef ”: 没有声明变量时忽略“gamePlayer”的左侧
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Action.cpp(8,8): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Action.cpp(18,57): warning C4244: “参数”: 从“int”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Action.cpp(18,35): warning C4244: “参数”: 从“int”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Action.cpp(19,55): warning C4244: “参数”: 从“int”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Action.cpp(19,34): warning C4244: “参数”: 从“int”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+C:\Users\18064\Downloads\SFML_Game-master\Project_test\Project_test\Action.cpp(22,63): warning C4244: “参数”: 从“double”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+  正在生成代码
+  Previous IPDB was built with incompatible compiler, fall back to full compilation.
+  All 893 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  已完成代码的生成
+  Project_test.vcxproj -> C:\Users\18064\Downloads\SFML_Game-master\Project_test\Release\Project_test.exe
