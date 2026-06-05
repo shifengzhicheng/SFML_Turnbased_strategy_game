@@ -58,7 +58,7 @@ ctest --test-dir build --output-on-failure
 
 - `src/`：游戏源码
 - `tests/`：基础逻辑测试，目前覆盖 A* 寻路边界
-- `data/`：运行所需资源，已清理为当前源码实际引用的资源
+- `data/`：运行所需字体和 SVG 美术源稿；单位、按钮、背景等贴图在运行时由 SFML 矢量图元生成
 - `third_party/SFML/`：SFML 2.6.2 submodule，跨平台从源码编译
 - `CMakeLists.txt`：跨平台构建入口
 

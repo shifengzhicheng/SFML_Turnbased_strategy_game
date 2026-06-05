@@ -53,11 +53,13 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # The game loads assets through relative paths such as data/..., so keep a copy
-# beside the executable for CLI runs on every platform.
-add_custom_command(TARGET sfml_tbs POST_BUILD
+# beside the executable for CLI runs on every platform. This target runs even
+# when the executable is already up to date.
+add_custom_target(copy_sfml_tbs_assets ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_CURRENT_SOURCE_DIR}/data
             $<TARGET_FILE_DIR:sfml_tbs>/data
+    DEPENDS sfml_tbs
     COMMENT "Copying game assets"
 )
 

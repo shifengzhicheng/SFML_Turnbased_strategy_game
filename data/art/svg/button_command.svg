@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="80" viewBox="0 0 200 80">
+  <rect x="8" y="12" width="184" height="56" rx="18" fill="#111716" opacity="0.28"/>
+  <rect x="6" y="6" width="188" height="58" rx="18" fill="#f2cc74" stroke="#4b432f" stroke-width="4"/>
+  <rect x="24" y="16" width="152" height="6" rx="3" fill="#ffffff" opacity="0.45"/>
+  <text x="100" y="45" text-anchor="middle" font-family="serif" font-size="24" font-weight="700" fill="#25231d">COMMAND</text>
+</svg>

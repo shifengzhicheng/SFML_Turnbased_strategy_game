@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#1d312c"/>
+    <stop offset="1" stop-color="#e3c37e"/>
+  </linearGradient>
+  <rect width="1280" height="720" fill="url(#sky)"/>
+  <circle cx="950" cy="155" r="100" fill="#ffdd7d" opacity="0.55"/>
+  <path d="M-40 620 C170 520 330 700 540 600 C740 500 940 710 1320 570 V720 H-40 Z" fill="#294a38" opacity="0.75"/>
+  <path d="M-20 670 C200 600 430 690 650 625 C870 560 1010 690 1300 625 V720 H-20 Z" fill="#435b3b" opacity="0.75"/>
+  <text x="120" y="150" font-family="serif" font-size="72" font-weight="800" fill="#fff6d0">PROJECT WAR</text>
+</svg>

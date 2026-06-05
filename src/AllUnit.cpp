@@ -3,6 +3,7 @@
 #include "Config.h"
 #include "Tile.h"
 #include "Game.h"
+#include "ArtAssets.h"
 #include <vector>
 #include <iostream>
 #include <iterator>
@@ -16,14 +17,6 @@ namespace
 	constexpr int width = config::MapWidth;
 	constexpr int height = config::MapHeight;
 
-	bool loadTexture(sf::Texture& texture, const std::string& path)
-	{
-		if (!texture.loadFromFile(path)) {
-			std::cerr << "Failed to load texture: " << path << std::endl;
-			return false;
-		}
-		return true;
-	}
 }
 Shooter::Shooter(int _team, int _x, int _y, Game* _mygame):MoveableUnit(_team, _x, _y, _mygame)
 {
@@ -31,10 +24,7 @@ Shooter::Shooter(int _team, int _x, int _y, Game* _mygame):MoveableUnit(_team, _
 	UnitState = 0;
 	myinfo.Health = 100;
 	Health = 100;
-	if(myteam==PLAYER)
-		loadTexture(mytexture, "data/unit/unit_archers.png");
-	else
-		loadTexture(mytexture, "data/unit/unit_riflemen.png");
+	art::makeUnitTexture(mytexture, art::UnitKind::Shooter, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
 	setTexture(mytexture);
 	UnitText.setString("100/100");
 	sf::Transformable::setPosition(_x * SqureSize, _y * SqureSize);
@@ -47,10 +37,7 @@ Infantry::Infantry(int _team, int _x, int _y, Game* _mygame) :MoveableUnit(_team
 {
 	UnitState = 0;
 	Health = 200;
-	if (myteam == PLAYER)
-	loadTexture(mytexture, "data/unit/unit_swordsmen.png");
-	else
-		loadTexture(mytexture, "data/unit/unit_peasants.png");
+	art::makeUnitTexture(mytexture, art::UnitKind::Infantry, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
 	setTexture(mytexture);
 	UnitText.setString("200/200");
 	sf::Transformable::setPosition(_x * SqureSize, _y * SqureSize);
@@ -65,10 +52,7 @@ Cavalry::Cavalry(int _team, int _x, int _y, Game* _mygame) : MoveableUnit(_team,
 {
 	UnitState = 0;
 	Health = 500;
-	if (myteam == PLAYER)
-	loadTexture(mytexture, "data/unit/unit_horsemen.png");
-		else
-		loadTexture(mytexture, "data/unit/unit_chariots.png");
+	art::makeUnitTexture(mytexture, art::UnitKind::Cavalry, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
 	setTexture(mytexture);
 	UnitText.setString("500/500");
 	sf::Transformable::setPosition(_x * SqureSize, _y * SqureSize);

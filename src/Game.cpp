@@ -2,6 +2,7 @@
 #include "AllUnit.h"
 #include "Config.h"
 #include "Map.h"
+#include "ArtAssets.h"
 
 #include <cmath>
 #include <utility>
@@ -15,15 +16,6 @@ namespace
     constexpr int width = config::MapWidth;
     constexpr int height = config::MapHeight;
     constexpr int MaxUnit = config::MaxUnits;
-
-    bool loadTexture(sf::Texture& texture, const std::string& path)
-    {
-        if (!texture.loadFromFile(path)) {
-            std::cerr << "Failed to load texture: " << path << std::endl;
-            return false;
-        }
-        return true;
-    }
 
     bool loadFont(sf::Font& font, const std::string& path)
     {
@@ -74,25 +66,25 @@ Game::Game() :
 Game::~Game() = default;
 void Game::loadpic()
 {
-    loadTexture(tStartBtnNormal, "data/button/start.png");
-    loadTexture(tStartBtnHover, "data/button/startHover.png");
-    loadTexture(tStartBtnClick, "data/button/startClick.png");
-    loadTexture(tEndBtnNormal, "data/button/endNormal.png");
-    loadTexture(tEndBtnHover, "data/button/endHover.png");
-    loadTexture(tEndBtnClick, "data/button/endClick.png");
-    loadTexture(tOverBtnNormal, "data/button/endGame.png");
-    loadTexture(tOverBtnHover, "data/button/endGame2.png");
-    loadTexture(tOverBtnClick, "data/button/endGame.png");
-    loadTexture(tinf, "data/button/inf.png");
-    loadTexture(tinfHover, "data/button/tinfHover.png");
-    loadTexture(tinfClick, "data/button/tinfClick.png");
-    loadTexture(tcav, "data/button/cav.png");
-    loadTexture(tcavHover, "data/button/tcavHover.png");
-    loadTexture(tcavClick, "data/button/tcavClick.png");
-    loadTexture(tsho, "data/button/sho.png");
-    loadTexture(tshoHover, "data/button/tshoHover.png");
-    loadTexture(tshoClick, "data/button/tshoClick.png");
-    loadTexture(background, "data/bg/intro.jpg");
+    art::makeIntroTexture(background, myfont);
+    art::makeButtonTexture(tStartBtnNormal, myfont, "START", art::ButtonState::Normal, sf::Vector2u(180, 72));
+    art::makeButtonTexture(tStartBtnHover, myfont, "START", art::ButtonState::Hover, sf::Vector2u(190, 76));
+    art::makeButtonTexture(tStartBtnClick, myfont, "START", art::ButtonState::Pressed, sf::Vector2u(170, 68));
+    art::makeButtonTexture(tEndBtnNormal, myfont, "END TURN", art::ButtonState::Normal, sf::Vector2u(112, 40));
+    art::makeButtonTexture(tEndBtnHover, myfont, "END TURN", art::ButtonState::Hover, sf::Vector2u(112, 40));
+    art::makeButtonTexture(tEndBtnClick, myfont, "END TURN", art::ButtonState::Pressed, sf::Vector2u(112, 40));
+    art::makeButtonTexture(tOverBtnNormal, myfont, "PLAY AGAIN", art::ButtonState::Normal, sf::Vector2u(240, 96));
+    art::makeButtonTexture(tOverBtnHover, myfont, "PLAY AGAIN", art::ButtonState::Hover, sf::Vector2u(250, 100));
+    art::makeButtonTexture(tOverBtnClick, myfont, "PLAY AGAIN", art::ButtonState::Pressed, sf::Vector2u(232, 92));
+    art::makeButtonTexture(tinf, myfont, "Infantry", art::ButtonState::Normal, sf::Vector2u(100, 50), art::UnitKind::Infantry, art::Team::Player);
+    art::makeButtonTexture(tinfHover, myfont, "Infantry", art::ButtonState::Hover, sf::Vector2u(100, 50), art::UnitKind::Infantry, art::Team::Player);
+    art::makeButtonTexture(tinfClick, myfont, "Infantry", art::ButtonState::Pressed, sf::Vector2u(100, 50), art::UnitKind::Infantry, art::Team::Player);
+    art::makeButtonTexture(tcav, myfont, "Cavalry", art::ButtonState::Normal, sf::Vector2u(100, 50), art::UnitKind::Cavalry, art::Team::Player);
+    art::makeButtonTexture(tcavHover, myfont, "Cavalry", art::ButtonState::Hover, sf::Vector2u(100, 50), art::UnitKind::Cavalry, art::Team::Player);
+    art::makeButtonTexture(tcavClick, myfont, "Cavalry", art::ButtonState::Pressed, sf::Vector2u(100, 50), art::UnitKind::Cavalry, art::Team::Player);
+    art::makeButtonTexture(tsho, myfont, "Shooter", art::ButtonState::Normal, sf::Vector2u(100, 50), art::UnitKind::Shooter, art::Team::Player);
+    art::makeButtonTexture(tshoHover, myfont, "Shooter", art::ButtonState::Hover, sf::Vector2u(100, 50), art::UnitKind::Shooter, art::Team::Player);
+    art::makeButtonTexture(tshoClick, myfont, "Shooter", art::ButtonState::Pressed, sf::Vector2u(100, 50), art::UnitKind::Shooter, art::Team::Player);
 
     startBtn.setTextures(tStartBtnNormal, tStartBtnHover, tStartBtnClick);
     EndTurnBtn.setTextures(tEndBtnNormal, tEndBtnHover, tEndBtnClick);
@@ -104,8 +96,8 @@ void Game::loadpic()
 }
 void Game::Initial()
 {
-    loadMediaData();
     loadFont(myfont, "data/ttf/arial.ttf");
+    loadMediaData();
     gameSceneState = SCENE_START;
     gameOver = false;
     const float panelTextX = static_cast<float>(config::PanelX + config::PanelPadding);
@@ -744,7 +736,7 @@ void Game::setBase()
                     setTileID(x + 1, y + 1, tile::Red_Base);
                     Red_baseP = Point(x, y);
                     Base_red = make_unique<DisMoveableUnit>(x, y, PLAYER, this);
-                    loadTexture(Base_red->mytexture, "data/unit/city_modern.png");
+                    art::makeUnitTexture(Base_red->mytexture, art::UnitKind::Base, art::Team::Player);
                     Base_red->setTexture(Base_red->mytexture);
                     isok = true;
                     break;
@@ -772,7 +764,7 @@ void Game::setBase()
                     setTileID(x, y + 1, tile::Blue_Base);
                     setTileID(x + 1, y + 1, tile::Blue_Base);
                     Base_blue = make_unique<DisMoveableUnit>(x, y, AI, this);
-                    loadTexture(Base_blue->mytexture, "data/unit/city.png");
+                    art::makeUnitTexture(Base_blue->mytexture, art::UnitKind::Base, art::Team::Enemy);
                     Base_blue->setTexture(Base_blue->mytexture);
                     isok = true;
                     break;
