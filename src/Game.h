@@ -13,30 +13,13 @@
 #include "Astar.h"
 #include "Button.h"
 #include "Map.h"
+#include "Effects.h"
 
 enum gameSeceneState {
     SCENE_START,SCENE_GAME, SCEN_GAMEOVER
 };
 enum gamePlayer {
     PLAYER,AI
-};
-
-struct AttackEffect
-{
-    sf::RectangleShape beam;
-    sf::CircleShape impact;
-    sf::Color color = sf::Color::White;
-    sf::Clock lifetime;
-    float durationSeconds = 0.35f;
-};
-
-struct FloatingText
-{
-    sf::Text text;
-    sf::Vector2f startPosition;
-    sf::Vector2f velocity;
-    sf::Clock lifetime;
-    float durationSeconds = 0.8f;
 };
 
 class Game
@@ -80,11 +63,7 @@ public:
 
     std::list<std::unique_ptr<MoveableUnit>> enemys;
 
-    std::vector<AttackEffect> attackEffects;
-    std::vector<FloatingText> floatingTexts;
-    sf::Clock shakeClock;
-    float shakeDurationSeconds = 0.f;
-    float shakeIntensity = 0.f;
+    Effects effects;
 
     std::size_t turn;
 
@@ -150,8 +129,6 @@ public:
     void addFloatingText(sf::Vector2f position, const std::string& value, sf::Color color, unsigned int size = 15);
     void startScreenShake(float durationSeconds, float intensity);
     sf::Vector2f currentShakeOffset() const;
-    void drawAttackEffects();
-    void drawFloatingTexts();
     void handleBuildButtons(sf::Vector2i mousePos, sf::Event event);
     void clearSelection();
     void selectOnly(Unit* unit);

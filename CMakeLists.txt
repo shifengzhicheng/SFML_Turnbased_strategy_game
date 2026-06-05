@@ -37,6 +37,7 @@ add_executable(sfml_tbs
     src/Astar.cpp
     src/ArtAssets.cpp
     src/Button.cpp
+    src/Effects.cpp
     src/Map.cpp
     src/Tile.cpp
 )
