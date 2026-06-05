@@ -4,6 +4,7 @@
 #include "Tile.h"
 #include "Game.h"
 #include "ArtAssets.h"
+#include <algorithm>
 #include <vector>
 #include <iostream>
 #include <iterator>
@@ -22,6 +23,7 @@ Shooter::Shooter(int _team, int _x, int _y, Game* _mygame):MoveableUnit(_team, _
 {
 	myinfo.actionPoint = 15;
 	UnitState = 0;
+	unitName = UName::SHOOTER;
 	myinfo.Health = 100;
 	Health = 100;
 	art::makeUnitTexture(mytexture, art::UnitKind::Shooter, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
@@ -36,6 +38,7 @@ Shooter::Shooter(int _team, int _x, int _y, Game* _mygame):MoveableUnit(_team, _
 Infantry::Infantry(int _team, int _x, int _y, Game* _mygame) :MoveableUnit(_team, _x, _y, _mygame)
 {
 	UnitState = 0;
+	unitName = UName::INFANTARY;
 	Health = 200;
 	art::makeUnitTexture(mytexture, art::UnitKind::Infantry, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
 	setTexture(mytexture);
@@ -51,6 +54,7 @@ Infantry::Infantry(int _team, int _x, int _y, Game* _mygame) :MoveableUnit(_team
 Cavalry::Cavalry(int _team, int _x, int _y, Game* _mygame) : MoveableUnit(_team, _x, _y, _mygame)
 {
 	UnitState = 0;
+	unitName = UName::CAVALRY;
 	Health = 500;
 	art::makeUnitTexture(mytexture, art::UnitKind::Cavalry, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
 	setTexture(mytexture);
@@ -98,6 +102,11 @@ bool MoveableUnit::isOktoAttackAndAttackconsume()
 		return true;
 	}
 	else return false;
+}
+
+void MoveableUnit::gainActionPoint(int amount)
+{
+	myActionPoint = std::min(myinfo.actionPoint, myActionPoint + amount);
 }
 
 void MoveableUnit::setdefalut()
@@ -226,6 +235,34 @@ void Unit::setState(int state)
 	default:
 		break;
 	}
+}
+
+void Unit::playFlash(sf::Color color, float seconds)
+{
+	flashColor = color;
+	flashSeconds = seconds;
+	flashing = seconds > 0.f;
+	flashClock.restart();
+	setColor(color);
+}
+
+void Unit::updateFlash()
+{
+	if (!flashing) {
+		return;
+	}
+
+	const float progress = flashClock.getElapsedTime().asSeconds() / flashSeconds;
+	if (progress >= 1.f) {
+		flashing = false;
+		setColor(sf::Color::White);
+		return;
+	}
+
+	const auto fade = [progress](sf::Uint8 value) {
+		return static_cast<sf::Uint8>(static_cast<float>(value) + (255.f - static_cast<float>(value)) * progress);
+	};
+	setColor(sf::Color(fade(flashColor.r), fade(flashColor.g), fade(flashColor.b), flashColor.a));
 }
 
 void Unit::checkHover(Vector2i mousePos, Event)
@@ -373,6 +410,7 @@ void MoveableUnit::decide()
 
 void MoveableUnit::updatemystate()
 {
+	updateFlash();
 	string temp = std::to_string(Health) + "/" + std::to_string(myinfo.Health);
 	UnitText.setString(temp);
 	UnitText.setPosition(sf::Transformable::getPosition().x, sf::Transformable::getPosition().y - 10);
@@ -394,6 +432,7 @@ DisMoveableUnit::DisMoveableUnit(int _x, int _y, int _team, Game* _game)
 	y = _y;
 	Health = 4000;
 	myteam = _team;
+	unitName = UName::BASE;
 	indanger = false;
 	cangenerate = true;
 	UnitText.setFont(mygame->myfont);
@@ -457,6 +496,7 @@ void DisMoveableUnit::reset()
 
 void DisMoveableUnit::updatemystate()
 {
+	updateFlash();
 
 	string temp = std::to_string(Health) + "/4000";
 	UnitText.setString(temp);

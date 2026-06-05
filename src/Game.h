@@ -3,6 +3,7 @@
 #include <iostream>
 #include <list>
 #include <memory>
+#include <string>
 #include <vector>
 #include "SFML/Graphics.hpp"
 #include "SFML/Window.hpp"
@@ -24,8 +25,18 @@ struct AttackEffect
 {
     sf::RectangleShape beam;
     sf::CircleShape impact;
+    sf::Color color = sf::Color::White;
     sf::Clock lifetime;
     float durationSeconds = 0.35f;
+};
+
+struct FloatingText
+{
+    sf::Text text;
+    sf::Vector2f startPosition;
+    sf::Vector2f velocity;
+    sf::Clock lifetime;
+    float durationSeconds = 0.8f;
 };
 
 class Game
@@ -70,6 +81,10 @@ public:
     std::list<std::unique_ptr<MoveableUnit>> enemys;
 
     std::vector<AttackEffect> attackEffects;
+    std::vector<FloatingText> floatingTexts;
+    sf::Clock shakeClock;
+    float shakeDurationSeconds = 0.f;
+    float shakeIntensity = 0.f;
 
     std::size_t turn;
 
@@ -132,7 +147,11 @@ public:
     void Draw();
     void DrawSidePanel();
     void addAttackEffect(sf::Vector2f start, sf::Vector2f end, sf::Color color);
+    void addFloatingText(sf::Vector2f position, const std::string& value, sf::Color color, unsigned int size = 15);
+    void startScreenShake(float durationSeconds, float intensity);
+    sf::Vector2f currentShakeOffset() const;
     void drawAttackEffects();
+    void drawFloatingTexts();
     void handleBuildButtons(sf::Vector2i mousePos, sf::Event event);
     void clearSelection();
     void selectOnly(Unit* unit);

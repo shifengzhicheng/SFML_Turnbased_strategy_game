@@ -1,4 +1,6 @@
 #pragma once
+#include <SFML/Graphics/Color.hpp>
+
 class Unit;
 class MoveableUnit;
 class Game;
@@ -18,7 +20,7 @@ public:
 	virtual ~Attacker() = default;
 	virtual void Attack(MoveableUnit* me, Unit* u);
 	virtual bool isInMyAttackRange(MoveableUnit*, Unit*);
-	virtual void drawAttackline(MoveableUnit*, Unit*);
+	virtual void drawAttackline(MoveableUnit*, Unit*, sf::Color);
 };
 class shot :public Attacker {
 public:

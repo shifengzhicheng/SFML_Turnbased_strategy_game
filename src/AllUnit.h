@@ -16,7 +16,7 @@ namespace UState {
 }
 namespace UName {
 	enum UnitName {
-		SHOOTER,INFANTARY,CAVALRY
+		SHOOTER, INFANTARY, CAVALRY, BASE
 	};
 }
 struct defaultInfo
@@ -31,6 +31,10 @@ class Unit :public sf::Sprite
 protected:
 	Game* mygame;
 	bool mousePosinMyRange(sf::Vector2i mousePos);
+	bool flashing = false;
+	float flashSeconds = 0.f;
+	sf::Color flashColor = sf::Color::White;
+	sf::Clock flashClock;
 public:
 	
 	int UnitState;
@@ -40,8 +44,11 @@ public:
 	int Health;
 	sf::Texture mytexture;
 	sf::Text UnitText;
+	int unitName = UName::BASE;
 	virtual ~Unit() = default;
 	virtual void updatemystate()=0;
+	void playFlash(sf::Color color, float seconds);
+	void updateFlash();
 	void setState(int state);
 	void checkHover(sf::Vector2i, sf::Event);
 
@@ -74,6 +81,7 @@ public:
 	void generatepath(Point from, Point to);
 	
 	void Showpath(sf::Vector2f mousePos);
+	void gainActionPoint(int amount);
 	bool isOktoAttackAndAttackconsume();
 	bool isdead();
 	virtual void move(Point p);
