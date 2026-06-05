@@ -1,0 +1,30 @@
+# CMake / local build output
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+
+# macOS
+.DS_Store
+
+# Visual Studio local state and build output
+.vs/
+/Debug/
+/Release/
+/bin/
+/include/
+/lib/
+/x64/
+*.user
+*.suo
+*.ipch
+*.exe
+*.dll
+*.lib
+*.pdb
+*.ilk
+*.obj
+*.tlog
+*.idb
+*.recipe
