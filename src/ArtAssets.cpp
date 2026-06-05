@@ -6,12 +6,6 @@
 
 namespace
 {
-    sf::Color withAlpha(sf::Color color, sf::Uint8 alpha)
-    {
-        color.a = alpha;
-        return color;
-    }
-
     sf::Color mix(sf::Color a, sf::Color b, float t)
     {
         t = std::clamp(t, 0.f, 1.f);
@@ -30,7 +24,7 @@ namespace
     bool createCanvas(sf::RenderTexture& canvas, sf::Vector2u size)
     {
         sf::ContextSettings settings;
-        settings.antialiasingLevel = 8;
+        settings.antialiasingLevel = 4;
         return canvas.create(size.x, size.y, settings);
     }
 
