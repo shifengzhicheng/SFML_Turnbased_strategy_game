@@ -13,6 +13,7 @@ namespace config
     inline constexpr int PanelX = MapWidth;
     inline constexpr int PanelPadding = 12;
     inline constexpr int ButtonX = PanelX + 16;
+    inline constexpr int HelpButtonY = 252;
     inline constexpr int EndTurnButtonY = 300;
     inline constexpr int BuildInfantryY = 346;
     inline constexpr int BuildShooterY = 428;

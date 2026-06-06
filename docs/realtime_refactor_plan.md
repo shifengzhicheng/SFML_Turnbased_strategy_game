@@ -46,3 +46,8 @@ The current milestone implements the full first RTS loop:
   Multiple barracks therefore train in parallel and increase army throughput.
 - The AI follows the same rules: expand to resources, build barracks, upgrade,
   queue unlocked units, then let automatic pathing/combat resolve the fight.
+- The pacing is intentionally slower than the prototype: income ticks, movement,
+  attacks, construction, unit training, and AI decisions leave time for the
+  player to read the map and make economy choices.
+- Press `H` or click `HELP` to open the in-game tutorial with controls, unlocks,
+  and automation rules.

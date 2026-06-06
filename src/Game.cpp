@@ -165,6 +165,9 @@ void Game::loadpic()
     art::makeButtonTexture(tUpgrade, myfont, "UPGRADE", art::ButtonState::Normal, sf::Vector2u(128, 44));
     art::makeButtonTexture(tUpgradeHover, myfont, "UPGRADE", art::ButtonState::Hover, sf::Vector2u(128, 44));
     art::makeButtonTexture(tUpgradeClick, myfont, "UPGRADE", art::ButtonState::Pressed, sf::Vector2u(128, 44));
+    art::makeButtonTexture(tHelp, myfont, "HELP", art::ButtonState::Normal, sf::Vector2u(128, 36));
+    art::makeButtonTexture(tHelpHover, myfont, "HELP", art::ButtonState::Hover, sf::Vector2u(128, 36));
+    art::makeButtonTexture(tHelpClick, myfont, "HELP", art::ButtonState::Pressed, sf::Vector2u(128, 36));
 
     startBtn.setTextures(tStartBtnNormal, tStartBtnHover, tStartBtnClick);
     EndTurnBtn.setTextures(tEndBtnNormal, tEndBtnHover, tEndBtnClick);
@@ -173,6 +176,7 @@ void Game::loadpic()
     cav.setTextures(tcav, tcavHover, tcavClick);
     sho.setTextures(tsho, tshoHover, tshoClick);
     upgradeBtn.setTextures(tUpgrade, tUpgradeHover, tUpgradeClick);
+    helpBtn.setTextures(tHelp, tHelpHover, tHelpClick);
     back.setTexture(background);
 }
 void Game::Initial()
@@ -200,6 +204,7 @@ void Game::Initial()
     sidePanel.setOutlineThickness(2.f);
 
     EndTurnBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
+    helpBtn.setPosition(config::ButtonX, config::HelpButtonY);
     upgradeBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
     inf.setPosition(config::ButtonX, config::BuildInfantryY);
     sho.setPosition(config::ButtonX, config::BuildShooterY);
@@ -1045,7 +1050,26 @@ void Game::Unitsreset(list<unique_ptr<MoveableUnit>>& us) {
 }
 
 void Game::startInput(Vector2i mousePos, Event event) {
-    
+    helpBtn.setPosition(600.f, 290.f);
+    if (event.type == sf::Event::KeyPressed) {
+        if (event.key.code == sf::Keyboard::H) {
+            tutorialVisible = !tutorialVisible;
+            return;
+        }
+        if (event.key.code == sf::Keyboard::Escape && tutorialVisible) {
+            tutorialVisible = false;
+            return;
+        }
+    }
+    if (helpBtn.checkMouse(mousePos, event) == RELEASE) {
+        tutorialVisible = !tutorialVisible;
+        helpBtn.setState(NORMAL);
+        return;
+    }
+    if (tutorialVisible) {
+        return;
+    }
+
     if (startBtn.checkMouse(mousePos, event) == RELEASE) {
         gameSceneState = SCENE_GAME;
         startBtn.setState(NORMAL);
@@ -1079,6 +1103,14 @@ void Game::handleRealtimeMapClick(Vector2i mousePos, Event event)
 void Game::GameInput(Vector2i mousePos, Event event) {
     const bool mouseInMap = mousePos.x >= 0 && mousePos.x < width && mousePos.y >= 0 && mousePos.y < height;
     if (event.type == sf::Event::KeyPressed) {
+        if (event.key.code == sf::Keyboard::H) {
+            tutorialVisible = !tutorialVisible;
+            return;
+        }
+        if (event.key.code == sf::Keyboard::Escape && tutorialVisible) {
+            tutorialVisible = false;
+            return;
+        }
         if (event.key.code == sf::Keyboard::Escape)
         {
             gameSceneState = gameSeceneState::SCENE_START;
@@ -1089,8 +1121,14 @@ void Game::GameInput(Vector2i mousePos, Event event) {
             clear();
         }
     }
+    if (tutorialVisible) {
+        return;
+    }
     if (realtimeMode) {
         handleBuildButtons(mousePos, event);
+        if (tutorialVisible) {
+            return;
+        }
         handleRealtimeMapClick(mousePos, event);
         if (Base_red) {
             Base_red->checkMouse(mousePos, event);
@@ -1136,6 +1174,9 @@ void Game::GameInput(Vector2i mousePos, Event event) {
         }
         else {
             handleBuildButtons(mousePos, event);
+            if (tutorialVisible) {
+                return;
+            }
             if (Base_red) {
                 Base_red->checkMouse(mousePos, event);
             }
@@ -1196,6 +1237,14 @@ void Game::Input()
 
 void Game::overinput(sf::Vector2i mousePos, sf::Event event) {
     if (event.type == sf::Event::KeyPressed) {
+        if (event.key.code == sf::Keyboard::H) {
+            tutorialVisible = !tutorialVisible;
+            return;
+        }
+        if (event.key.code == sf::Keyboard::Escape && tutorialVisible) {
+            tutorialVisible = false;
+            return;
+        }
         if (event.key.code == sf::Keyboard::Escape)
         {
             gameSceneState = gameSeceneState::SCENE_START;
@@ -1205,6 +1254,9 @@ void Game::overinput(sf::Vector2i mousePos, sf::Event event) {
         {
             clear();
         }
+    }
+    if (tutorialVisible) {
+        return;
     }
     if (endGame.checkMouse(mousePos, event) == RELEASE) {
         gameSceneState = SCENE_START;
@@ -1253,6 +1305,12 @@ bool Game::createUnit(int team, int name, int x, int y)
 
 void Game::handleBuildButtons(Vector2i mousePos, Event event)
 {
+    if (helpBtn.checkMouse(mousePos, event) == RELEASE) {
+        tutorialVisible = !tutorialVisible;
+        helpBtn.setState(NORMAL);
+        return;
+    }
+
     if (upgradeBtn.checkMouse(mousePos, event) == RELEASE) {
         upgradeTeam(PLAYER);
         upgradeBtn.setState(NORMAL);
@@ -1280,7 +1338,12 @@ void Game::Draw()
         back.setPosition(Vector2f(0,0));
         window.draw(back);
         startBtn.setPosition(600, 200);
+        helpBtn.setPosition(600, 290);
         window.draw(startBtn);
+        window.draw(helpBtn);
+        if (tutorialVisible) {
+            drawTutorialOverlay();
+        }
         break;
     case SCENE_GAME: {
         const sf::View defaultView(sf::FloatRect(0.f, 0.f, config::WindowWidth, config::WindowHeight));
@@ -1345,6 +1408,9 @@ void Game::Draw()
 
         window.setView(defaultView);
         DrawSidePanel();
+        if (tutorialVisible) {
+            drawTutorialOverlay();
+        }
         
         break;
     }
@@ -1359,6 +1425,9 @@ void Game::Draw()
         }
         endGame.setPosition(600,300);
         window.draw(endGame);
+        if (tutorialVisible) {
+            drawTutorialOverlay();
+        }
         break;
     default:
         break;
@@ -1504,6 +1573,77 @@ void Game::drawWorkers()
     }
 }
 
+void Game::drawTutorialOverlay()
+{
+    const sf::View defaultView(sf::FloatRect(0.f, 0.f, config::WindowWidth, config::WindowHeight));
+    window.setView(defaultView);
+
+    sf::RectangleShape veil(sf::Vector2f(config::WindowWidth, config::WindowHeight));
+    veil.setFillColor(sf::Color(8, 11, 10, 176));
+    window.draw(veil);
+
+    sf::RectangleShape shadow(sf::Vector2f(820.f, 548.f));
+    shadow.setPosition(196.f, 72.f);
+    shadow.setFillColor(sf::Color(0, 0, 0, 92));
+    window.draw(shadow);
+
+    sf::RectangleShape card(sf::Vector2f(820.f, 548.f));
+    card.setPosition(184.f, 60.f);
+    card.setFillColor(sf::Color(39, 49, 43, 245));
+    card.setOutlineColor(sf::Color(224, 170, 76));
+    card.setOutlineThickness(3.f);
+    window.draw(card);
+
+    sf::RectangleShape header(sf::Vector2f(820.f, 68.f));
+    header.setPosition(184.f, 60.f);
+    header.setFillColor(sf::Color(86, 61, 35, 238));
+    window.draw(header);
+
+    sf::Text title("HOW TO PLAY", myfont, 31);
+    title.setFillColor(sf::Color(255, 243, 201));
+    title.setPosition(222.f, 75.f);
+    window.draw(title);
+
+    sf::Text closeHint("Press H or Esc to close", myfont, 14);
+    closeHint.setFillColor(sf::Color(255, 226, 142));
+    closeHint.setPosition(790.f, 91.f);
+    window.draw(closeHint);
+
+    const std::vector<std::string> lines = {
+        "Goal",
+        "  Grow economy, build barracks, then let your army auto-push the enemy base.",
+        "",
+        "Core controls",
+        "  Left click a gold node: queue an Extractor. The base auto-sends a drone.",
+        "  Select the red base, then left click open land: queue a Barracks.",
+        "  Click Infantry / Shooter / Cavalry: queue units in the least-busy Barracks.",
+        "  Click Upgrade: spend CMD for stronger attacks after you have a Barracks.",
+        "",
+        "Automation",
+        "  Drones auto-build first. When work is done, they return to harvesting.",
+        "  Extractors only pay income while a drone is actively harvesting there.",
+        "  Combat units auto-path, choose targets, and attack on cooldown.",
+        "",
+        "Unlocks",
+        "  Infantry: needs 1 Barracks.",
+        "  Shooter: needs 1 Barracks and 1 Mine or Upgrade 1.",
+        "  Cavalry: needs 2 Barracks and 2 Mines or Upgrade 2.",
+        "",
+        "Hotkeys",
+        "  H: show / hide this guide.  C: restart map.  Esc: back to menu."
+    };
+
+    float y = 148.f;
+    for (const auto& line : lines) {
+        const bool section = !line.empty() && line.front() != ' ';
+        sf::Text text(line, myfont, section ? 18 : 14);
+        text.setFillColor(section ? sf::Color(255, 218, 112) : sf::Color(224, 232, 203));
+        text.setPosition(228.f, y);
+        window.draw(text);
+        y += line.empty() ? 12.f : (section ? 28.f : 22.f);
+    }
+}
+
 void Game::addAttackEffect(sf::Vector2f start, sf::Vector2f end, sf::Color color)
 {
     effects.addAttack(start, end, color);
@@ -1526,6 +1666,7 @@ sf::Vector2f Game::currentShakeOffset() const
 
 void Game::DrawSidePanel()
 {
+    helpBtn.setPosition(config::ButtonX, config::HelpButtonY);
     EndTurnBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
     upgradeBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
     inf.setPosition(config::ButtonX, config::BuildInfantryY);
@@ -1591,12 +1732,14 @@ void Game::DrawSidePanel()
     }
 
     const bool canBuild = Base_red && Base_red->UnitState == UState::UNITCLICK;
+    panelHint.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 216.f);
     panelHint.setString(canBuild ? "Click land: rax\nClick gold: mine" : "Click gold: mine\nSelect base: rax");
     inf.setColor(canQueueUnit(PLAYER, UName::INFANTARY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
     sho.setColor(canQueueUnit(PLAYER, UName::SHOOTER) ? sf::Color::White : sf::Color(255, 255, 255, 130));
     cav.setColor(canQueueUnit(PLAYER, UName::CAVALRY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
 
     window.draw(panelHint);
+    window.draw(helpBtn);
     window.draw(inf);
     window.draw(infantryLabel);
     window.draw(sho);
@@ -2080,7 +2223,7 @@ void Game::runAIProduction()
         UName::INFANTARY
     };
 
-    const int orders = std::min(completedBarracks + 1, realtime::AIUnitsPerBurst + completedBarracks);
+    const int orders = std::min(completedBarracks, realtime::AIUnitsPerBurst);
     for (int i = 0; i < orders; ++i) {
         bool queued = false;
         for (int code : priorities) {

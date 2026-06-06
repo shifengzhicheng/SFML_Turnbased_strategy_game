@@ -79,6 +79,7 @@ public:
     int aiCommand = config::StartingCommand;
     bool aiProductionDone = false;
     bool realtimeMode = true;
+    bool tutorialVisible = false;
     float playerIncomeTimer = 0.f;
     float aiIncomeTimer = 0.f;
     AIController aiController;
@@ -100,11 +101,13 @@ public:
     Button startBtn,EndTurnBtn;
     Button inf, cav, sho;
     Button upgradeBtn;
+    Button helpBtn;
     Button endGame;
     sf::Texture tinf, tinfHover, tinfClick;
     sf::Texture tcav, tcavHover, tcavClick;
     sf::Texture tsho, tshoHover, tshoClick;
     sf::Texture tUpgrade, tUpgradeHover, tUpgradeClick;
+    sf::Texture tHelp, tHelpHover, tHelpClick;
     sf::Texture background;
     sf::Sprite back;
     sf::RectangleShape sidePanel;
@@ -157,6 +160,7 @@ public:
     void drawResourceNodes();
     void drawBuildings();
     void drawWorkers();
+    void drawTutorialOverlay();
     void addAttackEffect(sf::Vector2f start, sf::Vector2f end, sf::Color color);
     void addFloatingText(sf::Vector2f position, const std::string& value, sf::Color color, unsigned int size = 15);
     void startScreenShake(float durationSeconds, float intensity);
