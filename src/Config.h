@@ -20,5 +20,12 @@ namespace config
 
     inline constexpr int PathStraightCost = 10;
     inline constexpr int PathDiagonalCost = 14;
+    inline constexpr int StartingCommand = 8;
+    inline constexpr int MaxCommand = 24;
+    inline constexpr int BaseCommandIncome = 4;
+    inline constexpr int ResourceCommandIncome = 2;
+    inline constexpr int InfantryCost = 3;
+    inline constexpr int ShooterCost = 4;
+    inline constexpr int CavalryCost = 6;
     inline constexpr double Pi = 3.14159265358979323846;
 }

@@ -4,6 +4,9 @@
 #include "Map.h"
 #include "ArtAssets.h"
 
+#include <algorithm>
+#include <cmath>
+
 using namespace sf;
 using namespace std;
 
@@ -31,6 +34,40 @@ namespace
         text.setFillColor(color);
         text.setString(value);
         text.setPosition(x, y);
+    }
+
+    void drawUnitBase(sf::RenderWindow& window, Point point, sf::Color color)
+    {
+        sf::CircleShape marker(7.f, 24);
+        marker.setOrigin(7.f, 7.f);
+        marker.setPosition(point.x * SqureSize + SqureSize / 2.f, point.y * SqureSize + SqureSize / 2.f + 3.f);
+        marker.setFillColor(sf::Color(color.r, color.g, color.b, 110));
+        marker.setOutlineColor(sf::Color(color.r, color.g, color.b, 210));
+        marker.setOutlineThickness(1.4f);
+        window.draw(marker);
+    }
+
+    sf::Color ownerColor(int owner)
+    {
+        if (owner == PLAYER) {
+            return sf::Color(218, 76, 60);
+        }
+        if (owner == AI) {
+            return sf::Color(61, 128, 206);
+        }
+        return sf::Color(226, 180, 63);
+    }
+
+    bool nearPoint(Point a, Point b, int radius)
+    {
+        const int dx = a.x - b.x;
+        const int dy = a.y - b.y;
+        return dx * dx + dy * dy <= radius * radius;
+    }
+
+    int& commandPool(Game& game, int team)
+    {
+        return team == PLAYER ? game.playerCommand : game.aiCommand;
     }
 }
 
@@ -102,11 +139,12 @@ void Game::Initial()
     setupText(UnitText, myfont, 16, sf::Color(38, 92, 68), "", panelTextX, 92.f);
     setupText(UnitAttack, myfont, 16, sf::Color(38, 92, 68), "", panelTextX, 118.f);
     setupText(UnitHP, myfont, 16, sf::Color(38, 92, 68), "", panelTextX, 144.f);
+    setupText(CommandText, myfont, 15, sf::Color(82, 60, 30), "", panelTextX, 174.f);
     setupText(panelTitle, myfont, 18, sf::Color(27, 47, 42), "Command", panelTextX, 16.f);
-    setupText(panelHint, myfont, 14, sf::Color(96, 91, 78), "Select base\nto build", panelTextX, 244.f);
-    setupText(infantryLabel, myfont, 13, sf::Color(27, 47, 42), "Infantry", panelTextX, config::BuildInfantryY + 52.f);
-    setupText(shooterLabel, myfont, 13, sf::Color(27, 47, 42), "Shooter", panelTextX, config::BuildShooterY + 52.f);
-    setupText(cavalryLabel, myfont, 13, sf::Color(27, 47, 42), "Cavalry", panelTextX, config::BuildCavalryY + 52.f);
+    setupText(panelHint, myfont, 14, sf::Color(96, 91, 78), "Capture gold\nto gain CMD", panelTextX, 232.f);
+    setupText(infantryLabel, myfont, 13, sf::Color(27, 47, 42), "Infantry 3", panelTextX, config::BuildInfantryY + 52.f);
+    setupText(shooterLabel, myfont, 13, sf::Color(27, 47, 42), "Shooter 4", panelTextX, config::BuildShooterY + 52.f);
+    setupText(cavalryLabel, myfont, 13, sf::Color(27, 47, 42), "Cavalry 6", panelTextX, config::BuildCavalryY + 52.f);
 
     sidePanel.setSize(sf::Vector2f(config::PanelWidth, config::WindowHeight));
     sidePanel.setPosition(config::PanelX, 0.f);
@@ -221,6 +259,7 @@ void Game::AIlogic() {
         Globle_text.setString("YourTurn");
         running = false;
         AIUnitreset();
+        addTurnIncome(PLAYER);
         return;
     }
     if (timepass) {
@@ -238,6 +277,7 @@ void Game::AIlogic() {
                 Globle_text.setString("YourTurn");
                 running = false;
                 AIUnitreset();
+                addTurnIncome(PLAYER);
             }
         }
     }
@@ -297,6 +337,7 @@ void Game::logicBeforeDraw()
             ++u;
         }
     }
+    updateResourceControl();
 
 }
 
@@ -366,6 +407,8 @@ void Game::GameInput(Vector2i mousePos, Event event) {
             playerturn = false;
             Globle_text.setString("EnemyTurn");
             clearSelection();
+            updateResourceControl();
+            addTurnIncome(AI);
             Unitsreset(myunits);
             if (Base_red) {
                 Base_red->reset();
@@ -450,24 +493,28 @@ void Game::overinput(sf::Vector2i mousePos, sf::Event event) {
     }
 }
 
-void Game::spawnUnit(int team, int name, int x, int y)
+bool Game::spawnUnit(int team, int name, int x, int y)
 {
+    if (!spendCommand(team, name)) {
+        return false;
+    }
+
     switch (name)
     {
     case UName::SHOOTER:
-        if (team == PLAYER&&myunits.size()< MaxUnit) myunits.push_back(make_unique<Shooter>(team, x, y, this));
-        if (team == AI&&enemys.size()< MaxUnit) enemys.push_back(make_unique<Shooter>(team, x, y, this));
-        break;
+        if (team == PLAYER) myunits.push_back(make_unique<Shooter>(team, x, y, this));
+        if (team == AI) enemys.push_back(make_unique<Shooter>(team, x, y, this));
+        return true;
     case UName::INFANTARY:
-        if (team == PLAYER && myunits.size() < MaxUnit) myunits.push_back(make_unique<Infantry>(team, x, y, this));
-        if (team == AI && enemys.size() < MaxUnit) enemys.push_back(make_unique<Infantry>(team, x, y, this));
-        break;
+        if (team == PLAYER) myunits.push_back(make_unique<Infantry>(team, x, y, this));
+        if (team == AI) enemys.push_back(make_unique<Infantry>(team, x, y, this));
+        return true;
     case UName::CAVALRY:
-        if (team == PLAYER && myunits.size() < MaxUnit) myunits.push_back(make_unique<Cavalry>(team, x, y, this));
-        if (team == AI && enemys.size() < MaxUnit) enemys.push_back(make_unique<Cavalry>(team, x, y, this));
-        break;
+        if (team == PLAYER) myunits.push_back(make_unique<Cavalry>(team, x, y, this));
+        if (team == AI) enemys.push_back(make_unique<Cavalry>(team, x, y, this));
+        return true;
     default:
-        break;
+        return false;
     }
 }
 
@@ -525,6 +572,9 @@ void Game::Draw()
 
         for (const auto& pathTile : drawPaths)
             window.draw(pathTile);
+        drawGridOverlay();
+        drawResourceNodes();
+
         if (Base_red) {
             window.draw(*Base_red);
             window.draw(Base_red->UnitText);
@@ -539,14 +589,12 @@ void Game::Draw()
         UnitHP.setString("");
 
         for (const auto& u : enemys) {
-            MapPos marker(Point(u->x, u->y), tile::Blue_Base);
-            window.draw(marker);
+            drawUnitBase(window, Point(u->x, u->y), sf::Color(61, 128, 206));
             window.draw(*u);
             window.draw(u->UnitText);
         }
         for (const auto& u : myunits) {
-            MapPos marker(Point(u->x, u->y), tile::Red_Base);
-            window.draw(marker);
+            drawUnitBase(window, Point(u->x, u->y), sf::Color(218, 76, 60));
             if (u->UnitState == UState::UNITCLICK) {
                 MapPos selected(Point(u->x, u->y), tile::Choosen);
                 window.draw(selected);
@@ -585,6 +633,61 @@ void Game::Draw()
     
 }
 
+void Game::drawGridOverlay()
+{
+    sf::VertexArray lines(sf::Lines);
+    const sf::Color lineColor(108, 119, 115, 175);
+
+    for (int x = 0; x <= width; x += SqureSize) {
+        lines.append(sf::Vertex(sf::Vector2f(static_cast<float>(x), 0.f), lineColor));
+        lines.append(sf::Vertex(sf::Vector2f(static_cast<float>(x), static_cast<float>(height)), lineColor));
+    }
+    for (int y = 0; y <= height; y += SqureSize) {
+        lines.append(sf::Vertex(sf::Vector2f(0.f, static_cast<float>(y)), lineColor));
+        lines.append(sf::Vertex(sf::Vector2f(static_cast<float>(width), static_cast<float>(y)), lineColor));
+    }
+
+    window.draw(lines);
+}
+
+void Game::drawResourceNodes()
+{
+    for (const auto& node : resources) {
+        const sf::Vector2f center(
+            node.point.x * SqureSize + SqureSize / 2.f,
+            node.point.y * SqureSize + SqureSize / 2.f);
+        const float pulse = 1.f + std::sin(node.pulseClock.getElapsedTime().asSeconds() * 4.f) * 0.08f;
+        const sf::Color color = ownerColor(node.owner);
+
+        sf::CircleShape aura(11.f * pulse, 32);
+        aura.setOrigin(11.f * pulse, 11.f * pulse);
+        aura.setPosition(center);
+        aura.setFillColor(sf::Color(color.r, color.g, color.b, 48));
+        aura.setOutlineColor(sf::Color(color.r, color.g, color.b, 170));
+        aura.setOutlineThickness(1.2f);
+        window.draw(aura);
+
+        sf::ConvexShape crystal(6);
+        crystal.setPoint(0, center + sf::Vector2f(0.f, -9.f));
+        crystal.setPoint(1, center + sf::Vector2f(7.f, -3.f));
+        crystal.setPoint(2, center + sf::Vector2f(5.f, 6.f));
+        crystal.setPoint(3, center + sf::Vector2f(0.f, 10.f));
+        crystal.setPoint(4, center + sf::Vector2f(-5.f, 6.f));
+        crystal.setPoint(5, center + sf::Vector2f(-7.f, -3.f));
+        crystal.setFillColor(sf::Color(255, 211, 82));
+        crystal.setOutlineColor(sf::Color(100, 74, 30));
+        crystal.setOutlineThickness(1.2f);
+        window.draw(crystal);
+
+        sf::Text label("+2", myfont, 11);
+        label.setFillColor(sf::Color(63, 49, 25));
+        label.setOutlineColor(sf::Color(255, 245, 190, 180));
+        label.setOutlineThickness(0.8f);
+        label.setPosition(center.x + 8.f, center.y - 14.f);
+        window.draw(label);
+    }
+}
+
 void Game::addAttackEffect(sf::Vector2f start, sf::Vector2f end, sf::Color color)
 {
     effects.addAttack(start, end, color);
@@ -618,14 +721,18 @@ void Game::DrawSidePanel()
     window.draw(UnitText);
     window.draw(UnitAttack);
     window.draw(UnitHP);
+    CommandText.setString("CMD: " + std::to_string(playerCommand)
+        + "/" + std::to_string(config::MaxCommand)
+        + "\nIncome: +" + std::to_string(resourceIncome(PLAYER)));
+    window.draw(CommandText);
 
     window.draw(EndTurnBtn);
 
     const bool canBuild = Base_red && Base_red->UnitState == UState::UNITCLICK;
-    panelHint.setString(canBuild ? "Build once\nper turn" : "Select base\nto build");
-    inf.setColor(canBuild ? sf::Color::White : sf::Color(255, 255, 255, 160));
-    sho.setColor(canBuild ? sf::Color::White : sf::Color(255, 255, 255, 160));
-    cav.setColor(canBuild ? sf::Color::White : sf::Color(255, 255, 255, 160));
+    panelHint.setString(canBuild ? "Spend CMD\nto build" : "Capture gold\nto gain CMD");
+    inf.setColor(canBuild && canSpawnUnit(PLAYER, UName::INFANTARY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
+    sho.setColor(canBuild && canSpawnUnit(PLAYER, UName::SHOOTER) ? sf::Color::White : sf::Color(255, 255, 255, 130));
+    cav.setColor(canBuild && canSpawnUnit(PLAYER, UName::CAVALRY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
 
     window.draw(panelHint);
     window.draw(inf);
@@ -644,6 +751,9 @@ void Game::clear()
     playerturn = true;
     gameWin = false;
     MosOnUnit = nullptr;
+    playerCommand = config::StartingCommand;
+    aiCommand = config::StartingCommand;
+    resources.clear();
     Globle_text.setString("YourTurn");
     Base_red.reset();
     Base_blue.reset();
@@ -679,6 +789,7 @@ void Game::clear()
         }
     }
     setBase();
+    placeResourceNodes();
 
     astar = Astar(maze);
 
@@ -743,6 +854,148 @@ void Game::setBase()
             }
         }
         if (isok) break;
+    }
+}
+
+void Game::placeResourceNodes()
+{
+    const int mapW = width / SqureSize;
+    const int mapH = height / SqureSize;
+    const std::vector<Point> targets = {
+        Point(mapW / 2, mapH / 2),
+        Point(mapW / 2, mapH / 3),
+        Point(mapW / 2, mapH * 2 / 3),
+        Point(mapW / 3, mapH / 2),
+        Point(mapW * 2 / 3, mapH / 2)
+    };
+
+    for (const auto& target : targets) {
+        Point best = target;
+        bool found = false;
+        for (int radius = 0; radius < 10 && !found; ++radius) {
+            for (int y = target.y - radius; y <= target.y + radius && !found; ++y) {
+                for (int x = target.x - radius; x <= target.x + radius; ++x) {
+                    if (!isMapCell(x, y)) {
+                        continue;
+                    }
+                    const auto id = tiles[y * horizontalTiles + x].getID();
+                    const bool duplicate = std::any_of(resources.begin(), resources.end(), [x, y](const ResourceNode& node) {
+                        return nearPoint(node.point, Point(x, y), 4);
+                    });
+                    if (!duplicate && id == tile::Empty && !nearPoint(Point(x, y), Red_baseP, 7) && !nearPoint(Point(x, y), Blue_baseP, 7)) {
+                        best = Point(x, y);
+                        found = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!found) {
+            continue;
+        }
+
+        // Clear a tiny capture plaza so resource fights are readable.
+        for (int y = best.y - 1; y <= best.y + 1; ++y) {
+            for (int x = best.x - 1; x <= best.x + 1; ++x) {
+                if (isMapCell(x, y)) {
+                    setTileID(x, y, tile::Empty);
+                }
+            }
+        }
+        ResourceNode node;
+        node.point = best;
+        node.owner = -1;
+        resources.push_back(node);
+    }
+}
+
+void Game::updateResourceControl()
+{
+    for (auto& node : resources) {
+        bool playerPresent = false;
+        bool enemyPresent = false;
+
+        for (const auto& unit : myunits) {
+            playerPresent = playerPresent || nearPoint(Point(unit->x, unit->y), node.point, 1);
+        }
+        for (const auto& unit : enemys) {
+            enemyPresent = enemyPresent || nearPoint(Point(unit->x, unit->y), node.point, 1);
+        }
+
+        const int previousOwner = node.owner;
+        if (playerPresent && !enemyPresent) {
+            node.owner = PLAYER;
+        }
+        else if (enemyPresent && !playerPresent) {
+            node.owner = AI;
+        }
+
+        if (node.owner != previousOwner) {
+            node.pulseClock.restart();
+            const sf::Vector2f pos(node.point.x * SqureSize + SqureSize / 2.f, node.point.y * SqureSize - 4.f);
+            addFloatingText(pos, node.owner == PLAYER ? "CAPTURED +2" : "ENEMY +2",
+                            node.owner == PLAYER ? sf::Color(255, 220, 93) : sf::Color(145, 196, 255), 12);
+            startScreenShake(0.10f, 1.5f);
+        }
+    }
+}
+
+int Game::resourceIncome(int team) const
+{
+    int income = config::BaseCommandIncome;
+    for (const auto& node : resources) {
+        if (node.owner == team) {
+            income += config::ResourceCommandIncome;
+        }
+    }
+    return income;
+}
+
+int Game::unitCost(int name) const
+{
+    switch (name) {
+    case UName::INFANTARY:
+        return config::InfantryCost;
+    case UName::SHOOTER:
+        return config::ShooterCost;
+    case UName::CAVALRY:
+        return config::CavalryCost;
+    default:
+        return 0;
+    }
+}
+
+bool Game::canSpawnUnit(int team, int name) const
+{
+    const int cost = unitCost(name);
+    if (cost <= 0) {
+        return false;
+    }
+    const bool hasRoom = team == PLAYER ? myunits.size() < MaxUnit : enemys.size() < MaxUnit;
+    const int command = team == PLAYER ? playerCommand : aiCommand;
+    return hasRoom && command >= cost;
+}
+
+bool Game::spendCommand(int team, int name)
+{
+    if (!canSpawnUnit(team, name)) {
+        return false;
+    }
+    commandPool(*this, team) -= unitCost(name);
+    return true;
+}
+
+void Game::addTurnIncome(int team)
+{
+    const int income = resourceIncome(team);
+    int& command = commandPool(*this, team);
+    command = std::min(config::MaxCommand, command + income);
+
+    Unit* base = team == PLAYER ? static_cast<Unit*>(Base_red.get()) : static_cast<Unit*>(Base_blue.get());
+    if (base != nullptr) {
+        addFloatingText(sf::Vector2f(base->x * SqureSize + SqureSize, base->y * SqureSize - 8.f),
+                        "+" + std::to_string(income) + " CMD",
+                        team == PLAYER ? sf::Color(218, 255, 134) : sf::Color(149, 203, 255), 13);
     }
 }
 

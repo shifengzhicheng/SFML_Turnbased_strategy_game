@@ -1,10 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
-  <ellipse cx="48" cy="80" rx="36" ry="9" fill="#13201b" opacity="0.32"/>
-  <path d="M18 32 L48 8 L78 32 Z" fill="#6e201e"/>
-  <rect x="22" y="32" width="52" height="44" fill="#de4b3b" stroke="#6e201e" stroke-width="5"/>
-  <rect x="32" y="12" width="9" height="18" fill="#6e201e"/>
-  <rect x="44" y="12" width="9" height="18" fill="#6e201e"/>
-  <rect x="56" y="12" width="9" height="18" fill="#6e201e"/>
-  <path d="M40 76 V55 C40 46 56 46 56 55 V76 Z" fill="#24221f"/>
-  <path d="M29 42 H39 M57 42 H67" stroke="#ffe79b" stroke-width="5" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs><linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff806e"/><stop offset="1" stop-color="#b83330"/></linearGradient></defs>
+  <ellipse cx="64" cy="106" rx="46" ry="12" fill="#13201b" opacity="0.32"/>
+  <path d="M24 44 L64 14 L104 44 Z" fill="#6e201e"/>
+  <rect x="26" y="43" width="82" height="61" rx="4" fill="url(#wall)" stroke="#6e201e" stroke-width="6"/>
+  <rect x="34" y="24" width="12" height="23" fill="#6e201e"/><rect x="58" y="21" width="12" height="26" fill="#6e201e"/><rect x="82" y="24" width="12" height="23" fill="#6e201e"/>
+  <path d="M53 104 V75 C53 62 75 62 75 75 V104 Z" fill="#24221f"/>
+  <path d="M37 58 H50 M78 58 H91" stroke="#ffe79b" stroke-width="7" stroke-linecap="round"/>
+  <path d="M28 45 H106" stroke="#fff2c4" stroke-width="3" opacity="0.5"/>
 </svg>

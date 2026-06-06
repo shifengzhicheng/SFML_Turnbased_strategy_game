@@ -14,12 +14,20 @@
 #include "Button.h"
 #include "Map.h"
 #include "Effects.h"
+#include "Config.h"
 
 enum gameSeceneState {
     SCENE_START,SCENE_GAME, SCEN_GAMEOVER
 };
 enum gamePlayer {
     PLAYER,AI
+};
+
+struct ResourceNode
+{
+    Point point;
+    int owner = -1;
+    sf::Clock pulseClock;
 };
 
 class Game
@@ -29,6 +37,7 @@ public:
     sf::Text UnitText;
     sf::Text UnitAttack;
     sf::Text UnitHP;
+    sf::Text CommandText;
     bool gameWin;
 
     mapgenerator gm;
@@ -64,6 +73,9 @@ public:
     std::list<std::unique_ptr<MoveableUnit>> enemys;
 
     Effects effects;
+    std::vector<ResourceNode> resources;
+    int playerCommand = config::StartingCommand;
+    int aiCommand = config::StartingCommand;
 
     std::size_t turn;
 
@@ -125,6 +137,8 @@ public:
 
     void Draw();
     void DrawSidePanel();
+    void drawGridOverlay();
+    void drawResourceNodes();
     void addAttackEffect(sf::Vector2f start, sf::Vector2f end, sf::Color color);
     void addFloatingText(sf::Vector2f position, const std::string& value, sf::Color color, unsigned int size = 15);
     void startScreenShake(float durationSeconds, float intensity);
@@ -140,6 +154,13 @@ public:
     void clear();
 
     void setBase();
+    void placeResourceNodes();
+    void updateResourceControl();
+    int resourceIncome(int team) const;
+    int unitCost(int name) const;
+    bool canSpawnUnit(int team, int name) const;
+    bool spendCommand(int team, int name);
+    void addTurnIncome(int team);
 
     int indexAt(sf::Vector2f position);
 
@@ -147,6 +168,6 @@ public:
 
     void overinput(sf::Vector2i mousePos, sf::Event event);
     
-    void spawnUnit(int team,int name, int x, int y);
+    bool spawnUnit(int team,int name, int x, int y);
     
 };

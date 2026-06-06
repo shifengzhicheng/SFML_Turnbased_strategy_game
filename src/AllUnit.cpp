@@ -5,6 +5,7 @@
 #include "Game.h"
 #include "ArtAssets.h"
 #include <algorithm>
+#include <cmath>
 #include <vector>
 #include <iostream>
 #include <iterator>
@@ -28,6 +29,7 @@ Shooter::Shooter(int _team, int _x, int _y, Game* _mygame):MoveableUnit(_team, _
 	Health = 100;
 	art::makeUnitTexture(mytexture, art::UnitKind::Shooter, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
 	setTexture(mytexture);
+	setScale(0.5f, 0.5f);
 	UnitText.setString("100/100");
 	sf::Transformable::setPosition(_x * SqureSize, _y * SqureSize);
 	myActionPoint = 15;
@@ -42,6 +44,7 @@ Infantry::Infantry(int _team, int _x, int _y, Game* _mygame) :MoveableUnit(_team
 	Health = 200;
 	art::makeUnitTexture(mytexture, art::UnitKind::Infantry, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
 	setTexture(mytexture);
+	setScale(0.5f, 0.5f);
 	UnitText.setString("200/200");
 	sf::Transformable::setPosition(_x * SqureSize, _y * SqureSize);
 	myActionPoint = 20;
@@ -58,6 +61,7 @@ Cavalry::Cavalry(int _team, int _x, int _y, Game* _mygame) : MoveableUnit(_team,
 	Health = 500;
 	art::makeUnitTexture(mytexture, art::UnitKind::Cavalry, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
 	setTexture(mytexture);
+	setScale(0.5f, 0.5f);
 	UnitText.setString("500/500");
 	sf::Transformable::setPosition(_x * SqureSize, _y * SqureSize);
 	myActionPoint = 40;
@@ -246,6 +250,34 @@ void Unit::playFlash(sf::Color color, float seconds)
 	setColor(color);
 }
 
+void Unit::playAction(sf::Vector2f direction, float seconds)
+{
+	const float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
+	if (length <= 0.f || seconds <= 0.f) {
+		return;
+	}
+	actionDirection = sf::Vector2f(direction.x / length, direction.y / length);
+	actionSeconds = seconds;
+	actionAnimating = true;
+	actionClock.restart();
+}
+
+sf::Vector2f Unit::actionOffset(float distance)
+{
+	if (!actionAnimating) {
+		return sf::Vector2f(0.f, 0.f);
+	}
+
+	const float progress = actionClock.getElapsedTime().asSeconds() / actionSeconds;
+	if (progress >= 1.f) {
+		actionAnimating = false;
+		return sf::Vector2f(0.f, 0.f);
+	}
+
+	const float wave = progress < 0.5f ? progress * 2.f : (1.f - progress) * 2.f;
+	return actionDirection * (distance * wave);
+}
+
 void Unit::updateFlash()
 {
 	if (!flashing) {
@@ -411,6 +443,12 @@ void MoveableUnit::decide()
 void MoveableUnit::updatemystate()
 {
 	updateFlash();
+	const float t = visualClock.getElapsedTime().asSeconds();
+	const float moveBob = UnitState == UState::MOVING ? std::sin(t * 13.f + static_cast<float>(x + y)) * 2.2f : 0.f;
+	const float selectedPulse = UnitState == UState::UNITCLICK ? 1.f + std::sin(t * 6.f) * 0.045f : 1.f;
+	const sf::Vector2f offset = actionOffset(3.5f);
+	setScale(0.5f * selectedPulse, 0.5f * selectedPulse);
+	sf::Transformable::setPosition(x * SqureSize + offset.x, y * SqureSize + moveBob + offset.y);
 	string temp = std::to_string(Health) + "/" + std::to_string(myinfo.Health);
 	UnitText.setString(temp);
 	UnitText.setPosition(sf::Transformable::getPosition().x, sf::Transformable::getPosition().y - 10);
@@ -466,6 +504,13 @@ void DisMoveableUnit::checkMouse(Vector2i mousePos, Event event)
 bool DisMoveableUnit::generateUnit(int code)
 {
 	if (cangenerate) {
+		if (!mygame->canSpawnUnit(myteam, code)) {
+			if (myteam == PLAYER) {
+				mygame->addFloatingText(sf::Vector2f(x * SqureSize + SqureSize, y * SqureSize - 8.f),
+					"Need CMD", sf::Color(255, 214, 96), 12);
+			}
+			return false;
+		}
 		bool success = false;
 		for (int i = x - 1; i < x + 3; i++) {
 			for (int j = y - 1; j < y + 3; j++) {
@@ -474,8 +519,7 @@ bool DisMoveableUnit::generateUnit(int code)
 				if (mygame->tiles[i + mygame->horizontalTiles * j].getID() != tile::Empty)
 					continue;
 				else {
-					mygame->spawnUnit(myteam, code, i, j);
-					success = true;
+					success = mygame->spawnUnit(myteam, code, i, j);
 					break;
 				}
 			}
@@ -497,6 +541,8 @@ void DisMoveableUnit::reset()
 void DisMoveableUnit::updatemystate()
 {
 	updateFlash();
+	const sf::Vector2f offset = actionOffset(2.f);
+	setPosition(sf::Vector2f(x * SqureSize + offset.x, y * SqureSize + offset.y));
 
 	string temp = std::to_string(Health) + "/4000";
 	UnitText.setString(temp);
@@ -517,11 +563,5 @@ void DisMoveableUnit::updatemystate()
 
 bool Unit::mousePosinMyRange(Vector2i mousePos)
 {
-	if (getTexture() == nullptr) {
-		return false;
-	}
-	if ((mousePos.x > getPosition().x && mousePos.x < getPosition().x + getTexture()->getSize().x) &&
-		(mousePos.y > getPosition().y && mousePos.y < getPosition().y + getTexture()->getSize().y))
-		return true;
-	else return false;
+	return getGlobalBounds().contains(static_cast<float>(mousePos.x), static_cast<float>(mousePos.y));
 }

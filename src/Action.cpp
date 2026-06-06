@@ -94,8 +94,11 @@ void Attacker::Attack(MoveableUnit* me, Unit* u)
 			? sf::Color(255, 206, 65, 255)
 			: (damageResult.resisted ? sf::Color(113, 176, 255, 255) : sf::Color(255, 74, 39, 255));
 
+		const sf::Vector2f attackVector = unitCenter(u) - unitCenter(me);
 		me->playFlash(sf::Color(255, 245, 180, 255), 0.16f);
+		me->playAction(attackVector, 0.18f);
 		u->playFlash(sf::Color(255, 146, 112, 255), 0.22f);
+		u->playAction(sf::Vector2f(-attackVector.x, -attackVector.y), 0.22f);
 		drawAttackline(me, u, beamColor);
 
 		mygame->addFloatingText(targetCenter + sf::Vector2f(0.f, -16.f), "-" + std::to_string(damageResult.amount),

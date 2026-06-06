@@ -82,7 +82,7 @@ MapPos::MapPos(sf::IntRect intrect, tile::ID ID):
     rect.setPosition(intrect.left, intrect.top);
 
     rect.setOutlineColor(sf::Color(160, 160, 160));
-    rect.setOutlineThickness(0.6f);
+    rect.setOutlineThickness(0.f);
 
     x = intrect.left / intrect.width;
     y = intrect.top / intrect.height;
@@ -114,7 +114,7 @@ MapPos::MapPos(Point p, tile::ID id)
     rect.setFillColor(IDtoColor(id));
     rect.setPosition(x*SqureSize, y*SqureSize);
     rect.setOutlineColor(sf::Color(160, 160, 160));
-    rect.setOutlineThickness(0.6f);
+    rect.setOutlineThickness(0.f);
 }
 
 MapPos::MapPos(sf::Vector2i mousePos, tile::ID id)
@@ -128,7 +128,7 @@ MapPos::MapPos(sf::Vector2i mousePos, tile::ID id)
     rect.setFillColor(IDtoColor(id));
     rect.setPosition(x , y);
     rect.setOutlineColor(sf::Color(160, 160, 160));
-    rect.setOutlineThickness(0.6f);
+    rect.setOutlineThickness(0.f);
 }
 // Draw the tile rectangle.
 void MapPos::draw(sf::RenderTarget& target, sf::RenderStates states) const

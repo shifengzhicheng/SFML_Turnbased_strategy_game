@@ -35,6 +35,12 @@ protected:
 	float flashSeconds = 0.f;
 	sf::Color flashColor = sf::Color::White;
 	sf::Clock flashClock;
+	bool actionAnimating = false;
+	float actionSeconds = 0.f;
+	sf::Vector2f actionDirection;
+	sf::Clock actionClock;
+	sf::Clock visualClock;
+	sf::Vector2f actionOffset(float distance);
 public:
 	
 	int UnitState;
@@ -48,6 +54,7 @@ public:
 	virtual ~Unit() = default;
 	virtual void updatemystate()=0;
 	void playFlash(sf::Color color, float seconds);
+	void playAction(sf::Vector2f direction, float seconds);
 	void updateFlash();
 	void setState(int state);
 	void checkHover(sf::Vector2i, sf::Event);
