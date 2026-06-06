@@ -102,11 +102,19 @@ namespace
         if (unit.realtimePathTimer < realtime::PathRefreshSeconds && !unit.mypath.empty()) {
             return;
         }
-        unit.realtimePathTimer = 0.f;
         if (!game.isCellWalkableForUnit(goal.x, goal.y)) {
             return;
         }
-        unit.generatepath(Point(unit.x, unit.y), goal);
+        if (unit.pendingPathRequest != 0
+            && unit.pendingPathGoal.x == goal.x
+            && unit.pendingPathGoal.y == goal.y) {
+            return;
+        }
+
+        unit.realtimePathTimer = 0.f;
+        // A* runs on the pathfinding service; the main thread only applies the
+        // returned path so SFML rendering/window access stays single-threaded.
+        game.requestPathForUnit(unit, goal);
     }
 
     void updateUnit(Game& game, MoveableUnit& unit, float dt)
@@ -123,6 +131,7 @@ namespace
         if (target != nullptr && unit.canAutoAttack(target)) {
             unit.UnitState = UState::UNITNORMAL;
             unit.mypath.clear();
+            unit.pendingPathRequest = 0;
             if (unit.realtimeAttackTimer >= unit.realtimeAttackCooldownSeconds()) {
                 unit.realtimeAttackTimer = 0.f;
                 unit.autoAttack(target);

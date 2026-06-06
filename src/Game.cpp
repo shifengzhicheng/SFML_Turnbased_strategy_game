@@ -8,6 +8,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
+#include <utility>
 
 using namespace sf;
 using namespace std;
@@ -79,6 +81,37 @@ namespace
             return unit->unitName == name;
         }));
     }
+
+    tile::ID buildingTileId(int team, int type)
+    {
+        if (type == building::Extractor) {
+            return team == PLAYER ? tile::Player_Extractor : tile::Enemy_Extractor;
+        }
+        return team == PLAYER ? tile::Player_Barracks : tile::Enemy_Barracks;
+    }
+
+    float buildingSeconds(int type)
+    {
+        return type == building::Extractor ? realtime::ExtractorBuildSeconds : realtime::BarracksBuildSeconds;
+    }
+
+    float unitTrainSeconds(int name)
+    {
+        switch (name) {
+        case UName::SHOOTER:
+            return realtime::ShooterTrainSeconds;
+        case UName::CAVALRY:
+            return realtime::CavalryTrainSeconds;
+        case UName::INFANTARY:
+        default:
+            return realtime::InfantryTrainSeconds;
+        }
+    }
+
+    bool isResourceClick(const ResourceNode& node, int tileX, int tileY)
+    {
+        return node.point.x == tileX && node.point.y == tileY;
+    }
 }
 
 bool Game::MousePosChanged()
@@ -129,6 +162,9 @@ void Game::loadpic()
     art::makeButtonTexture(tsho, myfont, "Shooter", art::ButtonState::Normal, sf::Vector2u(128, 54), art::UnitKind::Shooter, art::Team::Player);
     art::makeButtonTexture(tshoHover, myfont, "Shooter", art::ButtonState::Hover, sf::Vector2u(128, 54), art::UnitKind::Shooter, art::Team::Player);
     art::makeButtonTexture(tshoClick, myfont, "Shooter", art::ButtonState::Pressed, sf::Vector2u(128, 54), art::UnitKind::Shooter, art::Team::Player);
+    art::makeButtonTexture(tUpgrade, myfont, "UPGRADE", art::ButtonState::Normal, sf::Vector2u(128, 44));
+    art::makeButtonTexture(tUpgradeHover, myfont, "UPGRADE", art::ButtonState::Hover, sf::Vector2u(128, 44));
+    art::makeButtonTexture(tUpgradeClick, myfont, "UPGRADE", art::ButtonState::Pressed, sf::Vector2u(128, 44));
 
     startBtn.setTextures(tStartBtnNormal, tStartBtnHover, tStartBtnClick);
     EndTurnBtn.setTextures(tEndBtnNormal, tEndBtnHover, tEndBtnClick);
@@ -136,6 +172,7 @@ void Game::loadpic()
     inf.setTextures(tinf, tinfHover, tinfClick);
     cav.setTextures(tcav, tcavHover, tcavClick);
     sho.setTextures(tsho, tshoHover, tshoClick);
+    upgradeBtn.setTextures(tUpgrade, tUpgradeHover, tUpgradeClick);
     back.setTexture(background);
 }
 void Game::Initial()
@@ -152,9 +189,9 @@ void Game::Initial()
     setupText(CommandText, myfont, 14, sf::Color(255, 218, 112), "", panelTextX, 176.f);
     setupText(panelTitle, myfont, 19, sf::Color(255, 246, 208), "AUTO WAR", panelTextX, 16.f);
     setupText(panelHint, myfont, 13, sf::Color(211, 199, 165), "Select base\nto train", panelTextX, 232.f);
-    setupText(infantryLabel, myfont, 11, sf::Color(228, 218, 185), "Auto front line", panelTextX, config::BuildInfantryY + 57.f);
-    setupText(shooterLabel, myfont, 11, sf::Color(228, 218, 185), "Auto ranged DPS", panelTextX, config::BuildShooterY + 57.f);
-    setupText(cavalryLabel, myfont, 11, sf::Color(228, 218, 185), "Auto fast raid", panelTextX, config::BuildCavalryY + 57.f);
+    setupText(infantryLabel, myfont, 11, sf::Color(228, 218, 185), "Rax core unit", panelTextX, config::BuildInfantryY + 57.f);
+    setupText(shooterLabel, myfont, 11, sf::Color(228, 218, 185), "Mine unlock", panelTextX, config::BuildShooterY + 57.f);
+    setupText(cavalryLabel, myfont, 11, sf::Color(228, 218, 185), "2 rax + 2 mines", panelTextX, config::BuildCavalryY + 57.f);
 
     sidePanel.setSize(sf::Vector2f(config::PanelWidth, config::WindowHeight));
     sidePanel.setPosition(config::PanelX, 0.f);
@@ -163,6 +200,7 @@ void Game::Initial()
     sidePanel.setOutlineThickness(2.f);
 
     EndTurnBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
+    upgradeBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
     inf.setPosition(config::ButtonX, config::BuildInfantryY);
     sho.setPosition(config::ButtonX, config::BuildShooterY);
     cav.setPosition(config::ButtonX, config::BuildCavalryY);
@@ -225,7 +263,11 @@ bool Game::isBlockingTile(tile::ID id) const
         || id == tile::Tree
         || (!realtimeMode && id == tile::Unit)
         || id == tile::Red_Base
-        || id == tile::Blue_Base;
+        || id == tile::Blue_Base
+        || id == tile::Player_Extractor
+        || id == tile::Enemy_Extractor
+        || id == tile::Player_Barracks
+        || id == tile::Enemy_Barracks;
 }
 
 bool Game::isMapCell(int x, int y) const
@@ -247,7 +289,7 @@ bool Game::isCellWalkableForUnit(int x, int y) const
         return false;
     }
     const tile::ID id = tiles[y * horizontalTiles + x].getID();
-    return id == tile::Empty || id == tile::Path || id == tile::Choosen || id == tile::Unit;
+    return id == tile::Empty || id == tile::Path || id == tile::Choosen || id == tile::Unit || id == tile::Resource;
 }
 
 bool Game::isCellReservedForSpawn(int x, int y) const
@@ -257,6 +299,17 @@ bool Game::isCellReservedForSpawn(int x, int y) const
     };
     return std::any_of(myunits.begin(), myunits.end(), matchesCell)
         || std::any_of(enemys.begin(), enemys.end(), matchesCell);
+}
+
+bool Game::isBuildableCell(int x, int y) const
+{
+    if (!isMapCell(x, y)) {
+        return false;
+    }
+    const bool workerOnCell = std::any_of(workers.begin(), workers.end(), [x, y](const Worker& worker) {
+        return worker.point.x == x && worker.point.y == y;
+    });
+    return tiles[y * horizontalTiles + x].getID() == tile::Empty && !isCellReservedForSpawn(x, y) && !workerOnCell;
 }
 
 void Game::setTileID(int x, int y, tile::ID id)
@@ -323,9 +376,13 @@ void Game::updateRealtime(float dt)
 {
     syncMazeFromTiles();
     astar.setMaze(maze);
+    applyPathResults();
     updateResourceControl();
     updateRealtimeEconomy(dt);
     aiController.update(*this, dt);
+    assignWorkers();
+    updateWorkers(dt);
+    updateProduction(dt);
     realtime::updateAutoCombat(*this, dt);
 }
 
@@ -341,6 +398,547 @@ void Game::updateRealtimeEconomy(float dt)
     if (aiIncomeTimer >= realtime::EconomyTickSeconds) {
         aiIncomeTimer -= realtime::EconomyTickSeconds;
         addTurnIncome(AI);
+    }
+}
+
+Building* Game::findBuildingById(int id)
+{
+    const auto it = std::find_if(buildings.begin(), buildings.end(), [id](const Building& building) {
+        return building.id == id;
+    });
+    return it == buildings.end() ? nullptr : &(*it);
+}
+
+const Building* Game::findBuildingById(int id) const
+{
+    const auto it = std::find_if(buildings.begin(), buildings.end(), [id](const Building& building) {
+        return building.id == id;
+    });
+    return it == buildings.end() ? nullptr : &(*it);
+}
+
+Worker* Game::findWorkerById(int id)
+{
+    const auto it = std::find_if(workers.begin(), workers.end(), [id](const Worker& worker) {
+        return worker.id == id;
+    });
+    return it == workers.end() ? nullptr : &(*it);
+}
+
+int Game::workerCount(int team) const
+{
+    return static_cast<int>(std::count_if(workers.begin(), workers.end(), [team](const Worker& worker) {
+        return worker.team == team;
+    }));
+}
+
+int Game::assignedWorkerCount(int buildingId) const
+{
+    return static_cast<int>(std::count_if(workers.begin(), workers.end(), [buildingId](const Worker& worker) {
+        return worker.buildingId == buildingId && worker.state != worker::Idle;
+    }));
+}
+
+bool Game::hasActiveHarvester(const Building& building) const
+{
+    if (!building.complete || building.type != building::Extractor) {
+        return false;
+    }
+    return std::any_of(workers.begin(), workers.end(), [&building](const Worker& worker) {
+        return worker.buildingId == building.id
+            && worker.state == worker::Harvesting
+            && nearPoint(worker.point, building.point, 1);
+    });
+}
+
+Worker* Game::findIdleWorker(int team)
+{
+    const auto it = std::find_if(workers.begin(), workers.end(), [team](const Worker& worker) {
+        return worker.team == team && worker.state == worker::Idle;
+    });
+    return it == workers.end() ? nullptr : &(*it);
+}
+
+Worker* Game::findAvailableWorker(int team, bool allowHarvesting)
+{
+    if (Worker* worker = findIdleWorker(team)) {
+        return worker;
+    }
+    if (!allowHarvesting) {
+        return nullptr;
+    }
+
+    // Construction has priority over mining: temporarily pull a drone from a
+    // finished extractor when no idle worker is available.
+    const auto it = std::find_if(workers.begin(), workers.end(), [team](const Worker& worker) {
+        return worker.team == team && worker.state == worker::Harvesting;
+    });
+    return it == workers.end() ? nullptr : &(*it);
+}
+
+void Game::assignWorkerToBuilding(Worker& worker, Building& building)
+{
+    worker.state = worker::MovingToBuild;
+    worker.buildingId = building.id;
+    worker.target = findBuildStandPoint(building);
+    worker.path.clear();
+    worker.pendingPathRequest = 0;
+    worker.pathTimer = realtime::WorkerPathRefreshSeconds;
+    worker.moveTimer = 0.f;
+}
+
+void Game::assignWorkerToHarvest(Worker& worker, Building& building)
+{
+    worker.buildingId = building.id;
+    worker.target = findBuildStandPoint(building);
+    worker.path.clear();
+    worker.pendingPathRequest = 0;
+    worker.pathTimer = realtime::WorkerPathRefreshSeconds;
+    worker.moveTimer = 0.f;
+    worker.state = nearPoint(worker.point, building.point, 1) ? worker::Harvesting : worker::MovingToHarvest;
+}
+
+Point Game::workerSpawnPoint(int team) const
+{
+    const Point base = team == PLAYER ? Red_baseP : Blue_baseP;
+    const auto occupiedByWorker = [this](Point point) {
+        return std::any_of(workers.begin(), workers.end(), [point](const Worker& worker) {
+            return worker.point.x == point.x && worker.point.y == point.y;
+        });
+    };
+    const Point candidates[] = {
+        Point(base.x - 1, base.y),
+        Point(base.x, base.y - 1),
+        Point(base.x + 2, base.y + 1),
+        Point(base.x + 1, base.y + 2),
+        Point(base.x - 1, base.y + 1),
+        Point(base.x + 1, base.y - 1)
+    };
+    for (const auto& candidate : candidates) {
+        if (isCellWalkableForUnit(candidate.x, candidate.y) && !occupiedByWorker(candidate) && !isCellReservedForSpawn(candidate.x, candidate.y)) {
+            return candidate;
+        }
+    }
+    for (int radius = 2; radius <= 4; ++radius) {
+        for (int y = base.y - radius; y <= base.y + radius; ++y) {
+            for (int x = base.x - radius; x <= base.x + radius; ++x) {
+                const Point candidate(x, y);
+                if (isCellWalkableForUnit(x, y) && !occupiedByWorker(candidate) && !isCellReservedForSpawn(x, y)) {
+                    return candidate;
+                }
+            }
+        }
+    }
+    return base;
+}
+
+void Game::createWorker(int team, Point point)
+{
+    Worker worker;
+    worker.id = nextEntityId++;
+    worker.team = team;
+    worker.point = point;
+    worker.target = point;
+    workers.push_back(worker);
+}
+
+void Game::createStartingWorkers()
+{
+    for (int i = 0; i < realtime::StartingWorkers; ++i) {
+        createWorker(PLAYER, workerSpawnPoint(PLAYER));
+        createWorker(AI, workerSpawnPoint(AI));
+    }
+}
+
+Point Game::findBuildStandPoint(const Building& building) const
+{
+    const Point offsets[] = {
+        Point(-1, 0), Point(1, 0), Point(0, -1), Point(0, 1),
+        Point(-1, -1), Point(1, -1), Point(-1, 1), Point(1, 1)
+    };
+    for (const auto& offset : offsets) {
+        const Point candidate(building.point.x + offset.x, building.point.y + offset.y);
+        if (isCellWalkableForUnit(candidate.x, candidate.y)) {
+            return candidate;
+        }
+    }
+    return building.point;
+}
+
+Point Game::findBuildableNear(Point anchor, int radius) const
+{
+    for (int r = 1; r <= radius; ++r) {
+        for (int y = anchor.y - r; y <= anchor.y + r; ++y) {
+            for (int x = anchor.x - r; x <= anchor.x + r; ++x) {
+                if (isBuildableCell(x, y)) {
+                    return Point(x, y);
+                }
+            }
+        }
+    }
+    return Point(-1, -1);
+}
+
+Point Game::findSpawnPointAround(Point anchor) const
+{
+    for (int r = 1; r <= 3; ++r) {
+        for (int y = anchor.y - r; y <= anchor.y + r; ++y) {
+            for (int x = anchor.x - r; x <= anchor.x + r; ++x) {
+                if (isCellWalkableForUnit(x, y) && !isCellReservedForSpawn(x, y)) {
+                    return Point(x, y);
+                }
+            }
+        }
+    }
+    return Point(-1, -1);
+}
+
+int Game::completedBuildingCount(int team, int type) const
+{
+    return static_cast<int>(std::count_if(buildings.begin(), buildings.end(), [team, type](const Building& building) {
+        return building.team == team && building.type == type && building.complete;
+    }));
+}
+
+int Game::pendingOrCompleteExtractorForResource(int resourceIndex) const
+{
+    const auto it = std::find_if(buildings.begin(), buildings.end(), [resourceIndex](const Building& building) {
+        return building.type == building::Extractor && building.resourceIndex == resourceIndex;
+    });
+    return it == buildings.end() ? 0 : it->id;
+}
+
+int Game::buildingCost(int type) const
+{
+    return type == building::Extractor ? config::ExtractorCost : config::BarracksCost;
+}
+
+float Game::damageMultiplier(int team) const
+{
+    const int level = team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
+    return 1.f + static_cast<float>(level) * 0.16f;
+}
+
+bool Game::requestBuildExtractor(int team, int resourceIndex)
+{
+    if (resourceIndex < 0 || resourceIndex >= static_cast<int>(resources.size())) {
+        return false;
+    }
+    if (pendingOrCompleteExtractorForResource(resourceIndex) != 0) {
+        if (team == PLAYER) {
+            addFloatingText(sf::Vector2f(resources[resourceIndex].point.x * SqureSize, resources[resourceIndex].point.y * SqureSize - 8.f),
+                            "Mine exists", sf::Color(255, 214, 96), 12);
+        }
+        return false;
+    }
+    if (commandPool(*this, team) < config::ExtractorCost) {
+        if (team == PLAYER) {
+            addFloatingText(sf::Vector2f(resources[resourceIndex].point.x * SqureSize, resources[resourceIndex].point.y * SqureSize - 8.f),
+                            "Need CMD", sf::Color(255, 214, 96), 12);
+        }
+        return false;
+    }
+
+    commandPool(*this, team) -= config::ExtractorCost;
+    Building building;
+    building.id = nextEntityId++;
+    building.team = team;
+    building.type = building::Extractor;
+    building.point = resources[resourceIndex].point;
+    building.resourceIndex = resourceIndex;
+    building.buildSeconds = buildingSeconds(building.type);
+    buildings.push_back(building);
+    setTileID(building.point.x, building.point.y, buildingTileId(team, building.type));
+    if (team == PLAYER) {
+        addFloatingText(sf::Vector2f(building.point.x * SqureSize, building.point.y * SqureSize - 8.f),
+                        "Mine queued", sf::Color(218, 255, 134), 12);
+    }
+    return true;
+}
+
+bool Game::requestBuildBarracks(int team, Point point)
+{
+    if (!isBuildableCell(point.x, point.y) || commandPool(*this, team) < config::BarracksCost) {
+        if (team == PLAYER) {
+            addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
+                            commandPool(*this, team) < config::BarracksCost ? "Need CMD" : "Bad site",
+                            sf::Color(255, 214, 96), 12);
+        }
+        return false;
+    }
+
+    commandPool(*this, team) -= config::BarracksCost;
+    Building building;
+    building.id = nextEntityId++;
+    building.team = team;
+    building.type = building::Barracks;
+    building.point = point;
+    building.buildSeconds = buildingSeconds(building.type);
+    buildings.push_back(building);
+    setTileID(point.x, point.y, buildingTileId(team, building.type));
+    if (team == PLAYER) {
+        addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
+                        "Barracks queued", sf::Color(218, 255, 134), 12);
+    }
+    return true;
+}
+
+void Game::assignWorkers()
+{
+    // Worker routing is demand based: build tasks borrow idle/mining drones,
+    // then completed extractors claim one drone to keep income active.
+    for (auto& building : buildings) {
+        if (building.complete) {
+            continue;
+        }
+        if (assignedWorkerCount(building.id) > 0) {
+            continue;
+        }
+
+        Worker* worker = findAvailableWorker(building.team, true);
+        if (worker == nullptr) {
+            if (workerCount(building.team) < realtime::MaxWorkers) {
+                createWorker(building.team, workerSpawnPoint(building.team));
+                worker = &workers.back();
+            }
+        }
+        if (worker != nullptr) {
+            assignWorkerToBuilding(*worker, building);
+        }
+    }
+
+    for (auto& building : buildings) {
+        if (!building.complete || building.type != building::Extractor || assignedWorkerCount(building.id) > 0) {
+            continue;
+        }
+
+        Worker* worker = findIdleWorker(building.team);
+        if (worker == nullptr && workerCount(building.team) < realtime::MaxWorkers) {
+            createWorker(building.team, workerSpawnPoint(building.team));
+            worker = &workers.back();
+        }
+        if (worker != nullptr) {
+            assignWorkerToHarvest(*worker, building);
+        }
+    }
+}
+
+void Game::updateWorkerTravel(Worker& worker, Point target, float dt)
+{
+    worker.target = target;
+    worker.pathTimer += dt;
+    if ((worker.pathTimer >= realtime::WorkerPathRefreshSeconds || worker.path.empty()) && worker.pendingPathRequest == 0) {
+        worker.pathTimer = 0.f;
+        requestPathForWorker(worker, target);
+    }
+
+    worker.moveTimer += dt;
+    if (worker.moveTimer < realtime::WorkerStepSeconds || worker.path.empty()) {
+        return;
+    }
+
+    worker.moveTimer -= realtime::WorkerStepSeconds;
+    const Point next = worker.path.front();
+    worker.path.pop_front();
+    if (isCellWalkableForUnit(next.x, next.y)) {
+        worker.point = next;
+    }
+    else {
+        worker.path.clear();
+        worker.pathTimer = realtime::WorkerPathRefreshSeconds;
+    }
+}
+
+void Game::updateWorkers(float dt)
+{
+    for (auto& worker : workers) {
+        if (worker.state == worker::Idle) {
+            continue;
+        }
+
+        Building* building = findBuildingById(worker.buildingId);
+        if (building == nullptr) {
+            worker.state = worker::Idle;
+            worker.buildingId = 0;
+            worker.path.clear();
+            worker.pendingPathRequest = 0;
+            continue;
+        }
+
+        if (worker.state == worker::MovingToHarvest || worker.state == worker::Harvesting) {
+            if (!building->complete || building->type != building::Extractor) {
+                worker.state = worker::Idle;
+                worker.buildingId = 0;
+                worker.path.clear();
+                worker.pendingPathRequest = 0;
+                continue;
+            }
+
+            if (nearPoint(worker.point, building->point, 1)) {
+                worker.state = worker::Harvesting;
+                worker.path.clear();
+                continue;
+            }
+
+            worker.state = worker::MovingToHarvest;
+            updateWorkerTravel(worker, findBuildStandPoint(*building), dt);
+            continue;
+        }
+
+        if (building->complete) {
+            if (building->type == building::Extractor) {
+                assignWorkerToHarvest(worker, *building);
+            }
+            else {
+                worker.state = worker::Idle;
+                worker.buildingId = 0;
+                worker.path.clear();
+                worker.pendingPathRequest = 0;
+            }
+            continue;
+        }
+
+        const bool nearBuildSite = nearPoint(worker.point, building->point, 1);
+        if (nearBuildSite) {
+            worker.state = worker::Building;
+            building->buildProgress = std::min(building->buildSeconds, building->buildProgress + dt);
+            if (building->buildProgress >= building->buildSeconds) {
+                building->complete = true;
+                worker.path.clear();
+                worker.pendingPathRequest = 0;
+                if (building->type == building::Extractor) {
+                    assignWorkerToHarvest(worker, *building);
+                }
+                else {
+                    worker.state = worker::Idle;
+                    worker.buildingId = 0;
+                }
+                const sf::Vector2f pos(building->point.x * SqureSize, building->point.y * SqureSize - 10.f);
+                addFloatingText(pos, building->type == building::Extractor ? "Mine online" : "Barracks ready",
+                                building->team == PLAYER ? sf::Color(218, 255, 134) : sf::Color(149, 203, 255), 12);
+            }
+            continue;
+        }
+
+        worker.state = worker::MovingToBuild;
+        updateWorkerTravel(worker, findBuildStandPoint(*building), dt);
+    }
+}
+
+void Game::updateProduction(float dt)
+{
+    for (auto& building : buildings) {
+        if (!building.complete || building.type != building::Barracks) {
+            continue;
+        }
+        if (building.production.activeUnit < 0 && !building.production.orders.empty()) {
+            building.production.activeUnit = building.production.orders.front();
+            building.production.orders.pop_front();
+            building.production.progress = 0.f;
+        }
+        if (building.production.activeUnit < 0) {
+            continue;
+        }
+
+        building.production.progress += dt;
+        if (building.production.progress < unitTrainSeconds(building.production.activeUnit)) {
+            continue;
+        }
+
+        const Point spawn = findSpawnPointAround(building.point);
+        if (spawn.x >= 0 && createUnit(building.team, building.production.activeUnit, spawn.x, spawn.y)) {
+            building.production.activeUnit = -1;
+            building.production.progress = 0.f;
+        }
+    }
+}
+
+MoveableUnit* Game::findMoveableUnitById(int id)
+{
+    for (auto& unit : myunits) {
+        if (unit->entityId == id) {
+            return unit.get();
+        }
+    }
+    for (auto& unit : enemys) {
+        if (unit->entityId == id) {
+            return unit.get();
+        }
+    }
+    return nullptr;
+}
+
+void Game::requestPathForUnit(MoveableUnit& unit, Point goal)
+{
+    if (!isMapCell(unit.x, unit.y) || !isCellWalkableForUnit(goal.x, goal.y)) {
+        return;
+    }
+    if (unit.pendingPathRequest != 0
+        && unit.pendingPathGoal.x == goal.x
+        && unit.pendingPathGoal.y == goal.y) {
+        return;
+    }
+
+    PathRequest request;
+    request.requestId = nextPathRequestId++;
+    request.generation = pathGeneration;
+    request.ownerId = unit.entityId;
+    request.start = Point(unit.x, unit.y);
+    request.goal = goal;
+    request.allowDiagonal = false;
+    request.maze = maze;
+    request.maze[request.start.y][request.start.x] = 0;
+    request.maze[goal.y][goal.x] = 0;
+    unit.pendingPathRequest = request.requestId;
+    unit.pendingPathGoal = goal;
+    pathfinding.submit(std::move(request));
+}
+
+void Game::requestPathForWorker(Worker& worker, Point goal)
+{
+    if (!isMapCell(worker.point.x, worker.point.y) || !isCellWalkableForUnit(goal.x, goal.y)) {
+        return;
+    }
+    if (worker.pendingPathRequest != 0) {
+        return;
+    }
+
+    PathRequest request;
+    request.requestId = nextPathRequestId++;
+    request.generation = pathGeneration;
+    request.ownerId = worker.id;
+    request.start = worker.point;
+    request.goal = goal;
+    request.allowDiagonal = false;
+    request.maze = maze;
+    request.maze[request.start.y][request.start.x] = 0;
+    request.maze[goal.y][goal.x] = 0;
+    worker.pendingPathRequest = request.requestId;
+    pathfinding.submit(std::move(request));
+}
+
+void Game::applyPathResults()
+{
+    for (auto& result : pathfinding.collectResults()) {
+        if (result.generation != pathGeneration) {
+            continue;
+        }
+
+        if (MoveableUnit* unit = findMoveableUnitById(result.ownerId)) {
+            if (unit->pendingPathRequest == result.requestId) {
+                unit->mypath = std::move(result.path);
+                unit->pendingPathRequest = 0;
+                unit->pendingPathGoal = result.goal;
+            }
+            continue;
+        }
+
+        if (Worker* worker = findWorkerById(result.ownerId)) {
+            if (worker->pendingPathRequest == result.requestId) {
+                worker->path = std::move(result.path);
+                worker->pendingPathRequest = 0;
+            }
+        }
     }
 }
 
@@ -455,6 +1053,29 @@ void Game::startInput(Vector2i mousePos, Event event) {
     }
 }
 
+void Game::handleRealtimeMapClick(Vector2i mousePos, Event event)
+{
+    if (event.type != Event::EventType::MouseButtonPressed || event.mouseButton.button != Mouse::Left) {
+        return;
+    }
+    if (mousePos.x < 0 || mousePos.x >= width || mousePos.y < 0 || mousePos.y >= height) {
+        return;
+    }
+
+    const int tileX = mousePos.x / SqureSize;
+    const int tileY = mousePos.y / SqureSize;
+    for (int i = 0; i < static_cast<int>(resources.size()); ++i) {
+        if (isResourceClick(resources[i], tileX, tileY)) {
+            requestBuildExtractor(PLAYER, i);
+            return;
+        }
+    }
+
+    if (Base_red && Base_red->UnitState == UState::UNITCLICK && isBuildableCell(tileX, tileY)) {
+        requestBuildBarracks(PLAYER, Point(tileX, tileY));
+    }
+}
+
 void Game::GameInput(Vector2i mousePos, Event event) {
     const bool mouseInMap = mousePos.x >= 0 && mousePos.x < width && mousePos.y >= 0 && mousePos.y < height;
     if (event.type == sf::Event::KeyPressed) {
@@ -470,6 +1091,7 @@ void Game::GameInput(Vector2i mousePos, Event event) {
     }
     if (realtimeMode) {
         handleBuildButtons(mousePos, event);
+        handleRealtimeMapClick(mousePos, event);
         if (Base_red) {
             Base_red->checkMouse(mousePos, event);
         }
@@ -595,45 +1217,57 @@ bool Game::spawnUnit(int team, int name, int x, int y)
     if (!spendCommand(team, name)) {
         return false;
     }
+    return createUnit(team, name, x, y);
+}
 
+bool Game::createUnit(int team, int name, int x, int y)
+{
+    if (!hasUnitCapacity(team)) {
+        return false;
+    }
+    std::unique_ptr<MoveableUnit> unit;
     switch (name)
     {
     case UName::SHOOTER:
-        if (team == PLAYER) myunits.push_back(make_unique<Shooter>(team, x, y, this));
-        if (team == AI) enemys.push_back(make_unique<Shooter>(team, x, y, this));
-        return true;
+        unit = make_unique<Shooter>(team, x, y, this);
+        break;
     case UName::INFANTARY:
-        if (team == PLAYER) myunits.push_back(make_unique<Infantry>(team, x, y, this));
-        if (team == AI) enemys.push_back(make_unique<Infantry>(team, x, y, this));
-        return true;
+        unit = make_unique<Infantry>(team, x, y, this);
+        break;
     case UName::CAVALRY:
-        if (team == PLAYER) myunits.push_back(make_unique<Cavalry>(team, x, y, this));
-        if (team == AI) enemys.push_back(make_unique<Cavalry>(team, x, y, this));
-        return true;
+        unit = make_unique<Cavalry>(team, x, y, this);
+        break;
     default:
         return false;
     }
+
+    unit->entityId = nextEntityId++;
+    if (team == PLAYER) {
+        myunits.push_back(std::move(unit));
+    }
+    else {
+        enemys.push_back(std::move(unit));
+    }
+    return true;
 }
 
 void Game::handleBuildButtons(Vector2i mousePos, Event event)
 {
-    if (!Base_red || Base_red->UnitState != UState::UNITCLICK) {
-        inf.setState(NORMAL);
-        sho.setState(NORMAL);
-        cav.setState(NORMAL);
-        return;
+    if (upgradeBtn.checkMouse(mousePos, event) == RELEASE) {
+        upgradeTeam(PLAYER);
+        upgradeBtn.setState(NORMAL);
     }
 
     if (inf.checkMouse(mousePos, event) == RELEASE) {
-        Base_red->generateUnit(UName::INFANTARY);
+        enqueueUnit(PLAYER, UName::INFANTARY);
         inf.setState(NORMAL);
     }
     if (sho.checkMouse(mousePos, event) == RELEASE) {
-        Base_red->generateUnit(UName::SHOOTER);
+        enqueueUnit(PLAYER, UName::SHOOTER);
         sho.setState(NORMAL);
     }
     if (cav.checkMouse(mousePos, event) == RELEASE) {
-        Base_red->generateUnit(UName::CAVALRY);
+        enqueueUnit(PLAYER, UName::CAVALRY);
         cav.setState(NORMAL);
     }
 }
@@ -671,6 +1305,8 @@ void Game::Draw()
             window.draw(pathTile);
         drawGridOverlay();
         drawResourceNodes();
+        drawBuildings();
+        drawWorkers();
 
         if (Base_red) {
             window.draw(*Base_red);
@@ -776,12 +1412,95 @@ void Game::drawResourceNodes()
         crystal.setOutlineThickness(1.2f);
         window.draw(crystal);
 
-        sf::Text label("+2", myfont, 11);
+        sf::Text label("+" + std::to_string(config::ResourceCommandIncome), myfont, 11);
         label.setFillColor(sf::Color(63, 49, 25));
         label.setOutlineColor(sf::Color(255, 245, 190, 180));
         label.setOutlineThickness(0.8f);
         label.setPosition(center.x + 8.f, center.y - 14.f);
         window.draw(label);
+    }
+}
+
+void Game::drawBuildings()
+{
+    for (const auto& building : buildings) {
+        const sf::Vector2f origin(building.point.x * SqureSize, building.point.y * SqureSize);
+        if (!building.complete) {
+            const float pct = std::clamp(building.buildProgress / std::max(0.1f, building.buildSeconds), 0.f, 1.f);
+            sf::RectangleShape barBg(sf::Vector2f(18.f, 3.f));
+            barBg.setPosition(origin + sf::Vector2f(1.f, -5.f));
+            barBg.setFillColor(sf::Color(25, 25, 22, 170));
+            window.draw(barBg);
+            sf::RectangleShape bar(sf::Vector2f(18.f * pct, 3.f));
+            bar.setPosition(barBg.getPosition());
+            bar.setFillColor(building.team == PLAYER ? sf::Color(218, 255, 134) : sf::Color(149, 203, 255));
+            window.draw(bar);
+        }
+        else if (building.type == building::Barracks && building.production.activeUnit >= 0) {
+            const float pct = std::clamp(building.production.progress / unitTrainSeconds(building.production.activeUnit), 0.f, 1.f);
+            sf::RectangleShape bar(sf::Vector2f(18.f * pct, 2.f));
+            bar.setPosition(origin + sf::Vector2f(1.f, -4.f));
+            bar.setFillColor(sf::Color(255, 218, 112));
+            window.draw(bar);
+        }
+        else if (building.complete && building.type == building::Extractor) {
+            sf::CircleShape lamp(2.6f, 12);
+            lamp.setOrigin(2.6f, 2.6f);
+            lamp.setPosition(origin + sf::Vector2f(17.f, 4.f));
+            lamp.setFillColor(hasActiveHarvester(building) ? sf::Color(255, 224, 76) : sf::Color(88, 82, 67));
+            window.draw(lamp);
+        }
+
+        if (building.complete && building.type == building::Barracks && building.production.load() > 0) {
+            sf::Text queueText("Q" + std::to_string(building.production.load()), myfont, 9);
+            queueText.setFillColor(sf::Color(255, 241, 177));
+            queueText.setOutlineColor(sf::Color(44, 32, 24, 210));
+            queueText.setOutlineThickness(0.8f);
+            queueText.setPosition(origin + sf::Vector2f(2.f, 10.f));
+            window.draw(queueText);
+        }
+    }
+}
+
+void Game::drawWorkers()
+{
+    for (const auto& workerUnit : workers) {
+        const sf::Vector2f center(workerUnit.point.x * SqureSize + SqureSize / 2.f, workerUnit.point.y * SqureSize + SqureSize / 2.f);
+        if (workerUnit.state == worker::Harvesting) {
+            sf::CircleShape gatherAura(7.8f, 28);
+            gatherAura.setOrigin(7.8f, 7.8f);
+            gatherAura.setPosition(center);
+            gatherAura.setFillColor(sf::Color(255, 221, 96, 48));
+            gatherAura.setOutlineColor(sf::Color(255, 221, 96, 155));
+            gatherAura.setOutlineThickness(1.f);
+            window.draw(gatherAura);
+        }
+
+        sf::CircleShape body(5.f, 18);
+        body.setOrigin(5.f, 5.f);
+        body.setPosition(center);
+        body.setFillColor(workerUnit.team == PLAYER ? sf::Color(255, 187, 87) : sf::Color(118, 178, 255));
+        body.setOutlineColor(sf::Color(39, 35, 26));
+        body.setOutlineThickness(1.f);
+        window.draw(body);
+
+        if (workerUnit.state == worker::Building) {
+            sf::RectangleShape tool(sf::Vector2f(8.f, 1.6f));
+            tool.setOrigin(4.f, 0.8f);
+            tool.setPosition(center + sf::Vector2f(3.f, -5.f));
+            tool.setRotation(35.f);
+            tool.setFillColor(sf::Color(255, 241, 177));
+            window.draw(tool);
+        }
+        else if (workerUnit.state == worker::Harvesting) {
+            sf::CircleShape cargo(2.2f, 12);
+            cargo.setOrigin(2.2f, 2.2f);
+            cargo.setPosition(center + sf::Vector2f(4.5f, -4.5f));
+            cargo.setFillColor(sf::Color(255, 233, 93));
+            cargo.setOutlineColor(sf::Color(93, 69, 29));
+            cargo.setOutlineThickness(0.6f);
+            window.draw(cargo);
+        }
     }
 }
 
@@ -808,6 +1527,7 @@ sf::Vector2f Game::currentShakeOffset() const
 void Game::DrawSidePanel()
 {
     EndTurnBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
+    upgradeBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
     inf.setPosition(config::ButtonX, config::BuildInfantryY);
     sho.setPosition(config::ButtonX, config::BuildShooterY);
     cav.setPosition(config::ButtonX, config::BuildCavalryY);
@@ -840,14 +1560,22 @@ void Game::DrawSidePanel()
 
     window.draw(panelTitle);
     window.draw(Globle_text);
-    window.draw(UnitText);
-    window.draw(UnitAttack);
-    window.draw(UnitHP);
+    if (!realtimeMode) {
+        window.draw(UnitText);
+        window.draw(UnitAttack);
+        window.draw(UnitHP);
+    }
+    CommandText.setCharacterSize(realtimeMode ? 12 : 14);
+    CommandText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), realtimeMode ? 94.f : 176.f);
     CommandText.setString("CMD: " + std::to_string(playerCommand)
         + "/" + std::to_string(config::MaxCommand)
         + "\nGold: " + std::to_string(controlledResourceCount(PLAYER))
         + "/" + std::to_string(resources.size())
         + "\nTick: +" + std::to_string(resourceIncome(PLAYER))
+        + "\nDrone: " + std::to_string(workerCount(PLAYER))
+        + "/" + std::to_string(realtime::MaxWorkers)
+        + "\nRax: " + std::to_string(completedBuildingCount(PLAYER, building::Barracks))
+        + "  Up: " + std::to_string(playerUpgradeLevel)
         + "\nArmy: " + std::to_string(myunits.size())
         + "/" + std::to_string(config::MaxUnits));
     window.draw(CommandText);
@@ -855,12 +1583,18 @@ void Game::DrawSidePanel()
     if (!realtimeMode) {
         window.draw(EndTurnBtn);
     }
+    else {
+        upgradeBtn.setColor(commandForTeam(PLAYER) >= config::UpgradeCost && completedBuildingCount(PLAYER, building::Barracks) > 0 && playerUpgradeLevel < 2
+            ? sf::Color::White
+            : sf::Color(255, 255, 255, 130));
+        window.draw(upgradeBtn);
+    }
 
     const bool canBuild = Base_red && Base_red->UnitState == UState::UNITCLICK;
-    panelHint.setString(canBuild ? "Train squads:\nauto attack" : "Select base\nto train");
-    inf.setColor(canBuild && canSpawnUnit(PLAYER, UName::INFANTARY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
-    sho.setColor(canBuild && canSpawnUnit(PLAYER, UName::SHOOTER) ? sf::Color::White : sf::Color(255, 255, 255, 130));
-    cav.setColor(canBuild && canSpawnUnit(PLAYER, UName::CAVALRY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
+    panelHint.setString(canBuild ? "Click land: rax\nClick gold: mine" : "Click gold: mine\nSelect base: rax");
+    inf.setColor(canQueueUnit(PLAYER, UName::INFANTARY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
+    sho.setColor(canQueueUnit(PLAYER, UName::SHOOTER) ? sf::Color::White : sf::Color(255, 255, 255, 130));
+    cav.setColor(canQueueUnit(PLAYER, UName::CAVALRY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
 
     window.draw(panelHint);
     window.draw(inf);
@@ -885,8 +1619,15 @@ void Game::clear()
     playerIncomeTimer = 0.f;
     aiIncomeTimer = 0.f;
     aiController.reset();
+    ++pathGeneration;
+    nextPathRequestId = 1;
+    nextEntityId = 1;
+    playerUpgradeLevel = 0;
+    aiUpgradeLevel = 0;
     realtimeFrameClock.restart();
     resources.clear();
+    workers.clear();
+    buildings.clear();
     Globle_text.setString(realtimeMode ? "RealTime" : "YourTurn");
     Base_red.reset();
     Base_blue.reset();
@@ -923,6 +1664,7 @@ void Game::clear()
     }
     setBase();
     placeResourceNodes();
+    createStartingWorkers();
 
     astar = Astar(maze);
 
@@ -1039,35 +1781,33 @@ void Game::placeResourceNodes()
         node.point = best;
         node.owner = -1;
         resources.push_back(node);
+        setTileID(best.x, best.y, tile::Resource);
     }
 }
 
 void Game::updateResourceControl()
 {
-    for (auto& node : resources) {
-        bool playerPresent = false;
-        bool enemyPresent = false;
-
-        for (const auto& unit : myunits) {
-            playerPresent = playerPresent || nearPoint(Point(unit->x, unit->y), node.point, 1);
-        }
-        for (const auto& unit : enemys) {
-            enemyPresent = enemyPresent || nearPoint(Point(unit->x, unit->y), node.point, 1);
-        }
-
+    for (std::size_t i = 0; i < resources.size(); ++i) {
+        auto& node = resources[i];
         const int previousOwner = node.owner;
-        if (playerPresent && !enemyPresent) {
-            node.owner = PLAYER;
-        }
-        else if (enemyPresent && !playerPresent) {
-            node.owner = AI;
+        node.owner = -1;
+        for (const auto& building : buildings) {
+            if (building.type == building::Extractor
+                && building.resourceIndex == static_cast<int>(i)
+                && hasActiveHarvester(building)) {
+                node.owner = building.team;
+                break;
+            }
         }
 
         if (node.owner != previousOwner) {
             node.pulseClock.restart();
             const sf::Vector2f pos(node.point.x * SqureSize + SqureSize / 2.f, node.point.y * SqureSize - 4.f);
-            addFloatingText(pos, node.owner == PLAYER ? "CAPTURED +2" : "ENEMY +2",
-                            node.owner == PLAYER ? sf::Color(255, 220, 93) : sf::Color(145, 196, 255), 12);
+            const std::string text = node.owner == PLAYER ? "MINE ONLINE" : (node.owner == AI ? "ENEMY MINE" : "MINE IDLE");
+            const sf::Color color = node.owner == PLAYER
+                ? sf::Color(255, 220, 93)
+                : (node.owner == AI ? sf::Color(145, 196, 255) : sf::Color(205, 196, 158));
+            addFloatingText(pos, text, color, 12);
             startScreenShake(0.10f, 1.5f);
         }
     }
@@ -1103,6 +1843,92 @@ int Game::unitCost(int name) const
     default:
         return 0;
     }
+}
+
+bool Game::isUnitUnlocked(int team, int name) const
+{
+    const int extractors = completedBuildingCount(team, building::Extractor);
+    const int barracks = completedBuildingCount(team, building::Barracks);
+    const int upgrade = team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
+    switch (name) {
+    case UName::INFANTARY:
+        return barracks >= 1;
+    case UName::SHOOTER:
+        return barracks >= 1 && (extractors >= 1 || upgrade >= 1);
+    case UName::CAVALRY:
+        return barracks >= 2 && (extractors >= 2 || upgrade >= 2);
+    default:
+        return false;
+    }
+}
+
+bool Game::canQueueUnit(int team, int name) const
+{
+    return unitCost(name) > 0
+        && hasUnitCapacity(team)
+        && isUnitUnlocked(team, name)
+        && commandForTeam(team) >= unitCost(name)
+        && completedBuildingCount(team, building::Barracks) > 0;
+}
+
+bool Game::enqueueUnit(int team, int name)
+{
+    if (!canQueueUnit(team, name)) {
+        if (team == PLAYER) {
+            std::string reason = "Need Barracks";
+            if (completedBuildingCount(team, building::Barracks) > 0 && !isUnitUnlocked(team, name)) {
+                reason = "Locked";
+            }
+            else if (commandForTeam(team) < unitCost(name)) {
+                reason = "Need CMD";
+            }
+            addFloatingText(sf::Vector2f(config::PanelX + 18.f, static_cast<float>(config::BuildInfantryY) - 18.f),
+                            reason, sf::Color(255, 214, 96), 12);
+        }
+        return false;
+    }
+
+    Building* best = nullptr;
+    for (auto& building : buildings) {
+        if (building.team != team || building.type != building::Barracks || !building.complete) {
+            continue;
+        }
+        if (best == nullptr || building.production.load() < best->production.load()) {
+            best = &building;
+        }
+    }
+    if (best == nullptr) {
+        return false;
+    }
+
+    commandPool(*this, team) -= unitCost(name);
+    best->production.orders.push_back(name);
+    if (team == PLAYER) {
+        addFloatingText(sf::Vector2f(best->point.x * SqureSize, best->point.y * SqureSize - 8.f),
+                        "Queued", sf::Color(218, 255, 134), 12);
+    }
+    return true;
+}
+
+bool Game::upgradeTeam(int team)
+{
+    int& level = team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
+    if (level >= 2 || completedBuildingCount(team, building::Barracks) == 0 || commandPool(*this, team) < config::UpgradeCost) {
+        if (team == PLAYER) {
+            addFloatingText(sf::Vector2f(config::PanelX + 18.f, static_cast<float>(config::EndTurnButtonY) - 18.f),
+                            level >= 2 ? "Max upgrade" : (completedBuildingCount(team, building::Barracks) == 0 ? "Need Barracks" : "Need CMD"),
+                            sf::Color(255, 214, 96), 12);
+        }
+        return false;
+    }
+
+    commandPool(*this, team) -= config::UpgradeCost;
+    ++level;
+    if (team == PLAYER) {
+        addFloatingText(sf::Vector2f(config::PanelX + 18.f, static_cast<float>(config::EndTurnButtonY) - 18.f),
+                        "Damage +" + std::to_string(level), sf::Color(218, 255, 134), 12);
+    }
+    return true;
 }
 
 int Game::commandForTeam(int team) const
@@ -1173,31 +1999,98 @@ void Game::runAIProduction()
         return;
     }
 
-    // Real-time AI uses the same economy as the player and spends CMD in small
-    // bursts instead of receiving direct units from a turn script.
-    for (int i = 0; i < realtime::AIUnitsPerBurst; ++i) {
-        const int playerInfantry = countUnitsNamed(myunits, UName::INFANTARY);
-        const int playerShooters = countUnitsNamed(myunits, UName::SHOOTER);
-        const int playerCavalry = countUnitsNamed(myunits, UName::CAVALRY);
-        const int counterPick = playerShooters > playerInfantry && aiCommand >= config::CavalryCost
-            ? UName::CAVALRY
-            : (playerCavalry > playerShooters ? UName::INFANTARY : UName::SHOOTER);
-        const int priorities[] = {
-            counterPick,
-            aiCommand >= config::CavalryCost && enemys.size() < myunits.size() + 2 ? UName::CAVALRY : UName::INFANTARY,
-            UName::SHOOTER,
-            UName::INFANTARY
-        };
+    const auto totalBuildings = [this](int team, int type) {
+        return static_cast<int>(std::count_if(buildings.begin(), buildings.end(), [team, type](const Building& building) {
+            return building.team == team && building.type == type;
+        }));
+    };
+    const auto distanceScore = [](Point a, Point b) {
+        const int dx = a.x - b.x;
+        const int dy = a.y - b.y;
+        return dx * dx + dy * dy;
+    };
+    const auto chooseResource = [this, distanceScore]() {
+        int bestIndex = -1;
+        int bestScore = std::numeric_limits<int>::max();
+        for (int i = 0; i < static_cast<int>(resources.size()); ++i) {
+            if (pendingOrCompleteExtractorForResource(i) != 0) {
+                continue;
+            }
+            const int score = distanceScore(resources[i].point, Blue_baseP);
+            if (score < bestScore) {
+                bestScore = score;
+                bestIndex = i;
+            }
+        }
+        return bestIndex;
+    };
 
-        bool spawned = false;
+    const int totalExtractors = totalBuildings(AI, building::Extractor);
+    const int totalBarracks = totalBuildings(AI, building::Barracks);
+    const int completedExtractors = completedBuildingCount(AI, building::Extractor);
+    const int completedBarracks = completedBuildingCount(AI, building::Barracks);
+
+    if (totalExtractors < 1 && commandForTeam(AI) >= config::ExtractorCost) {
+        const int resourceIndex = chooseResource();
+        if (resourceIndex >= 0 && requestBuildExtractor(AI, resourceIndex)) {
+            return;
+        }
+    }
+
+    if (totalBarracks < 1 && commandForTeam(AI) >= config::BarracksCost) {
+        const Point site = findBuildableNear(Blue_baseP, 9);
+        if (site.x >= 0 && requestBuildBarracks(AI, site)) {
+            return;
+        }
+    }
+
+    const int desiredExtractors = std::min(3, std::max(1, (static_cast<int>(resources.size()) + 1) / 2));
+    if (totalExtractors < desiredExtractors && commandForTeam(AI) >= config::ExtractorCost + config::InfantryCost) {
+        const int resourceIndex = chooseResource();
+        if (resourceIndex >= 0 && requestBuildExtractor(AI, resourceIndex)) {
+            return;
+        }
+    }
+
+    const int desiredBarracks = completedExtractors >= 2 ? 3 : (completedExtractors >= 1 ? 2 : 1);
+    if (totalBarracks < desiredBarracks && commandForTeam(AI) >= config::BarracksCost + config::InfantryCost) {
+        const Point site = findBuildableNear(Blue_baseP, 12);
+        if (site.x >= 0 && requestBuildBarracks(AI, site)) {
+            return;
+        }
+    }
+
+    if (completedBarracks > 0
+        && aiUpgradeLevel < std::min(2, completedExtractors)
+        && commandForTeam(AI) >= config::UpgradeCost + config::ShooterCost) {
+        upgradeTeam(AI);
+    }
+
+    const int playerInfantry = countUnitsNamed(myunits, UName::INFANTARY);
+    const int playerShooters = countUnitsNamed(myunits, UName::SHOOTER);
+    const int playerCavalry = countUnitsNamed(myunits, UName::CAVALRY);
+    const int counterPick = playerShooters > playerInfantry
+        ? UName::CAVALRY
+        : (playerCavalry > playerShooters ? UName::INFANTARY : UName::SHOOTER);
+    const int pressurePick = enemys.size() + 2 < myunits.size() ? UName::CAVALRY : UName::INFANTARY;
+    const int priorities[] = {
+        counterPick,
+        pressurePick,
+        UName::SHOOTER,
+        UName::INFANTARY
+    };
+
+    const int orders = std::min(completedBarracks + 1, realtime::AIUnitsPerBurst + completedBarracks);
+    for (int i = 0; i < orders; ++i) {
+        bool queued = false;
         for (int code : priorities) {
-            if (Base_blue->generateUnit(code)) {
-                spawned = true;
+            if (enqueueUnit(AI, code)) {
+                queued = true;
                 break;
             }
         }
-        if (!spawned) {
-            return;
+        if (!queued) {
+            break;
         }
     }
 }

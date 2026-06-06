@@ -8,7 +8,7 @@ namespace config
     inline constexpr int PanelWidth = 160;
     inline constexpr int WindowWidth = MapWidth + PanelWidth;
     inline constexpr int WindowHeight = MapHeight;
-    inline constexpr int MaxUnits = 48;
+    inline constexpr int MaxUnits = 72;
 
     inline constexpr int PanelX = MapWidth;
     inline constexpr int PanelPadding = 12;
@@ -22,10 +22,13 @@ namespace config
 
     inline constexpr int PathStraightCost = 10;
     inline constexpr int PathDiagonalCost = 14;
-    inline constexpr int StartingCommand = 12;
-    inline constexpr int MaxCommand = 80;
-    inline constexpr int BaseCommandIncome = 4;
-    inline constexpr int ResourceCommandIncome = 2;
+    inline constexpr int StartingCommand = 26;
+    inline constexpr int MaxCommand = 160;
+    inline constexpr int BaseCommandIncome = 2;
+    inline constexpr int ResourceCommandIncome = 5;
+    inline constexpr int ExtractorCost = 6;
+    inline constexpr int BarracksCost = 10;
+    inline constexpr int UpgradeCost = 18;
     inline constexpr int InfantryCost = 3;
     inline constexpr int ShooterCost = 4;
     inline constexpr int CavalryCost = 6;

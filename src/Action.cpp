@@ -87,7 +87,8 @@ void Attacker::Attack(MoveableUnit* me, Unit* u)
 	}
 	if (isInMyAttackRange(me, u) && me->isOktoAttackAndAttackconsume()) {
 		const DamageResult damageResult = calculateDamage(me, u, damage);
-		u->Health -= damageResult.amount;
+		const int finalDamage = std::max(1, static_cast<int>(std::round(static_cast<float>(damageResult.amount) * mygame->damageMultiplier(me->myteam))));
+		u->Health -= finalDamage;
 
 		const sf::Vector2f targetCenter = unitCenter(u);
 		const sf::Color beamColor = damageResult.counter
@@ -101,7 +102,7 @@ void Attacker::Attack(MoveableUnit* me, Unit* u)
 		u->playAction(sf::Vector2f(-attackVector.x, -attackVector.y), 0.22f);
 		drawAttackline(me, u, beamColor);
 
-		mygame->addFloatingText(targetCenter + sf::Vector2f(0.f, -16.f), "-" + std::to_string(damageResult.amount),
+		mygame->addFloatingText(targetCenter + sf::Vector2f(0.f, -16.f), "-" + std::to_string(finalDamage),
 			damageResult.counter ? sf::Color(255, 222, 90) : sf::Color(255, 106, 82), damageResult.counter ? 18 : 15);
 		const bool useActionPoints = !mygame->isRealtimeMode();
 		if (damageResult.counter && useActionPoints) {

@@ -79,9 +79,15 @@ int main()
             assert(map[y].back() == 1);
         }
 
-        assert(countInArea(map, 5, 5, 3, 0) > 35);
-        assert(countInArea(map, cols - 7, lines - 7, 3, 0) > 35);
-        assert(hasPath(map, 5, 5, cols - 7, lines - 7));
+        if (countInArea(map, 5, 5, 3, 0) <= 35) {
+            return 1;
+        }
+        if (countInArea(map, cols - 7, lines - 7, 3, 0) <= 35) {
+            return 1;
+        }
+        if (!hasPath(map, 5, 5, cols - 7, lines - 7)) {
+            return 1;
+        }
     }
 
     return 0;

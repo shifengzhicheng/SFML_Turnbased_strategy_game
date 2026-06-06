@@ -48,6 +48,7 @@ public:
 	int y;
 	int myteam;
 	int Health;
+	int entityId = 0;
 	sf::Texture mytexture;
 	sf::Text UnitText;
 	int unitName = UName::BASE;
@@ -82,6 +83,8 @@ public:
 	float realtimeMoveTimer = 0.f;
 	float realtimeAttackTimer = 0.f;
 	float realtimePathTimer = 0.f;
+	int pendingPathRequest = 0;
+	Point pendingPathGoal;
 
 	std::deque<Point> mypath;
 

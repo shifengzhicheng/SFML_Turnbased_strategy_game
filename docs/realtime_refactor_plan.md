@@ -11,8 +11,10 @@ high-level economic and production choices while units handle pathing and combat
   steps units, and triggers attacks on cooldown.
 - `AIController.h/.cpp`: AI economy and production decisions. It should use the
   same resource and production rules as the player.
-- Future `Worker`, `Building`, `ProductionQueue`, and `Economy` files will be
-  added after the automatic battle core is stable.
+- `Building.h/.cpp`, `Worker.h/.cpp`, `ProductionQueue.h`: construction,
+  extractor harvesting, and per-barracks production queues.
+- `PathfindingService.h/.cpp`: background A* worker. It only consumes snapshots
+  of the maze and returns paths; SFML state is still touched on the main thread.
 
 ## Step-by-step implementation
 
@@ -34,6 +36,13 @@ high-level economic and production choices while units handle pathing and combat
 
 ## Current milestone
 
-This milestone implements steps 1-4 only. It intentionally keeps build buttons
-and direct base spawning as a temporary bridge so the game remains playable while
-worker/building systems are introduced in later commits.
+The current milestone implements the full first RTS loop:
+
+- Click a gold node to queue an extractor. The base auto-assigns or creates a
+  worker, and the extractor only produces income while a worker is harvesting.
+- Select the base and click open land to queue a barracks. Workers prioritize
+  construction, then return to mining when build demand is satisfied.
+- Unit buttons enqueue production into the least-loaded completed barracks.
+  Multiple barracks therefore train in parallel and increase army throughput.
+- The AI follows the same rules: expand to resources, build barracks, upgrade,
+  queue unlocked units, then let automatic pathing/combat resolve the fight.

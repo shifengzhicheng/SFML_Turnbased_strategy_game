@@ -73,6 +73,34 @@ namespace
         target.draw(plate);
     }
 
+    void drawBuildingTile(sf::RenderTarget& target, sf::Vector2f origin, sf::Color color, bool barracks)
+    {
+        sf::RectangleShape base(sf::Vector2f(SqureSize - 4.f, SqureSize - 5.f));
+        base.setPosition(origin + sf::Vector2f(2.f, 3.f));
+        base.setFillColor(withAlpha(color, 150));
+        base.setOutlineColor(withAlpha(sf::Color(31, 29, 24), 220));
+        base.setOutlineThickness(1.1f);
+        target.draw(base);
+
+        if (barracks) {
+            sf::ConvexShape roof(3);
+            roof.setPoint(0, origin + sf::Vector2f(2.f, 8.f));
+            roof.setPoint(1, origin + sf::Vector2f(10.f, 2.f));
+            roof.setPoint(2, origin + sf::Vector2f(18.f, 8.f));
+            roof.setFillColor(withAlpha(sf::Color(225, 177, 85), 210));
+            target.draw(roof);
+        }
+        else {
+            sf::CircleShape cap(5.f, 18);
+            cap.setOrigin(5.f, 5.f);
+            cap.setPosition(origin + sf::Vector2f(10.f, 9.f));
+            cap.setFillColor(sf::Color(255, 220, 94, 210));
+            cap.setOutlineColor(sf::Color(86, 62, 28));
+            cap.setOutlineThickness(0.8f);
+            target.draw(cap);
+        }
+    }
+
     void drawGrassDetail(sf::RenderTarget& target, sf::Vector2f origin, int x, int y)
     {
         const sf::Color blade = (x + y) % 2 == 0
@@ -169,6 +197,18 @@ void MapPos::draw(sf::RenderTarget& target, sf::RenderStates states) const
     case tile::River:
         drawRiver(target, origin);
         break;
+    case tile::Player_Extractor:
+        drawBuildingTile(target, origin, sf::Color(218, 76, 60), false);
+        break;
+    case tile::Enemy_Extractor:
+        drawBuildingTile(target, origin, sf::Color(61, 128, 206), false);
+        break;
+    case tile::Player_Barracks:
+        drawBuildingTile(target, origin, sf::Color(218, 76, 60), true);
+        break;
+    case tile::Enemy_Barracks:
+        drawBuildingTile(target, origin, sf::Color(61, 128, 206), true);
+        break;
     case tile::Red_Base:
         drawBaseTile(target, origin, sf::Color(218, 76, 60));
         break;
@@ -239,6 +279,16 @@ sf::Color MapPos::IDtoColor(tile::ID id)
         return sf::Color(171, 169, 151);
     case tile::Tree:
         return sf::Color(115, 170, 98);
+    case tile::Resource:
+        return sf::Color(220, 198, 120);
+    case tile::Player_Extractor:
+        return sf::Color(171, 118, 82);
+    case tile::Enemy_Extractor:
+        return sf::Color(112, 142, 181);
+    case tile::Player_Barracks:
+        return sf::Color(160, 92, 75);
+    case tile::Enemy_Barracks:
+        return sf::Color(92, 124, 170);
     case tile::UnableToReach:
         return sf::Color(255,106,106);
     default:

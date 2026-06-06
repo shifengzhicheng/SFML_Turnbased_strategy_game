@@ -24,7 +24,7 @@ add_subdirectory(third_party/SFML EXCLUDE_FROM_ALL)
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     foreach(sfml_target sfml-system sfml-window sfml-graphics)
         if(TARGET ${sfml_target})
-            target_compile_options(${sfml_target} PRIVATE -Wno-deprecated-declarations)
+            target_compile_options(${sfml_target} PRIVATE -Wno-deprecated-declarations -Wno-incompatible-pointer-types)
         endif()
     endforeach()
 endif()
@@ -38,10 +38,13 @@ add_executable(sfml_tbs
     src/Astar.cpp
     src/ArtAssets.cpp
     src/AutoCombat.cpp
+    src/Building.cpp
     src/Button.cpp
     src/Effects.cpp
     src/Map.cpp
+    src/PathfindingService.cpp
     src/Tile.cpp
+    src/Worker.cpp
 )
 
 target_include_directories(sfml_tbs PRIVATE src)
