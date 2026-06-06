@@ -18,6 +18,7 @@ namespace config
     inline constexpr int BuildInfantryY = 346;
     inline constexpr int BuildShooterY = 428;
     inline constexpr int BuildCavalryY = 510;
+    inline constexpr int BuildTowerY = 606;
     inline constexpr int UnitTextureSize = 44;
     inline constexpr float UnitSpriteScale = 0.66f;
 
@@ -29,7 +30,15 @@ namespace config
     inline constexpr int ResourceCommandIncome = 5;
     inline constexpr int ExtractorCost = 6;
     inline constexpr int BarracksCost = 10;
+    inline constexpr int TowerCost = 8;
+    inline constexpr int BarracksCap = 4;
+    inline constexpr int TowerCap = 5;
+    inline constexpr int MaxTechLevel = 4;
     inline constexpr int UpgradeCost = 18;
+    inline constexpr int UpgradeCostStep = 14;
+    inline constexpr float TechDamageBonus = 0.16f;
+    inline constexpr int DefenseTowerDamage = 34;
+    inline constexpr int DefenseTowerRange = 7;
     inline constexpr int InfantryCost = 3;
     inline constexpr int ShooterCost = 4;
     inline constexpr int CavalryCost = 6;

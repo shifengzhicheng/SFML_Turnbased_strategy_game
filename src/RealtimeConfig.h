@@ -19,9 +19,11 @@ namespace realtime
     inline constexpr float InfantryAttackCooldown = 1.30f;
     inline constexpr float ShooterAttackCooldown = 1.55f;
     inline constexpr float CavalryAttackCooldown = 1.45f;
+    inline constexpr float DefenseTowerAttackCooldown = 1.35f;
 
     inline constexpr float ExtractorBuildSeconds = 5.5f;
     inline constexpr float BarracksBuildSeconds = 9.0f;
+    inline constexpr float DefenseTowerBuildSeconds = 6.5f;
     inline constexpr float InfantryTrainSeconds = 3.6f;
     inline constexpr float ShooterTrainSeconds = 4.6f;
     inline constexpr float CavalryTrainSeconds = 6.2f;

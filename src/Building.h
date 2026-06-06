@@ -8,7 +8,8 @@ namespace building
     enum Type
     {
         Extractor,
-        Barracks
+        Barracks,
+        DefenseTower
     };
 }
 
@@ -22,5 +23,6 @@ struct Building
     bool complete = false;
     float buildProgress = 0.f;
     float buildSeconds = 1.f;
+    float attackTimer = 0.f;
     ProductionQueue production;
 };

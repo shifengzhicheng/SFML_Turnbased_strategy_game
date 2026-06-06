@@ -80,8 +80,12 @@ public:
     bool aiProductionDone = false;
     bool realtimeMode = true;
     bool tutorialVisible = false;
+    bool towerPlacementMode = false;
+    bool debugLogging = false;
     float playerIncomeTimer = 0.f;
     float aiIncomeTimer = 0.f;
+    float gameTimeSeconds = 0.f;
+    float debugSummaryTimer = 0.f;
     AIController aiController;
     PathfindingService pathfinding;
     int nextEntityId = 1;
@@ -102,12 +106,14 @@ public:
     Button inf, cav, sho;
     Button upgradeBtn;
     Button helpBtn;
+    Button towerBtn;
     Button endGame;
     sf::Texture tinf, tinfHover, tinfClick;
     sf::Texture tcav, tcavHover, tcavClick;
     sf::Texture tsho, tshoHover, tshoClick;
     sf::Texture tUpgrade, tUpgradeHover, tUpgradeClick;
     sf::Texture tHelp, tHelpHover, tHelpClick;
+    sf::Texture tTower, tTowerHover, tTowerClick;
     sf::Texture background;
     sf::Sprite back;
     sf::RectangleShape sidePanel;
@@ -116,6 +122,7 @@ public:
     sf::Text infantryLabel;
     sf::Text shooterLabel;
     sf::Text cavalryLabel;
+    sf::Text towerLabel;
 
     Game();
     ~Game();
@@ -146,6 +153,7 @@ public:
     void logicBeforeInput();
     void updateRealtime(float dt);
     void updateRealtimeEconomy(float dt);
+    void updateDebugSummary(float dt);
 
     void run();
     void Unitsreset(std::list<std::unique_ptr<MoveableUnit>>& us);
@@ -184,6 +192,7 @@ public:
     void updateResourceControl();
     void updateWorkers(float dt);
     void updateProduction(float dt);
+    void updateDefenseTowers(float dt);
     void handleRealtimeMapClick(sf::Vector2i mousePos, sf::Event event);
     int resourceIncome(int team) const;
     int controlledResourceCount(int team) const;
@@ -191,6 +200,9 @@ public:
     int pendingOrCompleteExtractorForResource(int resourceIndex) const;
     int unitCost(int name) const;
     int buildingCost(int type) const;
+    int totalBuildingCount(int team, int type) const;
+    int buildingCap(int type) const;
+    int upgradeCostForNextLevel(int team) const;
     int commandForTeam(int team) const;
     float damageMultiplier(int team) const;
     bool hasUnitCapacity(int team) const;
@@ -201,6 +213,9 @@ public:
     bool upgradeTeam(int team);
     bool requestBuildExtractor(int team, int resourceIndex);
     bool requestBuildBarracks(int team, Point point);
+    bool requestBuildTower(int team, Point point);
+    void logEvent(const std::string& message) const;
+    void logDebugSummary() const;
     void assignWorkers();
     int workerCount(int team) const;
     int assignedWorkerCount(int buildingId) const;

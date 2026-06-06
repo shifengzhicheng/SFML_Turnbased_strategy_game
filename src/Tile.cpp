@@ -73,7 +73,7 @@ namespace
         target.draw(plate);
     }
 
-    void drawBuildingTile(sf::RenderTarget& target, sf::Vector2f origin, sf::Color color, bool barracks)
+    void drawBuildingTile(sf::RenderTarget& target, sf::Vector2f origin, sf::Color color, bool barracks, bool tower = false)
     {
         sf::RectangleShape base(sf::Vector2f(SqureSize - 4.f, SqureSize - 5.f));
         base.setPosition(origin + sf::Vector2f(2.f, 3.f));
@@ -82,7 +82,23 @@ namespace
         base.setOutlineThickness(1.1f);
         target.draw(base);
 
-        if (barracks) {
+        if (tower) {
+            sf::RectangleShape shaft(sf::Vector2f(7.f, 12.f));
+            shaft.setPosition(origin + sf::Vector2f(6.5f, 5.f));
+            shaft.setFillColor(withAlpha(sf::Color(226, 215, 170), 220));
+            shaft.setOutlineColor(withAlpha(sf::Color(45, 40, 34), 220));
+            shaft.setOutlineThickness(0.8f);
+            target.draw(shaft);
+
+            sf::CircleShape lens(4.2f, 18);
+            lens.setOrigin(4.2f, 4.2f);
+            lens.setPosition(origin + sf::Vector2f(10.f, 5.5f));
+            lens.setFillColor(sf::Color(255, 229, 96, 230));
+            lens.setOutlineColor(withAlpha(color, 230));
+            lens.setOutlineThickness(1.f);
+            target.draw(lens);
+        }
+        else if (barracks) {
             sf::ConvexShape roof(3);
             roof.setPoint(0, origin + sf::Vector2f(2.f, 8.f));
             roof.setPoint(1, origin + sf::Vector2f(10.f, 2.f));
@@ -209,6 +225,12 @@ void MapPos::draw(sf::RenderTarget& target, sf::RenderStates states) const
     case tile::Enemy_Barracks:
         drawBuildingTile(target, origin, sf::Color(61, 128, 206), true);
         break;
+    case tile::Player_Tower:
+        drawBuildingTile(target, origin, sf::Color(218, 76, 60), false, true);
+        break;
+    case tile::Enemy_Tower:
+        drawBuildingTile(target, origin, sf::Color(61, 128, 206), false, true);
+        break;
     case tile::Red_Base:
         drawBaseTile(target, origin, sf::Color(218, 76, 60));
         break;
@@ -289,6 +311,10 @@ sf::Color MapPos::IDtoColor(tile::ID id)
         return sf::Color(160, 92, 75);
     case tile::Enemy_Barracks:
         return sf::Color(92, 124, 170);
+    case tile::Player_Tower:
+        return sf::Color(145, 89, 72);
+    case tile::Enemy_Tower:
+        return sf::Color(75, 106, 158);
     case tile::UnableToReach:
         return sf::Color(255,106,106);
     default:

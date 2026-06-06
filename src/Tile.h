@@ -7,7 +7,8 @@ namespace tile
     enum ID
     {
         Red_Base, Blue_Base, Path, Empty, Tree, Choosen, River, Mount, Unit, UnableToReach,
-        Resource, Player_Extractor, Enemy_Extractor, Player_Barracks, Enemy_Barracks
+        Resource, Player_Extractor, Enemy_Extractor, Player_Barracks, Enemy_Barracks,
+        Player_Tower, Enemy_Tower
     };
 }
 

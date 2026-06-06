@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <limits>
 #include <utility>
 
@@ -87,12 +88,44 @@ namespace
         if (type == building::Extractor) {
             return team == PLAYER ? tile::Player_Extractor : tile::Enemy_Extractor;
         }
+        if (type == building::DefenseTower) {
+            return team == PLAYER ? tile::Player_Tower : tile::Enemy_Tower;
+        }
         return team == PLAYER ? tile::Player_Barracks : tile::Enemy_Barracks;
     }
 
     float buildingSeconds(int type)
     {
-        return type == building::Extractor ? realtime::ExtractorBuildSeconds : realtime::BarracksBuildSeconds;
+        if (type == building::Extractor) {
+            return realtime::ExtractorBuildSeconds;
+        }
+        if (type == building::DefenseTower) {
+            return realtime::DefenseTowerBuildSeconds;
+        }
+        return realtime::BarracksBuildSeconds;
+    }
+
+    const char* buildingName(int type)
+    {
+        switch (type) {
+        case building::Extractor:
+            return "Mine";
+        case building::DefenseTower:
+            return "Tower";
+        case building::Barracks:
+        default:
+            return "Barracks";
+        }
+    }
+
+    sf::Vector2f unitCenter(const Unit& unit)
+    {
+        const auto bounds = unit.getGlobalBounds();
+        if (bounds.width > 0.f && bounds.height > 0.f) {
+            return sf::Vector2f(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
+        }
+        const float baseOffset = unit.unitName == UName::BASE ? SqureSize : SqureSize / 2.f;
+        return sf::Vector2f(unit.x * SqureSize + baseOffset, unit.y * SqureSize + baseOffset);
     }
 
     float unitTrainSeconds(int name)
@@ -131,6 +164,7 @@ Game::Game() :
     gameWin(false),
     MosOnUnit(nullptr),
     horizontalTiles(width / SqureSize),
+    debugLogging(std::getenv("TBS_LOG") != nullptr),
     playerturn(true),
     running(false)
 {
@@ -168,6 +202,9 @@ void Game::loadpic()
     art::makeButtonTexture(tHelp, myfont, "HELP", art::ButtonState::Normal, sf::Vector2u(128, 36));
     art::makeButtonTexture(tHelpHover, myfont, "HELP", art::ButtonState::Hover, sf::Vector2u(128, 36));
     art::makeButtonTexture(tHelpClick, myfont, "HELP", art::ButtonState::Pressed, sf::Vector2u(128, 36));
+    art::makeButtonTexture(tTower, myfont, "Tower", art::ButtonState::Normal, sf::Vector2u(128, 44));
+    art::makeButtonTexture(tTowerHover, myfont, "Tower", art::ButtonState::Hover, sf::Vector2u(128, 44));
+    art::makeButtonTexture(tTowerClick, myfont, "Tower", art::ButtonState::Pressed, sf::Vector2u(128, 44));
 
     startBtn.setTextures(tStartBtnNormal, tStartBtnHover, tStartBtnClick);
     EndTurnBtn.setTextures(tEndBtnNormal, tEndBtnHover, tEndBtnClick);
@@ -177,6 +214,7 @@ void Game::loadpic()
     sho.setTextures(tsho, tshoHover, tshoClick);
     upgradeBtn.setTextures(tUpgrade, tUpgradeHover, tUpgradeClick);
     helpBtn.setTextures(tHelp, tHelpHover, tHelpClick);
+    towerBtn.setTextures(tTower, tTowerHover, tTowerClick);
     back.setTexture(background);
 }
 void Game::Initial()
@@ -196,6 +234,7 @@ void Game::Initial()
     setupText(infantryLabel, myfont, 11, sf::Color(228, 218, 185), "Rax core unit", panelTextX, config::BuildInfantryY + 57.f);
     setupText(shooterLabel, myfont, 11, sf::Color(228, 218, 185), "Mine unlock", panelTextX, config::BuildShooterY + 57.f);
     setupText(cavalryLabel, myfont, 11, sf::Color(228, 218, 185), "2 rax + 2 mines", panelTextX, config::BuildCavalryY + 57.f);
+    setupText(towerLabel, myfont, 11, sf::Color(228, 218, 185), "Base build mode", panelTextX, config::BuildTowerY + 46.f);
 
     sidePanel.setSize(sf::Vector2f(config::PanelWidth, config::WindowHeight));
     sidePanel.setPosition(config::PanelX, 0.f);
@@ -209,6 +248,9 @@ void Game::Initial()
     inf.setPosition(config::ButtonX, config::BuildInfantryY);
     sho.setPosition(config::ButtonX, config::BuildShooterY);
     cav.setPosition(config::ButtonX, config::BuildCavalryY);
+    towerBtn.setPosition(config::ButtonX, config::BuildTowerY);
+    towerBtn.setPosition(config::ButtonX, config::BuildTowerY);
+    towerBtn.setPosition(config::ButtonX, config::BuildTowerY);
 }
 
 void Game::loadMediaData()
@@ -272,7 +314,9 @@ bool Game::isBlockingTile(tile::ID id) const
         || id == tile::Player_Extractor
         || id == tile::Enemy_Extractor
         || id == tile::Player_Barracks
-        || id == tile::Enemy_Barracks;
+        || id == tile::Enemy_Barracks
+        || id == tile::Player_Tower
+        || id == tile::Enemy_Tower;
 }
 
 bool Game::isMapCell(int x, int y) const
@@ -379,6 +423,7 @@ void Game::AIlogic() {
 
 void Game::updateRealtime(float dt)
 {
+    gameTimeSeconds += dt;
     syncMazeFromTiles();
     astar.setMaze(maze);
     applyPathResults();
@@ -388,7 +433,9 @@ void Game::updateRealtime(float dt)
     assignWorkers();
     updateWorkers(dt);
     updateProduction(dt);
+    updateDefenseTowers(dt);
     realtime::updateAutoCombat(*this, dt);
+    updateDebugSummary(dt);
 }
 
 void Game::updateRealtimeEconomy(float dt)
@@ -403,6 +450,47 @@ void Game::updateRealtimeEconomy(float dt)
     if (aiIncomeTimer >= realtime::EconomyTickSeconds) {
         aiIncomeTimer -= realtime::EconomyTickSeconds;
         addTurnIncome(AI);
+    }
+}
+
+void Game::logEvent(const std::string& message) const
+{
+    if (!debugLogging) {
+        return;
+    }
+    std::clog << "[tbs " << static_cast<int>(std::round(gameTimeSeconds)) << "s] " << message << '\n';
+}
+
+void Game::logDebugSummary() const
+{
+    if (!debugLogging) {
+        return;
+    }
+    std::clog << "[tbs " << static_cast<int>(std::round(gameTimeSeconds)) << "s] "
+        << "player cmd=" << playerCommand
+        << " mines=" << completedBuildingCount(PLAYER, building::Extractor)
+        << " rax=" << completedBuildingCount(PLAYER, building::Barracks) << "/" << config::BarracksCap
+        << " tower=" << totalBuildingCount(PLAYER, building::DefenseTower)
+        << " level=" << playerUpgradeLevel
+        << " army=" << myunits.size()
+        << " | ai cmd=" << aiCommand
+        << " mines=" << completedBuildingCount(AI, building::Extractor)
+        << " rax=" << completedBuildingCount(AI, building::Barracks) << "/" << config::BarracksCap
+        << " tower=" << totalBuildingCount(AI, building::DefenseTower)
+        << " level=" << aiUpgradeLevel
+        << " army=" << enemys.size()
+        << '\n';
+}
+
+void Game::updateDebugSummary(float dt)
+{
+    if (!debugLogging) {
+        return;
+    }
+    debugSummaryTimer += dt;
+    if (debugSummaryTimer >= 10.f) {
+        debugSummaryTimer -= 10.f;
+        logDebugSummary();
     }
 }
 
@@ -605,6 +693,24 @@ int Game::completedBuildingCount(int team, int type) const
     }));
 }
 
+int Game::totalBuildingCount(int team, int type) const
+{
+    return static_cast<int>(std::count_if(buildings.begin(), buildings.end(), [team, type](const Building& building) {
+        return building.team == team && building.type == type;
+    }));
+}
+
+int Game::buildingCap(int type) const
+{
+    if (type == building::Barracks) {
+        return config::BarracksCap;
+    }
+    if (type == building::DefenseTower) {
+        return config::TowerCap;
+    }
+    return static_cast<int>(resources.size());
+}
+
 int Game::pendingOrCompleteExtractorForResource(int resourceIndex) const
 {
     const auto it = std::find_if(buildings.begin(), buildings.end(), [resourceIndex](const Building& building) {
@@ -615,13 +721,25 @@ int Game::pendingOrCompleteExtractorForResource(int resourceIndex) const
 
 int Game::buildingCost(int type) const
 {
-    return type == building::Extractor ? config::ExtractorCost : config::BarracksCost;
+    if (type == building::Extractor) {
+        return config::ExtractorCost;
+    }
+    if (type == building::DefenseTower) {
+        return config::TowerCost;
+    }
+    return config::BarracksCost;
 }
 
 float Game::damageMultiplier(int team) const
 {
     const int level = team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
-    return 1.f + static_cast<float>(level) * 0.16f;
+    return 1.f + static_cast<float>(level) * config::TechDamageBonus;
+}
+
+int Game::upgradeCostForNextLevel(int team) const
+{
+    const int level = team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
+    return config::UpgradeCost + level * config::UpgradeCostStep;
 }
 
 bool Game::requestBuildExtractor(int team, int resourceIndex)
@@ -658,11 +776,19 @@ bool Game::requestBuildExtractor(int team, int resourceIndex)
         addFloatingText(sf::Vector2f(building.point.x * SqureSize, building.point.y * SqureSize - 8.f),
                         "Mine queued", sf::Color(218, 255, 134), 12);
     }
+    logEvent(std::string(team == PLAYER ? "player" : "ai") + " queued mine id=" + std::to_string(building.id));
     return true;
 }
 
 bool Game::requestBuildBarracks(int team, Point point)
 {
+    if (totalBuildingCount(team, building::Barracks) >= buildingCap(building::Barracks)) {
+        if (team == PLAYER) {
+            addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
+                            "Rax cap", sf::Color(255, 214, 96), 12);
+        }
+        return false;
+    }
     if (!isBuildableCell(point.x, point.y) || commandPool(*this, team) < config::BarracksCost) {
         if (team == PLAYER) {
             addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
@@ -685,6 +811,42 @@ bool Game::requestBuildBarracks(int team, Point point)
         addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
                         "Barracks queued", sf::Color(218, 255, 134), 12);
     }
+    logEvent(std::string(team == PLAYER ? "player" : "ai") + " queued barracks id=" + std::to_string(building.id));
+    return true;
+}
+
+bool Game::requestBuildTower(int team, Point point)
+{
+    if (totalBuildingCount(team, building::DefenseTower) >= buildingCap(building::DefenseTower)) {
+        if (team == PLAYER) {
+            addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
+                            "Tower cap", sf::Color(255, 214, 96), 12);
+        }
+        return false;
+    }
+    if (!isBuildableCell(point.x, point.y) || commandPool(*this, team) < config::TowerCost) {
+        if (team == PLAYER) {
+            addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
+                            commandPool(*this, team) < config::TowerCost ? "Need CMD" : "Bad site",
+                            sf::Color(255, 214, 96), 12);
+        }
+        return false;
+    }
+
+    commandPool(*this, team) -= config::TowerCost;
+    Building building;
+    building.id = nextEntityId++;
+    building.team = team;
+    building.type = building::DefenseTower;
+    building.point = point;
+    building.buildSeconds = buildingSeconds(building.type);
+    buildings.push_back(building);
+    setTileID(point.x, point.y, buildingTileId(team, building.type));
+    if (team == PLAYER) {
+        addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
+                        "Tower queued", sf::Color(218, 255, 134), 12);
+    }
+    logEvent(std::string(team == PLAYER ? "player" : "ai") + " queued tower id=" + std::to_string(building.id));
     return true;
 }
 
@@ -819,8 +981,10 @@ void Game::updateWorkers(float dt)
                     worker.buildingId = 0;
                 }
                 const sf::Vector2f pos(building->point.x * SqureSize, building->point.y * SqureSize - 10.f);
-                addFloatingText(pos, building->type == building::Extractor ? "Mine online" : "Barracks ready",
+                addFloatingText(pos, building->type == building::Extractor ? "Mine online" : (building->type == building::DefenseTower ? "Tower ready" : "Barracks ready"),
                                 building->team == PLAYER ? sf::Color(218, 255, 134) : sf::Color(149, 203, 255), 12);
+                logEvent(std::string(building->team == PLAYER ? "player" : "ai") + " completed " + buildingName(building->type)
+                    + " id=" + std::to_string(building->id));
             }
             continue;
         }
@@ -855,6 +1019,67 @@ void Game::updateProduction(float dt)
             building.production.activeUnit = -1;
             building.production.progress = 0.f;
         }
+    }
+}
+
+void Game::updateDefenseTowers(float dt)
+{
+    const auto distanceSquared = [](Point a, Point b) {
+        const int dx = a.x - b.x;
+        const int dy = a.y - b.y;
+        return dx * dx + dy * dy;
+    };
+    const int rangeSquared = config::DefenseTowerRange * config::DefenseTowerRange;
+
+    for (auto& building : buildings) {
+        if (!building.complete || building.type != building::DefenseTower) {
+            continue;
+        }
+
+        building.attackTimer += dt;
+        if (building.attackTimer < realtime::DefenseTowerAttackCooldown) {
+            continue;
+        }
+
+        Unit* target = nullptr;
+        int bestScore = std::numeric_limits<int>::max();
+        auto considerTarget = [&](Unit* candidate) {
+            if (candidate == nullptr || candidate->Health <= 0 || candidate->myteam == building.team) {
+                return;
+            }
+            const int score = distanceSquared(building.point, Point(candidate->x, candidate->y));
+            if (score <= rangeSquared && score < bestScore) {
+                bestScore = score;
+                target = candidate;
+            }
+        };
+
+        if (building.team == PLAYER) {
+            for (auto& enemy : enemys) {
+                considerTarget(enemy.get());
+            }
+        }
+        else {
+            for (auto& playerUnit : myunits) {
+                considerTarget(playerUnit.get());
+            }
+        }
+
+        if (target == nullptr) {
+            continue;
+        }
+
+        building.attackTimer = 0.f;
+        const int damage = std::max(1, static_cast<int>(std::round(static_cast<float>(config::DefenseTowerDamage) * damageMultiplier(building.team))));
+        target->Health -= damage;
+
+        const sf::Vector2f towerCenter(
+            building.point.x * SqureSize + SqureSize / 2.f,
+            building.point.y * SqureSize + SqureSize / 2.f);
+        addAttackEffect(towerCenter, unitCenter(*target), building.team == PLAYER ? sf::Color(255, 211, 84) : sf::Color(118, 178, 255));
+        target->playFlash(sf::Color(255, 146, 112, 255), 0.18f);
+        addFloatingText(unitCenter(*target) + sf::Vector2f(0.f, -14.f),
+                        "-" + std::to_string(damage), sf::Color(255, 218, 112), 13);
     }
 }
 
@@ -1096,7 +1321,14 @@ void Game::handleRealtimeMapClick(Vector2i mousePos, Event event)
     }
 
     if (Base_red && Base_red->UnitState == UState::UNITCLICK && isBuildableCell(tileX, tileY)) {
-        requestBuildBarracks(PLAYER, Point(tileX, tileY));
+        if (towerPlacementMode) {
+            if (requestBuildTower(PLAYER, Point(tileX, tileY))) {
+                towerPlacementMode = false;
+            }
+        }
+        else {
+            requestBuildBarracks(PLAYER, Point(tileX, tileY));
+        }
     }
 }
 
@@ -1300,6 +1532,8 @@ bool Game::createUnit(int team, int name, int x, int y)
     else {
         enemys.push_back(std::move(unit));
     }
+    logEvent(std::string(team == PLAYER ? "player" : "ai") + " spawned unit=" + std::to_string(name)
+        + " at " + std::to_string(x) + "," + std::to_string(y));
     return true;
 }
 
@@ -1314,6 +1548,20 @@ void Game::handleBuildButtons(Vector2i mousePos, Event event)
     if (upgradeBtn.checkMouse(mousePos, event) == RELEASE) {
         upgradeTeam(PLAYER);
         upgradeBtn.setState(NORMAL);
+    }
+
+    if (towerBtn.checkMouse(mousePos, event) == RELEASE) {
+        if (Base_red && Base_red->UnitState == UState::UNITCLICK) {
+            towerPlacementMode = !towerPlacementMode;
+            addFloatingText(sf::Vector2f(config::PanelX + 18.f, static_cast<float>(config::BuildTowerY) - 18.f),
+                            towerPlacementMode ? "Click land" : "Tower off", sf::Color(218, 255, 134), 12);
+        }
+        else {
+            addFloatingText(sf::Vector2f(config::PanelX + 18.f, static_cast<float>(config::BuildTowerY) - 18.f),
+                            "Select base", sf::Color(255, 214, 96), 12);
+        }
+        towerBtn.setState(NORMAL);
+        return;
     }
 
     if (inf.checkMouse(mousePos, event) == RELEASE) {
@@ -1582,31 +1830,31 @@ void Game::drawTutorialOverlay()
     veil.setFillColor(sf::Color(8, 11, 10, 176));
     window.draw(veil);
 
-    sf::RectangleShape shadow(sf::Vector2f(820.f, 548.f));
-    shadow.setPosition(196.f, 72.f);
+    sf::RectangleShape shadow(sf::Vector2f(820.f, 620.f));
+    shadow.setPosition(196.f, 56.f);
     shadow.setFillColor(sf::Color(0, 0, 0, 92));
     window.draw(shadow);
 
-    sf::RectangleShape card(sf::Vector2f(820.f, 548.f));
-    card.setPosition(184.f, 60.f);
+    sf::RectangleShape card(sf::Vector2f(820.f, 620.f));
+    card.setPosition(184.f, 44.f);
     card.setFillColor(sf::Color(39, 49, 43, 245));
     card.setOutlineColor(sf::Color(224, 170, 76));
     card.setOutlineThickness(3.f);
     window.draw(card);
 
     sf::RectangleShape header(sf::Vector2f(820.f, 68.f));
-    header.setPosition(184.f, 60.f);
+    header.setPosition(184.f, 44.f);
     header.setFillColor(sf::Color(86, 61, 35, 238));
     window.draw(header);
 
     sf::Text title("HOW TO PLAY", myfont, 31);
     title.setFillColor(sf::Color(255, 243, 201));
-    title.setPosition(222.f, 75.f);
+    title.setPosition(222.f, 59.f);
     window.draw(title);
 
     sf::Text closeHint("Press H or Esc to close", myfont, 14);
     closeHint.setFillColor(sf::Color(255, 226, 142));
-    closeHint.setPosition(790.f, 91.f);
+    closeHint.setPosition(790.f, 75.f);
     window.draw(closeHint);
 
     const std::vector<std::string> lines = {
@@ -1616,13 +1864,15 @@ void Game::drawTutorialOverlay()
         "Core controls",
         "  Left click a gold node: queue an Extractor. The base auto-sends a drone.",
         "  Select the red base, then left click open land: queue a Barracks.",
+        "  Select the red base, click Tower, then click open land: build defense.",
         "  Click Infantry / Shooter / Cavalry: queue units in the least-busy Barracks.",
-        "  Click Upgrade: spend CMD for stronger attacks after you have a Barracks.",
+        "  Click Upgrade: spend CMD to enter the next LEVEL; all units hit harder.",
         "",
         "Automation",
         "  Drones auto-build first. When work is done, they return to harvesting.",
         "  Extractors only pay income while a drone is actively harvesting there.",
         "  Combat units auto-path, choose targets, and attack on cooldown.",
+        "  Towers auto-fire at enemies inside range and also scale with LEVEL.",
         "",
         "Unlocks",
         "  Infantry: needs 1 Barracks.",
@@ -1633,7 +1883,7 @@ void Game::drawTutorialOverlay()
         "  H: show / hide this guide.  C: restart map.  Esc: back to menu."
     };
 
-    float y = 148.f;
+    float y = 126.f;
     for (const auto& line : lines) {
         const bool section = !line.empty() && line.front() != ' ';
         sf::Text text(line, myfont, section ? 18 : 14);
@@ -1697,7 +1947,7 @@ void Game::DrawSidePanel()
     drawPanelCard(8.f, 72.f, sf::Color(47, 58, 51), sf::Color(93, 103, 81));
     drawPanelCard(86.f, 126.f, sf::Color(41, 50, 45), sf::Color(77, 92, 74));
     drawPanelCard(208.f, 72.f, sf::Color(60, 47, 31), sf::Color(197, 150, 67));
-    drawPanelCard(292.f, 300.f, sf::Color(42, 49, 44), sf::Color(81, 91, 73));
+    drawPanelCard(292.f, 386.f, sf::Color(42, 49, 44), sf::Color(81, 91, 73));
 
     window.draw(panelTitle);
     window.draw(Globle_text);
@@ -1716,7 +1966,11 @@ void Game::DrawSidePanel()
         + "\nDrone: " + std::to_string(workerCount(PLAYER))
         + "/" + std::to_string(realtime::MaxWorkers)
         + "\nRax: " + std::to_string(completedBuildingCount(PLAYER, building::Barracks))
-        + "  Up: " + std::to_string(playerUpgradeLevel)
+        + "/" + std::to_string(config::BarracksCap)
+        + "  Lv: " + std::to_string(playerUpgradeLevel)
+        + "\nTower: " + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower))
+        + "/" + std::to_string(config::TowerCap)
+        + "  Up: " + std::to_string(upgradeCostForNextLevel(PLAYER))
         + "\nArmy: " + std::to_string(myunits.size())
         + "/" + std::to_string(config::MaxUnits));
     window.draw(CommandText);
@@ -1725,7 +1979,9 @@ void Game::DrawSidePanel()
         window.draw(EndTurnBtn);
     }
     else {
-        upgradeBtn.setColor(commandForTeam(PLAYER) >= config::UpgradeCost && completedBuildingCount(PLAYER, building::Barracks) > 0 && playerUpgradeLevel < 2
+        upgradeBtn.setColor(commandForTeam(PLAYER) >= upgradeCostForNextLevel(PLAYER)
+            && completedBuildingCount(PLAYER, building::Barracks) > 0
+            && playerUpgradeLevel < config::MaxTechLevel
             ? sf::Color::White
             : sf::Color(255, 255, 255, 130));
         window.draw(upgradeBtn);
@@ -1733,10 +1989,16 @@ void Game::DrawSidePanel()
 
     const bool canBuild = Base_red && Base_red->UnitState == UState::UNITCLICK;
     panelHint.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 216.f);
-    panelHint.setString(canBuild ? "Click land: rax\nClick gold: mine" : "Click gold: mine\nSelect base: rax");
+    panelHint.setString(canBuild
+        ? (towerPlacementMode ? "Tower mode: click land\nClick gold: mine" : "Click land: rax\nTower btn: defense")
+        : "Click gold: mine\nSelect base: build");
     inf.setColor(canQueueUnit(PLAYER, UName::INFANTARY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
     sho.setColor(canQueueUnit(PLAYER, UName::SHOOTER) ? sf::Color::White : sf::Color(255, 255, 255, 130));
     cav.setColor(canQueueUnit(PLAYER, UName::CAVALRY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
+    const bool canQueueTower = canBuild
+        && commandForTeam(PLAYER) >= config::TowerCost
+        && totalBuildingCount(PLAYER, building::DefenseTower) < config::TowerCap;
+    towerBtn.setColor(canQueueTower ? sf::Color::White : sf::Color(255, 255, 255, 130));
 
     window.draw(panelHint);
     window.draw(helpBtn);
@@ -1746,6 +2008,8 @@ void Game::DrawSidePanel()
     window.draw(shooterLabel);
     window.draw(cav);
     window.draw(cavalryLabel);
+    window.draw(towerBtn);
+    window.draw(towerLabel);
 }
 
 void Game::clear()
@@ -1761,6 +2025,9 @@ void Game::clear()
     aiProductionDone = false;
     playerIncomeTimer = 0.f;
     aiIncomeTimer = 0.f;
+    gameTimeSeconds = 0.f;
+    debugSummaryTimer = 0.f;
+    towerPlacementMode = false;
     aiController.reset();
     ++pathGeneration;
     nextPathRequestId = 1;
@@ -2050,27 +2317,31 @@ bool Game::enqueueUnit(int team, int name)
         addFloatingText(sf::Vector2f(best->point.x * SqureSize, best->point.y * SqureSize - 8.f),
                         "Queued", sf::Color(218, 255, 134), 12);
     }
+    logEvent(std::string(team == PLAYER ? "player" : "ai") + " queued unit=" + std::to_string(name)
+        + " rax=" + std::to_string(best->id) + " load=" + std::to_string(best->production.load()));
     return true;
 }
 
 bool Game::upgradeTeam(int team)
 {
     int& level = team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
-    if (level >= 2 || completedBuildingCount(team, building::Barracks) == 0 || commandPool(*this, team) < config::UpgradeCost) {
+    const int cost = upgradeCostForNextLevel(team);
+    if (level >= config::MaxTechLevel || completedBuildingCount(team, building::Barracks) == 0 || commandPool(*this, team) < cost) {
         if (team == PLAYER) {
             addFloatingText(sf::Vector2f(config::PanelX + 18.f, static_cast<float>(config::EndTurnButtonY) - 18.f),
-                            level >= 2 ? "Max upgrade" : (completedBuildingCount(team, building::Barracks) == 0 ? "Need Barracks" : "Need CMD"),
+                            level >= config::MaxTechLevel ? "Max level" : (completedBuildingCount(team, building::Barracks) == 0 ? "Need Barracks" : "Need CMD"),
                             sf::Color(255, 214, 96), 12);
         }
         return false;
     }
 
-    commandPool(*this, team) -= config::UpgradeCost;
+    commandPool(*this, team) -= cost;
     ++level;
     if (team == PLAYER) {
         addFloatingText(sf::Vector2f(config::PanelX + 18.f, static_cast<float>(config::EndTurnButtonY) - 18.f),
-                        "Damage +" + std::to_string(level), sf::Color(218, 255, 134), 12);
+                        "LEVEL " + std::to_string(level), sf::Color(218, 255, 134), 12);
     }
+    logEvent(std::string(team == PLAYER ? "player" : "ai") + " upgraded to level " + std::to_string(level));
     return true;
 }
 
@@ -2142,11 +2413,6 @@ void Game::runAIProduction()
         return;
     }
 
-    const auto totalBuildings = [this](int team, int type) {
-        return static_cast<int>(std::count_if(buildings.begin(), buildings.end(), [team, type](const Building& building) {
-            return building.team == team && building.type == type;
-        }));
-    };
     const auto distanceScore = [](Point a, Point b) {
         const int dx = a.x - b.x;
         const int dy = a.y - b.y;
@@ -2168,8 +2434,9 @@ void Game::runAIProduction()
         return bestIndex;
     };
 
-    const int totalExtractors = totalBuildings(AI, building::Extractor);
-    const int totalBarracks = totalBuildings(AI, building::Barracks);
+    const int totalExtractors = totalBuildingCount(AI, building::Extractor);
+    const int totalBarracks = totalBuildingCount(AI, building::Barracks);
+    const int totalTowers = totalBuildingCount(AI, building::DefenseTower);
     const int completedExtractors = completedBuildingCount(AI, building::Extractor);
     const int completedBarracks = completedBuildingCount(AI, building::Barracks);
 
@@ -2195,7 +2462,7 @@ void Game::runAIProduction()
         }
     }
 
-    const int desiredBarracks = completedExtractors >= 2 ? 3 : (completedExtractors >= 1 ? 2 : 1);
+    const int desiredBarracks = std::min(config::BarracksCap, 1 + totalExtractors + aiUpgradeLevel / 2);
     if (totalBarracks < desiredBarracks && commandForTeam(AI) >= config::BarracksCost + config::InfantryCost) {
         const Point site = findBuildableNear(Blue_baseP, 12);
         if (site.x >= 0 && requestBuildBarracks(AI, site)) {
@@ -2203,9 +2470,16 @@ void Game::runAIProduction()
         }
     }
 
+    if (totalTowers < 2 && completedBarracks > 0 && commandForTeam(AI) >= config::TowerCost + config::InfantryCost) {
+        const Point site = findBuildableNear(Blue_baseP, 8);
+        if (site.x >= 0 && requestBuildTower(AI, site)) {
+            return;
+        }
+    }
+
     if (completedBarracks > 0
-        && aiUpgradeLevel < std::min(2, completedExtractors)
-        && commandForTeam(AI) >= config::UpgradeCost + config::ShooterCost) {
+        && aiUpgradeLevel < std::min(config::MaxTechLevel, completedExtractors + completedBarracks / 2)
+        && commandForTeam(AI) >= upgradeCostForNextLevel(AI) + config::ShooterCost) {
         upgradeTeam(AI);
     }
 

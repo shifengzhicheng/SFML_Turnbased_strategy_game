@@ -51,3 +51,9 @@ The current milestone implements the full first RTS loop:
   player to read the map and make economy choices.
 - Press `H` or click `HELP` to open the in-game tutorial with controls, unlocks,
   and automation rules.
+- Barracks and towers now have explicit caps (`BarracksCap`, `TowerCap`) so the
+  economy has a predictable ceiling instead of unbounded structure spam.
+- Tech upgrades advance through levels; each level increases global unit and
+  tower damage through `TechDamageBonus`.
+- Run `TBS_LOG=1 ./sfml_tbs --simulate 120` from a build directory to print a
+  120-second AI/economy timeline without entering the interactive loop.
