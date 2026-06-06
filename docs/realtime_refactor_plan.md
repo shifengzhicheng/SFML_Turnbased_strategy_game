@@ -51,8 +51,8 @@ The current milestone implements the full first RTS loop:
   player to read the map and make economy choices.
 - Press `H` or click `HELP` to open the in-game tutorial with controls, unlocks,
   and automation rules.
-- Barracks and towers now have explicit caps (`BarracksCap`, `TowerCap`) so the
-  economy has a predictable ceiling instead of unbounded structure spam.
+- Barracks and towers now have tech-scaled caps, so production ramps from one
+  barracks into a stronger late game instead of exploding immediately.
 - Tech upgrades advance through levels; each level increases global unit and
   tower damage through `TechDamageBonus`.
 - Unit/building costs were raised so early-game choices matter: opening mine,
@@ -63,5 +63,11 @@ The current milestone implements the full first RTS loop:
   return the tile to a rebuildable resource point.
 - Resource layout now includes safer natural nodes plus higher-value central and
   flank nodes, giving the map clearer expansion and conflict zones.
+- The map generator carves a main lane plus upper/lower flanks and open resource
+  plazas, keeping routes readable while still allowing obstacle variation.
+- Combat autopilot rallies early armies through valuable neutral/resource zones
+  before base-racing, which makes mines and captures visible in normal play.
 - Run `TBS_LOG=1 ./sfml_tbs --simulate 120` from a build directory to print a
   120-second AI/economy timeline without entering the interactive loop.
+- Run `TBS_LOG=1 ./sfml_tbs --simulate-player 180` to pit the AI against a
+  scripted player opener and inspect pacing under pressure.

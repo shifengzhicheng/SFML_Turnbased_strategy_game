@@ -223,6 +223,29 @@ void mapgenerator::gmap(std::vector<std::vector<int>>& initMap, int cols, int li
 
     std::vector<std::vector<bool>> routeMask(lines, std::vector<bool>(cols, false));
     carveMainRoute(initMap, routeMask, red, blue, rng);
+    const GridPoint center{cols / 2, lines / 2};
+    const GridPoint upper{cols / 2, std::max(4, lines / 4)};
+    const GridPoint lower{cols / 2, std::min(lines - 5, lines * 3 / 4)};
+    carveMainRoute(initMap, routeMask, red, upper, rng);
+    carveMainRoute(initMap, routeMask, upper, blue, rng);
+    carveMainRoute(initMap, routeMask, red, lower, rng);
+    carveMainRoute(initMap, routeMask, lower, blue, rng);
+
+    const std::vector<GridPoint> plazas = {
+        center,
+        upper,
+        lower,
+        GridPoint{cols / 3, lines / 2},
+        GridPoint{cols * 2 / 3, lines / 2},
+        GridPoint{std::min(cols - 4, red.x + 8), std::min(lines - 4, red.y + 4)},
+        GridPoint{std::max(3, blue.x - 8), std::max(3, blue.y - 4)}
+    };
+    for (const auto& plaza : plazas) {
+        // Resource fights need readable open ground; mark these pockets as
+        // route-safe so later obstacle passes do not seal them off.
+        clearDisc(initMap, plaza.x, plaza.y, 3);
+        markDisc(routeMask, plaza.x, plaza.y, 3);
+    }
 
     placeRiver(initMap, routeMask, red, blue, rng);
 

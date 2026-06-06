@@ -254,9 +254,9 @@ void Game::Initial()
     setupText(CommandText, myfont, 14, sf::Color(255, 218, 112), "", panelTextX, 176.f);
     setupText(panelTitle, myfont, 19, sf::Color(255, 246, 208), "AUTO WAR", panelTextX, 16.f);
     setupText(panelHint, myfont, 13, sf::Color(211, 199, 165), "Select base\nto train", panelTextX, 232.f);
-    setupText(infantryLabel, myfont, 11, sf::Color(228, 218, 185), "Rax core unit", panelTextX, config::BuildInfantryY + 57.f);
-    setupText(shooterLabel, myfont, 11, sf::Color(228, 218, 185), "Mine unlock", panelTextX, config::BuildShooterY + 57.f);
-    setupText(cavalryLabel, myfont, 11, sf::Color(228, 218, 185), "2 rax + 2 mines", panelTextX, config::BuildCavalryY + 57.f);
+    setupText(infantryLabel, myfont, 11, sf::Color(228, 218, 185), "12 CMD core", panelTextX, config::BuildInfantryY + 57.f);
+    setupText(shooterLabel, myfont, 11, sf::Color(228, 218, 185), "18 CMD mine/Lv1", panelTextX, config::BuildShooterY + 57.f);
+    setupText(cavalryLabel, myfont, 11, sf::Color(228, 218, 185), "30 CMD 2 rax", panelTextX, config::BuildCavalryY + 57.f);
     setupText(towerLabel, myfont, 11, sf::Color(228, 218, 185), "Base build mode", panelTextX, config::BuildTowerY + 46.f);
 
     sidePanel.setSize(sf::Vector2f(config::PanelWidth, config::WindowHeight));
@@ -271,8 +271,6 @@ void Game::Initial()
     inf.setPosition(config::ButtonX, config::BuildInfantryY);
     sho.setPosition(config::ButtonX, config::BuildShooterY);
     cav.setPosition(config::ButtonX, config::BuildCavalryY);
-    towerBtn.setPosition(config::ButtonX, config::BuildTowerY);
-    towerBtn.setPosition(config::ButtonX, config::BuildTowerY);
     towerBtn.setPosition(config::ButtonX, config::BuildTowerY);
 }
 
@@ -495,13 +493,13 @@ void Game::logDebugSummary() const
     std::clog << "[tbs " << static_cast<int>(std::round(gameTimeSeconds)) << "s] "
         << "player cmd=" << playerCommand
         << " mines=" << completedBuildingCount(PLAYER, building::Extractor)
-        << " rax=" << completedBuildingCount(PLAYER, building::Barracks) << "/" << config::BarracksCap
+        << " rax=" << completedBuildingCount(PLAYER, building::Barracks) << "/" << buildingCap(PLAYER, building::Barracks)
         << " tower=" << totalBuildingCount(PLAYER, building::DefenseTower)
         << " level=" << playerUpgradeLevel
         << " army=" << myunits.size()
         << " | ai cmd=" << aiCommand
         << " mines=" << completedBuildingCount(AI, building::Extractor)
-        << " rax=" << completedBuildingCount(AI, building::Barracks) << "/" << config::BarracksCap
+        << " rax=" << completedBuildingCount(AI, building::Barracks) << "/" << buildingCap(AI, building::Barracks)
         << " tower=" << totalBuildingCount(AI, building::DefenseTower)
         << " level=" << aiUpgradeLevel
         << " army=" << enemys.size()
@@ -755,13 +753,14 @@ int Game::totalBuildingCount(int team, int type) const
     }));
 }
 
-int Game::buildingCap(int type) const
+int Game::buildingCap(int team, int type) const
 {
+    const int tech = team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
     if (type == building::Barracks) {
-        return config::BarracksCap;
+        return std::min(config::BarracksCap, config::BarracksBaseCap + tech);
     }
     if (type == building::DefenseTower) {
-        return config::TowerCap;
+        return std::min(config::TowerCap, config::TowerBaseCap + tech);
     }
     return static_cast<int>(resources.size());
 }
@@ -848,10 +847,10 @@ bool Game::requestBuildExtractor(int team, int resourceIndex)
 
 bool Game::requestBuildBarracks(int team, Point point)
 {
-    if (totalBuildingCount(team, building::Barracks) >= buildingCap(building::Barracks)) {
+    if (totalBuildingCount(team, building::Barracks) >= buildingCap(team, building::Barracks)) {
         if (team == PLAYER) {
             addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
-                            "Rax cap", sf::Color(255, 214, 96), 12);
+                            "Tech for more Rax", sf::Color(255, 214, 96), 12);
         }
         return false;
     }
@@ -885,7 +884,7 @@ bool Game::requestBuildBarracks(int team, Point point)
 
 bool Game::requestBuildTower(int team, Point point)
 {
-    if (totalBuildingCount(team, building::DefenseTower) >= buildingCap(building::DefenseTower)) {
+    if (totalBuildingCount(team, building::DefenseTower) >= buildingCap(team, building::DefenseTower)) {
         if (team == PLAYER) {
             addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
                             "Tower cap", sf::Color(255, 214, 96), 12);
@@ -1253,6 +1252,56 @@ Building* Game::chooseBuildingTarget(MoveableUnit& unit)
             best = &building;
         }
     }
+    return best;
+}
+
+Point Game::chooseStrategicRallyPoint(const MoveableUnit& unit) const
+{
+    Point best(-1, -1);
+    int bestScore = std::numeric_limits<int>::max();
+    const Point current(unit.x, unit.y);
+    const Point enemyBase = unit.myteam == PLAYER ? Blue_baseP : Red_baseP;
+
+    for (int i = 0; i < static_cast<int>(resources.size()); ++i) {
+        const auto& node = resources[i];
+        const Building* extractor = findResourceExtractor(i);
+        const bool friendlyContested = extractor != nullptr
+            && extractor->team == unit.myteam
+            && node.contestingTeam != -1
+            && node.captureProgress > 0.f;
+        const bool enemyOwned = node.owner != -1 && node.owner != -2 && node.owner != unit.myteam;
+        const bool valuableNeutral = extractor == nullptr && node.income >= 8 && gameTimeSeconds < 150.f;
+        if (!friendlyContested && !enemyOwned && !valuableNeutral) {
+            continue;
+        }
+
+        const Point goal = extractor != nullptr ? findBuildStandPoint(*extractor) : node.point;
+        if (!isCellWalkableForUnit(goal.x, goal.y)) {
+            continue;
+        }
+        if (nearPoint(current, goal, valuableNeutral ? 3 : 2)) {
+            continue;
+        }
+
+        // Strategic rallying keeps early armies contesting mines before they
+        // mindlessly base-race; once a unit reaches the area, auto-combat can
+        // resume pushing to the next building or base.
+        int score = distanceSquared(current, goal) + distanceSquared(goal, enemyBase) / 4 - node.income * 70;
+        if (friendlyContested) {
+            score -= 900;
+        }
+        if (enemyOwned) {
+            score -= 500;
+        }
+        if (valuableNeutral && gameTimeSeconds < 80.f) {
+            score -= 180;
+        }
+        if (score < bestScore) {
+            bestScore = score;
+            best = goal;
+        }
+    }
+
     return best;
 }
 
@@ -2091,7 +2140,7 @@ void Game::drawTutorialOverlay()
         "  Select the red base, then left click open land: queue a Barracks.",
         "  Select the red base, click Tower, then click open land: build defense.",
         "  Click Infantry / Shooter / Cavalry: queue units in the least-busy Barracks.",
-        "  Click Upgrade: spend CMD to enter the next LEVEL; all units hit harder.",
+        "  Click Upgrade: spend CMD to enter the next LEVEL; units hit harder and caps rise.",
         "",
         "Automation",
         "  Drones auto-build first. When work is done, they return to harvesting.",
@@ -2101,9 +2150,9 @@ void Game::drawTutorialOverlay()
         "  Enemy mines can be captured by holding the area with more units than defenders.",
         "",
         "Unlocks",
-        "  Infantry: 9 CMD, needs 1 Barracks.",
-        "  Shooter: 14 CMD, needs 1 Barracks and 1 Mine or Upgrade 1.",
-        "  Cavalry: 22 CMD, needs 2 Barracks and 2 Mines or Upgrade 2.",
+        "  Infantry: 12 CMD, needs 1 Barracks.",
+        "  Shooter: 18 CMD, needs 1 Barracks and 1 Mine or Upgrade 1.",
+        "  Cavalry: 30 CMD, needs 2 Barracks and 2 Mines or Upgrade 2.",
         "",
         "Hotkeys",
         "  H: show / hide this guide.  C: restart map.  Esc: back to menu."
@@ -2192,10 +2241,10 @@ void Game::DrawSidePanel()
         + "\nDrone: " + std::to_string(workerCount(PLAYER))
         + "/" + std::to_string(realtime::MaxWorkers)
         + "\nRax: " + std::to_string(completedBuildingCount(PLAYER, building::Barracks))
-        + "/" + std::to_string(config::BarracksCap)
+        + "/" + std::to_string(buildingCap(PLAYER, building::Barracks))
         + "  Lv: " + std::to_string(playerUpgradeLevel)
         + "\nTower: " + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower))
-        + "/" + std::to_string(config::TowerCap)
+        + "/" + std::to_string(buildingCap(PLAYER, building::DefenseTower))
         + "  Up: " + std::to_string(upgradeCostForNextLevel(PLAYER))
         + "\nArmy: " + std::to_string(myunits.size())
         + "/" + std::to_string(config::MaxUnits));
@@ -2223,7 +2272,7 @@ void Game::DrawSidePanel()
     cav.setColor(canQueueUnit(PLAYER, UName::CAVALRY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
     const bool canQueueTower = canBuild
         && commandForTeam(PLAYER) >= config::TowerCost
-        && totalBuildingCount(PLAYER, building::DefenseTower) < config::TowerCap;
+        && totalBuildingCount(PLAYER, building::DefenseTower) < buildingCap(PLAYER, building::DefenseTower);
     towerBtn.setColor(canQueueTower ? sf::Color::White : sf::Color(255, 255, 255, 130));
 
     window.draw(panelHint);
@@ -2658,7 +2707,12 @@ void Game::runAIProduction()
             if (pendingOrCompleteExtractorForResource(i) != 0) {
                 continue;
             }
-            const int score = distanceScore(resources[i].point, Blue_baseP);
+            // Prefer the safe natural first, then let income value pull the AI
+            // toward central/flank nodes later in the match.
+            int score = distanceScore(resources[i].point, Blue_baseP) - resources[i].income * 45;
+            if (gameTimeSeconds > 70.f && resources[i].income >= 8) {
+                score -= 160;
+            }
             if (score < bestScore) {
                 bestScore = score;
                 bestIndex = i;
@@ -2672,6 +2726,8 @@ void Game::runAIProduction()
     const int totalTowers = totalBuildingCount(AI, building::DefenseTower);
     const int completedExtractors = completedBuildingCount(AI, building::Extractor);
     const int completedBarracks = completedBuildingCount(AI, building::Barracks);
+    const int currentBarracksCap = buildingCap(AI, building::Barracks);
+    const int currentTowerCap = buildingCap(AI, building::DefenseTower);
 
     if (totalExtractors < 1 && commandForTeam(AI) >= config::ExtractorCost) {
         const int resourceIndex = chooseResource();
@@ -2687,33 +2743,91 @@ void Game::runAIProduction()
         }
     }
 
-    const int desiredExtractors = std::min(3, std::max(1, (static_cast<int>(resources.size()) + 1) / 2));
-    if (totalExtractors < desiredExtractors && commandForTeam(AI) >= config::ExtractorCost + config::InfantryCost) {
+    int desiredExtractors = 1;
+    if (gameTimeSeconds > 55.f) {
+        desiredExtractors = 2;
+    }
+    if (gameTimeSeconds > 115.f) {
+        desiredExtractors = 3;
+    }
+    if (gameTimeSeconds > 205.f && aiUpgradeLevel >= 2) {
+        desiredExtractors = 4;
+    }
+    if (controlledResourceCount(AI) + 1 < controlledResourceCount(PLAYER) && gameTimeSeconds > 95.f) {
+        desiredExtractors += 1;
+    }
+    desiredExtractors = std::min({desiredExtractors, static_cast<int>(resources.size()), realtime::MaxWorkers - 1});
+    if (totalExtractors < desiredExtractors && commandForTeam(AI) >= config::ExtractorCost) {
         const int resourceIndex = chooseResource();
         if (resourceIndex >= 0 && requestBuildExtractor(AI, resourceIndex)) {
             return;
         }
     }
+    if (totalExtractors < desiredExtractors) {
+        return;
+    }
 
-    const int desiredBarracks = std::min(config::BarracksCap, 1 + totalExtractors + aiUpgradeLevel / 2);
-    if (totalBarracks < desiredBarracks && commandForTeam(AI) >= config::BarracksCost + config::InfantryCost) {
+    int allowedTech = 0;
+    if (gameTimeSeconds > 75.f && completedExtractors >= 1 && completedBarracks >= 1) {
+        allowedTech = 1;
+    }
+    if (gameTimeSeconds > 145.f && completedExtractors >= 2) {
+        allowedTech = 2;
+    }
+    if (gameTimeSeconds > 230.f && completedExtractors >= 3 && completedBarracks >= 2) {
+        allowedTech = 3;
+    }
+    if (gameTimeSeconds > 330.f && completedExtractors >= 4 && completedBarracks >= 3) {
+        allowedTech = 4;
+    }
+
+    if (aiUpgradeLevel < std::min(config::MaxTechLevel, allowedTech)
+        && commandForTeam(AI) >= upgradeCostForNextLevel(AI)) {
+        if (upgradeTeam(AI)) {
+            return;
+        }
+    }
+    if (aiUpgradeLevel < std::min(config::MaxTechLevel, allowedTech)) {
+        return;
+    }
+
+    int desiredBarracks = 1;
+    if (gameTimeSeconds > 95.f && completedExtractors >= 2) {
+        desiredBarracks = 2;
+    }
+    if (gameTimeSeconds > 165.f && completedExtractors >= 2 && aiUpgradeLevel >= 2) {
+        desiredBarracks = 3;
+    }
+    if (gameTimeSeconds > 260.f && completedExtractors >= 3 && aiUpgradeLevel >= 3) {
+        desiredBarracks = 4;
+    }
+    desiredBarracks = std::min(desiredBarracks, currentBarracksCap);
+    if (totalBarracks < desiredBarracks && commandForTeam(AI) >= config::BarracksCost) {
         const Point site = findBuildableNear(Blue_baseP, 12);
         if (site.x >= 0 && requestBuildBarracks(AI, site)) {
             return;
         }
     }
+    if (totalBarracks < desiredBarracks) {
+        return;
+    }
 
-    if (totalTowers < 2 && completedBarracks > 0 && commandForTeam(AI) >= config::TowerCost + config::InfantryCost) {
+    int desiredTowers = 0;
+    if (gameTimeSeconds > 90.f && completedBarracks > 0) {
+        desiredTowers = 1;
+    }
+    if (gameTimeSeconds > 175.f && completedBarracks >= 2) {
+        desiredTowers = 2;
+    }
+    if (gameTimeSeconds > 270.f && aiUpgradeLevel >= 2) {
+        desiredTowers = 3;
+    }
+    desiredTowers = std::min(desiredTowers, currentTowerCap);
+    if (totalTowers < desiredTowers && commandForTeam(AI) >= config::TowerCost + config::InfantryCost) {
         const Point site = findBuildableNear(Blue_baseP, 8);
         if (site.x >= 0 && requestBuildTower(AI, site)) {
             return;
         }
-    }
-
-    if (completedBarracks > 0
-        && aiUpgradeLevel < std::min(config::MaxTechLevel, completedExtractors + completedBarracks / 2)
-        && commandForTeam(AI) >= upgradeCostForNextLevel(AI) + config::ShooterCost) {
-        upgradeTeam(AI);
     }
 
     const int playerInfantry = countUnitsNamed(myunits, UName::INFANTARY);
@@ -2730,7 +2844,7 @@ void Game::runAIProduction()
         UName::INFANTARY
     };
 
-    const int orders = std::min(completedBarracks, realtime::AIUnitsPerBurst);
+    const int orders = std::min(completedBarracks, realtime::AIUnitsPerBurst + aiUpgradeLevel / 2);
     for (int i = 0; i < orders; ++i) {
         bool queued = false;
         for (int code : priorities) {

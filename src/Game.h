@@ -203,7 +203,7 @@ public:
     int unitCost(int name) const;
     int buildingCost(int type) const;
     int totalBuildingCount(int team, int type) const;
-    int buildingCap(int type) const;
+    int buildingCap(int team, int type) const;
     int upgradeCostForNextLevel(int team) const;
     int unitsNearPoint(int team, Point point, int radius) const;
     int commandForTeam(int team) const;
@@ -220,6 +220,7 @@ public:
     Building* findResourceExtractor(int resourceIndex);
     const Building* findResourceExtractor(int resourceIndex) const;
     Building* chooseBuildingTarget(MoveableUnit& unit);
+    Point chooseStrategicRallyPoint(const MoveableUnit& unit) const;
     bool canAttackBuilding(const MoveableUnit& unit, const Building& building) const;
     void autoAttackBuilding(MoveableUnit& unit, Building& building);
     void resetWorkersForBuilding(int buildingId);
