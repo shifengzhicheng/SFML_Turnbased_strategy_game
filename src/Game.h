@@ -15,19 +15,14 @@
 #include "Map.h"
 #include "Effects.h"
 #include "Config.h"
+#include "AIController.h"
+#include "ResourceNode.h"
 
 enum gameSeceneState {
     SCENE_START,SCENE_GAME, SCEN_GAMEOVER
 };
 enum gamePlayer {
     PLAYER,AI
-};
-
-struct ResourceNode
-{
-    Point point;
-    int owner = -1;
-    sf::Clock pulseClock;
 };
 
 class Game
@@ -48,6 +43,7 @@ public:
 
     sf::Clock clock;
     sf::Clock clock2;
+    sf::Clock realtimeFrameClock;
 
     Point MousePoint;
 
@@ -77,6 +73,10 @@ public:
     int playerCommand = config::StartingCommand;
     int aiCommand = config::StartingCommand;
     bool aiProductionDone = false;
+    bool realtimeMode = true;
+    float playerIncomeTimer = 0.f;
+    float aiIncomeTimer = 0.f;
+    AIController aiController;
 
     std::size_t turn;
 
@@ -128,6 +128,8 @@ public:
     void logicBeforeDraw();
     void logicAfterDraw();
     void logicBeforeInput();
+    void updateRealtime(float dt);
+    void updateRealtimeEconomy(float dt);
 
     void run();
     void Unitsreset(std::list<std::unique_ptr<MoveableUnit>>& us);
@@ -151,6 +153,9 @@ public:
     void setTileID(int x, int y, tile::ID id);
     bool isBlockingTile(tile::ID id) const;
     bool isMapCell(int x, int y) const;
+    bool isRealtimeMode() const;
+    bool isCellWalkableForUnit(int x, int y) const;
+    bool isCellReservedForSpawn(int x, int y) const;
     
     void clear();
 

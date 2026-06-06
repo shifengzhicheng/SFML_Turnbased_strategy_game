@@ -34,8 +34,10 @@ add_executable(sfml_tbs
     src/Game.cpp
     src/AllUnit.cpp
     src/Action.cpp
+    src/AIController.cpp
     src/Astar.cpp
     src/ArtAssets.cpp
+    src/AutoCombat.cpp
     src/Button.cpp
     src/Effects.cpp
     src/Map.cpp

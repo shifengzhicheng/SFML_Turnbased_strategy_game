@@ -4,6 +4,7 @@
 #include "Tile.h"
 #include "Game.h"
 #include "ArtAssets.h"
+#include "RealtimeConfig.h"
 #include <algorithm>
 #include <cmath>
 #include <vector>
@@ -125,6 +126,9 @@ void MoveableUnit::Showpath(sf::Vector2f mousePos)
 
 bool MoveableUnit::isOktoAttackAndAttackconsume()
 {
+	if (mygame->isRealtimeMode()) {
+		return true;
+	}
 	if (myinfo.attackconsume <= myActionPoint) {
 		myActionPoint -= myinfo.attackconsume;
 		return true;
@@ -342,7 +346,9 @@ MoveableUnit::MoveableUnit(int _team, int _x, int _y, Game* _mygame)
 	UnitState = UState::UNITNORMAL;
 	x = _x;
 	y = _y;
-	mygame->setTileID(x, y, tile::Unit);
+	if (!mygame->isRealtimeMode()) {
+		mygame->setTileID(x, y, tile::Unit);
+	}
 	myteam = _team;
 	myinfo.UnitState = UState::UNITNORMAL;
 	UnitText.setFont(mygame->myfont);
@@ -364,7 +370,9 @@ bool MoveableUnit::isdead()
 {
 
 	if (Health <= 0) {
-		mygame->setTileID(x, y, tile::Empty);
+		if (!mygame->isRealtimeMode()) {
+			mygame->setTileID(x, y, tile::Empty);
+		}
 		return true;
 	}
 	else return false;
@@ -372,14 +380,23 @@ bool MoveableUnit::isdead()
 
 void MoveableUnit::move(Point p)
 {
-	if (mygame->tiles[p.y*mygame->horizontalTiles+p.x].getID()==tile::Empty) {
-		mygame->setTileID(x, y, tile::Empty);
+	const bool canMove = mygame->isRealtimeMode()
+		? mygame->isCellWalkableForUnit(p.x, p.y)
+		: mygame->tiles[p.y*mygame->horizontalTiles+p.x].getID()==tile::Empty;
+	if (canMove) {
+		if (!mygame->isRealtimeMode()) {
+			mygame->setTileID(x, y, tile::Empty);
+		}
 		y = p.y;
 		x = p.x;
-		mygame->setTileID(x, y, tile::Unit);
+		if (!mygame->isRealtimeMode()) {
+			mygame->setTileID(x, y, tile::Unit);
+		}
 		placeUnitSprite(*this, x, y, config::UnitSpriteScale);
 		placeHealthLabel(UnitText, x, y);
-		myActionPoint--;
+		if (!mygame->isRealtimeMode()) {
+			myActionPoint--;
+		}
 	}
 	else {
 		mypath.clear();
@@ -487,6 +504,49 @@ int MoveableUnit::myattack()
 	return attackmethod->damage;
 }
 
+int MoveableUnit::myAttackRange() const
+{
+	return attackmethod ? attackmethod->range : 0;
+}
+
+float MoveableUnit::realtimeMoveStepSeconds() const
+{
+	switch (unitName) {
+	case UName::SHOOTER:
+		return realtime::ShooterStepSeconds;
+	case UName::CAVALRY:
+		return realtime::CavalryStepSeconds;
+	case UName::INFANTARY:
+	default:
+		return realtime::InfantryStepSeconds;
+	}
+}
+
+float MoveableUnit::realtimeAttackCooldownSeconds() const
+{
+	switch (unitName) {
+	case UName::SHOOTER:
+		return realtime::ShooterAttackCooldown;
+	case UName::CAVALRY:
+		return realtime::CavalryAttackCooldown;
+	case UName::INFANTARY:
+	default:
+		return realtime::InfantryAttackCooldown;
+	}
+}
+
+bool MoveableUnit::canAutoAttack(Unit* target)
+{
+	return attackmethod && target != nullptr && attackmethod->isInMyAttackRange(this, target);
+}
+
+void MoveableUnit::autoAttack(Unit* target)
+{
+	if (attackmethod && target != nullptr) {
+		attackmethod->Attack(this, target);
+	}
+}
+
 DisMoveableUnit::DisMoveableUnit(int _x, int _y, int _team, Game* _game)
 {
 
@@ -541,7 +601,7 @@ bool DisMoveableUnit::generateUnit(int code)
 		for (int j = y - 1; j < y + 3; j++) {
 			if (!mygame->isMapCell(i, j))
 				continue;
-			if (mygame->tiles[i + mygame->horizontalTiles * j].getID() != tile::Empty)
+			if (mygame->tiles[i + mygame->horizontalTiles * j].getID() != tile::Empty || mygame->isCellReservedForSpawn(i, j))
 				continue;
 			success = mygame->spawnUnit(myteam, code, i, j);
 			break;

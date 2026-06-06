@@ -3,6 +3,8 @@
 #include "Config.h"
 #include "Map.h"
 #include "ArtAssets.h"
+#include "AutoCombat.h"
+#include "RealtimeConfig.h"
 
 #include <algorithm>
 #include <cmath>
@@ -69,6 +71,13 @@ namespace
     int& commandPool(Game& game, int team)
     {
         return team == PLAYER ? game.playerCommand : game.aiCommand;
+    }
+
+    int countUnitsNamed(const std::list<std::unique_ptr<MoveableUnit>>& units, int name)
+    {
+        return static_cast<int>(std::count_if(units.begin(), units.end(), [name](const std::unique_ptr<MoveableUnit>& unit) {
+            return unit->unitName == name;
+        }));
     }
 }
 
@@ -141,11 +150,11 @@ void Game::Initial()
     setupText(UnitAttack, myfont, 14, sf::Color(201, 215, 186), "", panelTextX, 118.f);
     setupText(UnitHP, myfont, 14, sf::Color(201, 215, 186), "", panelTextX, 140.f);
     setupText(CommandText, myfont, 14, sf::Color(255, 218, 112), "", panelTextX, 176.f);
-    setupText(panelTitle, myfont, 19, sf::Color(255, 246, 208), "WAR ROOM", panelTextX, 16.f);
-    setupText(panelHint, myfont, 13, sf::Color(211, 199, 165), "Gold shrines\nadd income", panelTextX, 232.f);
-    setupText(infantryLabel, myfont, 11, sf::Color(228, 218, 185), "Hold line / cheap", panelTextX, config::BuildInfantryY + 57.f);
-    setupText(shooterLabel, myfont, 11, sf::Color(228, 218, 185), "Safe ranged burst", panelTextX, config::BuildShooterY + 57.f);
-    setupText(cavalryLabel, myfont, 11, sf::Color(228, 218, 185), "Big charge damage", panelTextX, config::BuildCavalryY + 57.f);
+    setupText(panelTitle, myfont, 19, sf::Color(255, 246, 208), "AUTO WAR", panelTextX, 16.f);
+    setupText(panelHint, myfont, 13, sf::Color(211, 199, 165), "Select base\nto train", panelTextX, 232.f);
+    setupText(infantryLabel, myfont, 11, sf::Color(228, 218, 185), "Auto front line", panelTextX, config::BuildInfantryY + 57.f);
+    setupText(shooterLabel, myfont, 11, sf::Color(228, 218, 185), "Auto ranged DPS", panelTextX, config::BuildShooterY + 57.f);
+    setupText(cavalryLabel, myfont, 11, sf::Color(228, 218, 185), "Auto fast raid", panelTextX, config::BuildCavalryY + 57.f);
 
     sidePanel.setSize(sf::Vector2f(config::PanelWidth, config::WindowHeight));
     sidePanel.setPosition(config::PanelX, 0.f);
@@ -168,7 +177,7 @@ void Game::logicBeforeInput()
 {
     syncMazeFromTiles();
     astar.setMaze(maze);
-    if (playerturn == false) {
+    if (!realtimeMode && playerturn == false) {
         AIlogic();
     }
 }
@@ -214,7 +223,7 @@ bool Game::isBlockingTile(tile::ID id) const
     return id == tile::Mount
         || id == tile::River
         || id == tile::Tree
-        || id == tile::Unit
+        || (!realtimeMode && id == tile::Unit)
         || id == tile::Red_Base
         || id == tile::Blue_Base;
 }
@@ -225,6 +234,29 @@ bool Game::isMapCell(int x, int y) const
         && y < static_cast<int>(maze.size())
         && x >= 0
         && x < static_cast<int>(maze[y].size());
+}
+
+bool Game::isRealtimeMode() const
+{
+    return realtimeMode;
+}
+
+bool Game::isCellWalkableForUnit(int x, int y) const
+{
+    if (!isMapCell(x, y)) {
+        return false;
+    }
+    const tile::ID id = tiles[y * horizontalTiles + x].getID();
+    return id == tile::Empty || id == tile::Path || id == tile::Choosen || id == tile::Unit;
+}
+
+bool Game::isCellReservedForSpawn(int x, int y) const
+{
+    const auto matchesCell = [x, y](const std::unique_ptr<MoveableUnit>& unit) {
+        return unit->x == x && unit->y == y;
+    };
+    return std::any_of(myunits.begin(), myunits.end(), matchesCell)
+        || std::any_of(enemys.begin(), enemys.end(), matchesCell);
 }
 
 void Game::setTileID(int x, int y, tile::ID id)
@@ -287,12 +319,41 @@ void Game::AIlogic() {
     }
 }
 
+void Game::updateRealtime(float dt)
+{
+    syncMazeFromTiles();
+    astar.setMaze(maze);
+    updateResourceControl();
+    updateRealtimeEconomy(dt);
+    aiController.update(*this, dt);
+    realtime::updateAutoCombat(*this, dt);
+}
+
+void Game::updateRealtimeEconomy(float dt)
+{
+    playerIncomeTimer += dt;
+    aiIncomeTimer += dt;
+
+    if (playerIncomeTimer >= realtime::EconomyTickSeconds) {
+        playerIncomeTimer -= realtime::EconomyTickSeconds;
+        addTurnIncome(PLAYER);
+    }
+    if (aiIncomeTimer >= realtime::EconomyTickSeconds) {
+        aiIncomeTimer -= realtime::EconomyTickSeconds;
+        addTurnIncome(AI);
+    }
+}
+
 void Game::logicBeforeDraw()
 {
 
     // Update all units before drawing.
 
-    bool timepassed = clock.getElapsedTime().asMilliseconds() > 30.f;
+    if (realtimeMode) {
+        updateRealtime(std::min(realtimeFrameClock.restart().asSeconds(), 0.05f));
+    }
+
+    bool timepassed = !realtimeMode && clock.getElapsedTime().asMilliseconds() > 30.f;
     if (timepassed) {
         for (auto& test : myunits) {
             if (test->UnitState == UState::MOVING)
@@ -341,7 +402,9 @@ void Game::logicBeforeDraw()
             ++u;
         }
     }
-    updateResourceControl();
+    if (!realtimeMode) {
+        updateResourceControl();
+    }
 
 }
 
@@ -404,6 +467,35 @@ void Game::GameInput(Vector2i mousePos, Event event) {
         {
             clear();
         }
+    }
+    if (realtimeMode) {
+        handleBuildButtons(mousePos, event);
+        if (Base_red) {
+            Base_red->checkMouse(mousePos, event);
+        }
+        if (Base_blue) {
+            Base_blue->checkHover(mousePos, event);
+        }
+        for (auto& u : enemys) {
+            u->checkHover(mousePos, event);
+        }
+        if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::T))
+        {
+            setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::Tree);
+        }
+        if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::M))
+        {
+            setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::Mount);
+        }
+        if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
+        {
+            setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::River);
+        }
+        if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E))
+        {
+            setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::Empty);
+        }
+        return;
     }
     if (!running && playerturn) {
         EndTurnBtn.checkMouse(mousePos, event);
@@ -755,13 +847,17 @@ void Game::DrawSidePanel()
         + "/" + std::to_string(config::MaxCommand)
         + "\nGold: " + std::to_string(controlledResourceCount(PLAYER))
         + "/" + std::to_string(resources.size())
-        + "\nIncome: +" + std::to_string(resourceIncome(PLAYER)));
+        + "\nTick: +" + std::to_string(resourceIncome(PLAYER))
+        + "\nArmy: " + std::to_string(myunits.size())
+        + "/" + std::to_string(config::MaxUnits));
     window.draw(CommandText);
 
-    window.draw(EndTurnBtn);
+    if (!realtimeMode) {
+        window.draw(EndTurnBtn);
+    }
 
     const bool canBuild = Base_red && Base_red->UnitState == UState::UNITCLICK;
-    panelHint.setString(canBuild ? "Click again:\nbuild more" : "Capture gold\nto gain CMD");
+    panelHint.setString(canBuild ? "Train squads:\nauto attack" : "Select base\nto train");
     inf.setColor(canBuild && canSpawnUnit(PLAYER, UName::INFANTARY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
     sho.setColor(canBuild && canSpawnUnit(PLAYER, UName::SHOOTER) ? sf::Color::White : sf::Color(255, 255, 255, 130));
     cav.setColor(canBuild && canSpawnUnit(PLAYER, UName::CAVALRY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
@@ -786,8 +882,12 @@ void Game::clear()
     playerCommand = config::StartingCommand;
     aiCommand = config::StartingCommand;
     aiProductionDone = false;
+    playerIncomeTimer = 0.f;
+    aiIncomeTimer = 0.f;
+    aiController.reset();
+    realtimeFrameClock.restart();
     resources.clear();
-    Globle_text.setString("YourTurn");
+    Globle_text.setString(realtimeMode ? "RealTime" : "YourTurn");
     Base_red.reset();
     Base_blue.reset();
     myunits.clear();
@@ -1027,7 +1127,7 @@ bool Game::hasSpawnTile(int team) const
             if (!isMapCell(i, j)) {
                 continue;
             }
-            if (tiles[i + horizontalTiles * j].getID() == tile::Empty) {
+            if (tiles[i + horizontalTiles * j].getID() == tile::Empty && !isCellReservedForSpawn(i, j)) {
                 return true;
             }
         }
@@ -1073,14 +1173,20 @@ void Game::runAIProduction()
         return;
     }
 
-    // AI production happens once at the start of its turn, but it may spend
-    // multiple chunks of CMD just like the player can by clicking repeatedly.
-    for (int i = 0; i < config::AIMaxBuildsPerTurn; ++i) {
+    // Real-time AI uses the same economy as the player and spends CMD in small
+    // bursts instead of receiving direct units from a turn script.
+    for (int i = 0; i < realtime::AIUnitsPerBurst; ++i) {
+        const int playerInfantry = countUnitsNamed(myunits, UName::INFANTARY);
+        const int playerShooters = countUnitsNamed(myunits, UName::SHOOTER);
+        const int playerCavalry = countUnitsNamed(myunits, UName::CAVALRY);
+        const int counterPick = playerShooters > playerInfantry && aiCommand >= config::CavalryCost
+            ? UName::CAVALRY
+            : (playerCavalry > playerShooters ? UName::INFANTARY : UName::SHOOTER);
         const int priorities[] = {
+            counterPick,
             aiCommand >= config::CavalryCost && enemys.size() < myunits.size() + 2 ? UName::CAVALRY : UName::INFANTARY,
             UName::SHOOTER,
-            UName::INFANTARY,
-            UName::CAVALRY
+            UName::INFANTARY
         };
 
         bool spawned = false;

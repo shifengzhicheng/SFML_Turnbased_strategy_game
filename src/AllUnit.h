@@ -79,6 +79,9 @@ public:
 	Astar astar;
 
 	int myActionPoint;
+	float realtimeMoveTimer = 0.f;
+	float realtimeAttackTimer = 0.f;
+	float realtimePathTimer = 0.f;
 
 	std::deque<Point> mypath;
 
@@ -97,6 +100,11 @@ public:
 	virtual void decide();
 	virtual void updatemystate();
 	int myattack();
+	int myAttackRange() const;
+	float realtimeMoveStepSeconds() const;
+	float realtimeAttackCooldownSeconds() const;
+	bool canAutoAttack(Unit* target);
+	void autoAttack(Unit* target);
 };
 class DisMoveableUnit : public Unit
 {
