@@ -76,6 +76,7 @@ public:
     std::vector<ResourceNode> resources;
     int playerCommand = config::StartingCommand;
     int aiCommand = config::StartingCommand;
+    bool aiProductionDone = false;
 
     std::size_t turn;
 
@@ -157,10 +158,16 @@ public:
     void placeResourceNodes();
     void updateResourceControl();
     int resourceIncome(int team) const;
+    int controlledResourceCount(int team) const;
     int unitCost(int name) const;
+    int commandForTeam(int team) const;
+    bool hasUnitCapacity(int team) const;
+    bool hasSpawnTile(int team) const;
+    std::string spawnBlockReason(int team, int name) const;
     bool canSpawnUnit(int team, int name) const;
     bool spendCommand(int team, int name);
     void addTurnIncome(int team);
+    void runAIProduction();
 
     int indexAt(sf::Vector2f position);
 

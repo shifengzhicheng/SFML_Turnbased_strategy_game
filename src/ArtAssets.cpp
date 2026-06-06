@@ -126,34 +126,6 @@ namespace
         target.draw(arrow);
     }
 
-    void drawHorse(sf::RenderTarget& target, sf::Vector2f center, float scale, sf::Color body, sf::Color accent)
-    {
-        sf::CircleShape bodyShape(6.f * scale, 24);
-        bodyShape.setOrigin(6.f * scale, 6.f * scale);
-        bodyShape.setScale(1.35f, 0.82f);
-        bodyShape.setPosition(center.x, center.y + 2.f * scale);
-        bodyShape.setFillColor(body);
-        bodyShape.setOutlineColor(accent);
-        bodyShape.setOutlineThickness(1.2f * scale);
-        target.draw(bodyShape);
-
-        sf::CircleShape head(3.7f * scale, 18);
-        head.setOrigin(3.7f * scale, 3.7f * scale);
-        head.setPosition(center.x + 7.f * scale, center.y - 2.f * scale);
-        head.setFillColor(body);
-        head.setOutlineColor(accent);
-        head.setOutlineThickness(scale);
-        target.draw(head);
-
-        for (float dx : {-4.f, 3.f}) {
-            sf::RectangleShape leg(sf::Vector2f(1.8f * scale, 7.f * scale));
-            leg.setOrigin(0.9f * scale, 0.f);
-            leg.setPosition(center.x + dx * scale, center.y + 6.f * scale);
-            leg.setFillColor(accent);
-            target.draw(leg);
-        }
-    }
-
     void drawBase(sf::RenderTarget& target, sf::Vector2f pos, float scale, art::Team team)
     {
         const auto main = art::teamColor(team);
@@ -196,13 +168,14 @@ namespace
     {
         const auto main = art::teamColor(team);
         const auto accent = art::teamAccent(team);
-        const auto pale = mix(main, sf::Color::White, 0.56f);
-        const auto dark = mix(accent, sf::Color::Black, 0.18f);
+        const auto pale = mix(main, sf::Color::White, 0.48f);
+        const auto dark = mix(accent, sf::Color::Black, 0.28f);
+        const auto brass = sf::Color(239, 193, 88);
 
-        sf::CircleShape shadow(10.f * scale, 32);
-        shadow.setOrigin(10.f * scale, 4.f * scale);
-        shadow.setScale(1.25f, 0.40f);
-        shadow.setPosition(center.x, center.y + 10.f * scale);
+        sf::CircleShape shadow(12.f * scale, 36);
+        shadow.setOrigin(12.f * scale, 4.f * scale);
+        shadow.setScale(1.35f, 0.42f);
+        shadow.setPosition(center.x, center.y + 11.f * scale);
         shadow.setFillColor(sf::Color(13, 23, 20, 85));
         target.draw(shadow);
 
@@ -211,67 +184,74 @@ namespace
             return;
         }
 
-        sf::CircleShape halo(12.f * scale, 36);
-        halo.setOrigin(12.f * scale, 12.f * scale);
-        halo.setPosition(center);
-        halo.setFillColor(sf::Color(pale.r, pale.g, pale.b, 230));
-        halo.setOutlineColor(dark);
-        halo.setOutlineThickness(1.5f * scale);
-        target.draw(halo);
+        sf::CircleShape rim(14.f * scale, 40);
+        rim.setOrigin(14.f * scale, 14.f * scale);
+        rim.setPosition(center);
+        rim.setFillColor(dark);
+        rim.setOutlineColor(sf::Color(255, 230, 139, 210));
+        rim.setOutlineThickness(1.35f * scale);
+        target.draw(rim);
 
-        sf::CircleShape shine(4.5f * scale, 20);
-        shine.setOrigin(4.5f * scale, 4.5f * scale);
-        shine.setPosition(center.x - 4.f * scale, center.y - 5.f * scale);
-        shine.setFillColor(sf::Color(255, 255, 255, 70));
+        sf::CircleShape token(11.4f * scale, 40);
+        token.setOrigin(11.4f * scale, 11.4f * scale);
+        token.setPosition(center.x - 0.2f * scale, center.y - 0.8f * scale);
+        token.setFillColor(sf::Color(pale.r, pale.g, pale.b, 238));
+        target.draw(token);
+
+        sf::CircleShape shine(5.2f * scale, 24);
+        shine.setOrigin(5.2f * scale, 5.2f * scale);
+        shine.setPosition(center.x - 4.5f * scale, center.y - 6.f * scale);
+        shine.setFillColor(sf::Color(255, 255, 244, 72));
         target.draw(shine);
-
-        sf::RectangleShape torso(sf::Vector2f(10.f * scale, 11.f * scale));
-        torso.setOrigin(5.f * scale, 2.f * scale);
-        torso.setPosition(center.x, center.y + 1.f * scale);
-        torso.setFillColor(main);
-        torso.setOutlineColor(dark);
-        torso.setOutlineThickness(1.f * scale);
-        target.draw(torso);
-
-        sf::CircleShape head(4.f * scale, 24);
-        head.setOrigin(4.f * scale, 4.f * scale);
-        head.setPosition(center.x, center.y - 6.f * scale);
-        head.setFillColor(sf::Color(245, 220, 170));
-        head.setOutlineColor(sf::Color(68, 49, 40));
-        head.setOutlineThickness(0.7f * scale);
-        target.draw(head);
-
-        sf::ConvexShape helmet(4);
-        helmet.setPoint(0, sf::Vector2f(center.x - 5.f * scale, center.y - 6.f * scale));
-        helmet.setPoint(1, sf::Vector2f(center.x - 2.f * scale, center.y - 11.f * scale));
-        helmet.setPoint(2, sf::Vector2f(center.x + 5.f * scale, center.y - 8.f * scale));
-        helmet.setPoint(3, sf::Vector2f(center.x + 4.f * scale, center.y - 4.f * scale));
-        helmet.setFillColor(dark);
-        target.draw(helmet);
 
         switch (kind) {
         case art::UnitKind::Infantry: {
+            drawSword(target, center + sf::Vector2f(5.f * scale, 1.f * scale), scale * 1.13f, sf::Color(244, 247, 232), dark);
+
             sf::ConvexShape shield(5);
-            shield.setPoint(0, sf::Vector2f(center.x - 10.f * scale, center.y - 2.f * scale));
-            shield.setPoint(1, sf::Vector2f(center.x - 4.f * scale, center.y - 5.f * scale));
-            shield.setPoint(2, sf::Vector2f(center.x - 1.f * scale, center.y + 2.f * scale));
-            shield.setPoint(3, sf::Vector2f(center.x - 5.f * scale, center.y + 9.f * scale));
-            shield.setPoint(4, sf::Vector2f(center.x - 11.f * scale, center.y + 5.f * scale));
-            shield.setFillColor(sf::Color(240, 218, 143));
+            shield.setPoint(0, sf::Vector2f(center.x - 8.f * scale, center.y - 7.f * scale));
+            shield.setPoint(1, sf::Vector2f(center.x + 2.f * scale, center.y - 10.f * scale));
+            shield.setPoint(2, sf::Vector2f(center.x + 9.f * scale, center.y - 3.f * scale));
+            shield.setPoint(3, sf::Vector2f(center.x + 5.f * scale, center.y + 10.f * scale));
+            shield.setPoint(4, sf::Vector2f(center.x - 8.f * scale, center.y + 7.f * scale));
+            shield.setFillColor(sf::Color(242, 215, 121));
             shield.setOutlineColor(dark);
-            shield.setOutlineThickness(0.9f * scale);
+            shield.setOutlineThickness(1.1f * scale);
             target.draw(shield);
-            drawSword(target, center + sf::Vector2f(3.f * scale, 1.f * scale), scale * 0.95f, sf::Color(238, 242, 230), dark);
+
+            sf::RectangleShape stripe(sf::Vector2f(2.8f * scale, 16.f * scale));
+            stripe.setOrigin(1.4f * scale, 8.f * scale);
+            stripe.setPosition(center.x + 0.5f * scale, center.y);
+            stripe.setFillColor(main);
+            stripe.setRotation(-14.f);
+            target.draw(stripe);
             break;
         }
         case art::UnitKind::Shooter: {
+            sf::ConvexShape cape(4);
+            cape.setPoint(0, sf::Vector2f(center.x - 9.f * scale, center.y - 3.f * scale));
+            cape.setPoint(1, sf::Vector2f(center.x - 1.f * scale, center.y - 12.f * scale));
+            cape.setPoint(2, sf::Vector2f(center.x + 8.f * scale, center.y - 1.f * scale));
+            cape.setPoint(3, sf::Vector2f(center.x + 2.f * scale, center.y + 10.f * scale));
+            cape.setFillColor(mix(main, sf::Color::Black, 0.10f));
+            cape.setOutlineColor(dark);
+            cape.setOutlineThickness(0.9f * scale);
+            target.draw(cape);
+
             sf::ConvexShape hood(3);
-            hood.setPoint(0, sf::Vector2f(center.x - 8.f * scale, center.y - 5.f * scale));
-            hood.setPoint(1, sf::Vector2f(center.x, center.y - 13.f * scale));
-            hood.setPoint(2, sf::Vector2f(center.x + 8.f * scale, center.y - 4.f * scale));
-            hood.setFillColor(mix(main, sf::Color::Black, 0.15f));
+            hood.setPoint(0, sf::Vector2f(center.x - 7.f * scale, center.y - 5.f * scale));
+            hood.setPoint(1, sf::Vector2f(center.x - 1.f * scale, center.y - 13.f * scale));
+            hood.setPoint(2, sf::Vector2f(center.x + 7.f * scale, center.y - 5.f * scale));
+            hood.setFillColor(dark);
             target.draw(hood);
-            drawBow(target, center + sf::Vector2f(1.f * scale, 1.f * scale), scale * 1.05f, dark, sf::Color(41, 37, 32));
+
+            sf::CircleShape face(3.2f * scale, 18);
+            face.setOrigin(3.2f * scale, 3.2f * scale);
+            face.setPosition(center.x - 0.5f * scale, center.y - 4.f * scale);
+            face.setFillColor(sf::Color(246, 219, 166));
+            target.draw(face);
+
+            drawBow(target, center + sf::Vector2f(1.5f * scale, 1.5f * scale), scale * 1.20f, brass, sf::Color(39, 34, 28));
             sf::RectangleShape quiver(sf::Vector2f(3.f * scale, 10.f * scale));
             quiver.setOrigin(1.5f * scale, 5.f * scale);
             quiver.setPosition(center.x + 8.f * scale, center.y + 2.f * scale);
@@ -281,33 +261,75 @@ namespace
             break;
         }
         case art::UnitKind::Cavalry: {
-            drawHorse(target, center + sf::Vector2f(0.f, 3.f * scale), scale * 1.05f, main, dark);
-            sf::CircleShape rider(3.2f * scale, 18);
-            rider.setOrigin(3.2f * scale, 3.2f * scale);
-            rider.setPosition(center.x - 2.f * scale, center.y - 7.f * scale);
-            rider.setFillColor(sf::Color(245, 220, 170));
-            rider.setOutlineColor(dark);
-            rider.setOutlineThickness(0.8f * scale);
-            target.draw(rider);
-            sf::RectangleShape lance(sf::Vector2f(16.f * scale, 1.6f * scale));
+            sf::RectangleShape lance(sf::Vector2f(20.f * scale, 1.8f * scale));
             lance.setOrigin(2.f * scale, 0.8f * scale);
-            lance.setPosition(center.x - 1.f * scale, center.y - 4.f * scale);
+            lance.setPosition(center.x - 5.f * scale, center.y - 7.f * scale);
             lance.setRotation(-25.f);
-            lance.setFillColor(sf::Color(235, 230, 196));
+            lance.setFillColor(sf::Color(247, 238, 197));
             target.draw(lance);
+
+            const sf::Color horseBody = team == art::Team::Enemy ? sf::Color(89, 104, 132) : sf::Color(121, 77, 43);
+
+            sf::ConvexShape knight(7);
+            knight.setPoint(0, sf::Vector2f(center.x - 9.f * scale, center.y + 8.f * scale));
+            knight.setPoint(1, sf::Vector2f(center.x - 7.f * scale, center.y - 3.f * scale));
+            knight.setPoint(2, sf::Vector2f(center.x - 1.f * scale, center.y - 10.f * scale));
+            knight.setPoint(3, sf::Vector2f(center.x + 8.f * scale, center.y - 7.f * scale));
+            knight.setPoint(4, sf::Vector2f(center.x + 10.f * scale, center.y - 1.f * scale));
+            knight.setPoint(5, sf::Vector2f(center.x + 3.f * scale, center.y + 5.f * scale));
+            knight.setPoint(6, sf::Vector2f(center.x + 6.f * scale, center.y + 11.f * scale));
+            knight.setFillColor(horseBody);
+            knight.setOutlineColor(dark);
+            knight.setOutlineThickness(1.1f * scale);
+            target.draw(knight);
+
+            sf::ConvexShape mane(4);
+            mane.setPoint(0, sf::Vector2f(center.x - 5.f * scale, center.y - 5.f * scale));
+            mane.setPoint(1, sf::Vector2f(center.x + 1.f * scale, center.y - 10.f * scale));
+            mane.setPoint(2, sf::Vector2f(center.x + 4.f * scale, center.y - 6.f * scale));
+            mane.setPoint(3, sf::Vector2f(center.x - 2.f * scale, center.y - 2.f * scale));
+            mane.setFillColor(dark);
+            target.draw(mane);
+
+            sf::CircleShape eye(1.1f * scale, 10);
+            eye.setOrigin(1.1f * scale, 1.1f * scale);
+            eye.setPosition(center.x + 5.6f * scale, center.y - 4.1f * scale);
+            eye.setFillColor(sf::Color(255, 236, 165));
+            target.draw(eye);
+
+            sf::RectangleShape reins(sf::Vector2f(8.f * scale, 1.4f * scale));
+            reins.setOrigin(0.f, 0.7f * scale);
+            reins.setPosition(center.x + 0.5f * scale, center.y + 1.f * scale);
+            reins.setRotation(-18.f);
+            reins.setFillColor(brass);
+            target.draw(reins);
             break;
         }
         default:
             break;
         }
 
-        sf::CircleShape badge(3.f * scale, 18);
-        badge.setOrigin(3.f * scale, 3.f * scale);
-        badge.setPosition(center.x + 8.f * scale, center.y + 8.f * scale);
+        sf::CircleShape badge(3.3f * scale, 18);
+        badge.setOrigin(3.3f * scale, 3.3f * scale);
+        badge.setPosition(center.x + 8.7f * scale, center.y + 8.5f * scale);
         badge.setFillColor(accent);
-        badge.setOutlineColor(sf::Color(255, 245, 207, 180));
-        badge.setOutlineThickness(0.7f * scale);
+        badge.setOutlineColor(sf::Color(255, 245, 207, 210));
+        badge.setOutlineThickness(0.8f * scale);
         target.draw(badge);
+    }
+
+    const char* costForIcon(art::UnitKind icon)
+    {
+        switch (icon) {
+        case art::UnitKind::Infantry:
+            return "3";
+        case art::UnitKind::Shooter:
+            return "4";
+        case art::UnitKind::Cavalry:
+            return "6";
+        default:
+            return "";
+        }
     }
 
     void drawTextCentered(sf::RenderTarget& target, const sf::Font& font, const std::string& label,
@@ -408,13 +430,15 @@ namespace art
 
     void makeUnitTexture(sf::Texture& texture, UnitKind kind, Team team)
     {
-        const sf::Vector2u size = kind == UnitKind::Base ? sf::Vector2u(40, 40) : sf::Vector2u(40, 40);
+        const sf::Vector2u size = kind == UnitKind::Base
+            ? sf::Vector2u(config::TileSize * 2, config::TileSize * 2)
+            : sf::Vector2u(config::UnitTextureSize, config::UnitTextureSize);
         sf::RenderTexture canvas;
         if (!createCanvas(canvas, size)) {
             return;
         }
         canvas.clear(sf::Color::Transparent);
-        const float scale = kind == UnitKind::Base ? 1.f : 1.55f;
+        const float scale = kind == UnitKind::Base ? 1.f : 1.50f;
         drawUnitIcon(canvas, kind, team, sf::Vector2f(size.x / 2.f, size.y / 2.f), scale);
         canvas.display();
         commitTexture(texture, canvas);
@@ -432,29 +456,70 @@ namespace art
         const bool pressed = state == ButtonState::Pressed;
         const bool hover = state == ButtonState::Hover;
         const float inset = pressed ? 4.f : 2.f;
-        const sf::Color base = hover ? sf::Color(255, 231, 145) : sf::Color(242, 204, 116);
-        const sf::Color fill = pressed ? sf::Color(206, 137, 70) : base;
-        const sf::Color outline = pressed ? sf::Color(88, 57, 41) : sf::Color(75, 67, 47);
+        const sf::Color deep = sf::Color(39, 45, 39);
+        const sf::Color leather = pressed ? sf::Color(104, 74, 48) : (hover ? sf::Color(143, 102, 61) : sf::Color(112, 82, 52));
+        const sf::Color brass = hover ? sf::Color(255, 220, 116) : sf::Color(219, 166, 75);
+        const sf::Color paper = pressed ? sf::Color(214, 177, 107) : sf::Color(240, 203, 126);
 
-        drawPill(canvas, sf::Vector2f(inset + 2.f, inset + 5.f),
-                 sf::Vector2f(static_cast<float>(size.x) - inset * 2.f - 4.f, static_cast<float>(size.y) - inset * 2.f - 8.f),
-                 12.f, sf::Color(17, 23, 22, 70), sf::Color::Transparent, 0.f);
+        drawPill(canvas, sf::Vector2f(inset + 3.f, inset + 7.f),
+                 sf::Vector2f(static_cast<float>(size.x) - inset * 2.f - 6.f, static_cast<float>(size.y) - inset * 2.f - 9.f),
+                 13.f, sf::Color(10, 13, 12, 92), sf::Color::Transparent, 0.f);
         drawPill(canvas, sf::Vector2f(inset, inset),
-                 sf::Vector2f(static_cast<float>(size.x) - inset * 2.f, static_cast<float>(size.y) - inset * 2.f - 3.f),
-                 12.f, fill, outline, 2.f);
+                 sf::Vector2f(static_cast<float>(size.x) - inset * 2.f, static_cast<float>(size.y) - inset * 2.f - 4.f),
+                 13.f, leather, deep, 2.f);
 
-        sf::RectangleShape shine(sf::Vector2f(static_cast<float>(size.x) - 24.f, 4.f));
-        shine.setPosition(12.f, 9.f + inset);
-        shine.setFillColor(sf::Color(255, 255, 255, hover ? 95 : 55));
-        canvas.draw(shine);
+        sf::RectangleShape face(sf::Vector2f(static_cast<float>(size.x) - inset * 2.f - 10.f, static_cast<float>(size.y) - inset * 2.f - 14.f));
+        face.setPosition(inset + 5.f, inset + 5.f);
+        face.setFillColor(paper);
+        canvas.draw(face);
 
-        float textLeft = 8.f;
+        sf::RectangleShape topGlow(sf::Vector2f(static_cast<float>(size.x) - inset * 2.f - 24.f, 4.f));
+        topGlow.setPosition(inset + 12.f, inset + 10.f);
+        topGlow.setFillColor(sf::Color(255, 255, 235, hover ? 105 : 58));
+        canvas.draw(topGlow);
+
+        sf::VertexArray slash(sf::Triangles, 3);
+        slash[0].position = sf::Vector2f(static_cast<float>(size.x) - 40.f, inset + 5.f);
+        slash[1].position = sf::Vector2f(static_cast<float>(size.x) - 5.f, inset + 5.f);
+        slash[2].position = sf::Vector2f(static_cast<float>(size.x) - 5.f, static_cast<float>(size.y) - 12.f);
+        slash[0].color = sf::Color(255, 248, 205, 45);
+        slash[1].color = sf::Color(255, 248, 205, 16);
+        slash[2].color = sf::Color(255, 248, 205, 0);
+        canvas.draw(slash);
+
+        float textLeft = 12.f;
         if (icon != UnitKind::None) {
-            drawUnitIcon(canvas, icon, team, sf::Vector2f(21.f, static_cast<float>(size.y) / 2.f - 2.f + inset * 0.5f), 0.82f);
-            textLeft = 38.f;
+            sf::CircleShape medallion(18.f, 36);
+            medallion.setOrigin(18.f, 18.f);
+            medallion.setPosition(28.f, static_cast<float>(size.y) / 2.f - 2.f + inset * 0.45f);
+            medallion.setFillColor(sf::Color(45, 56, 48));
+            medallion.setOutlineColor(brass);
+            medallion.setOutlineThickness(2.f);
+            canvas.draw(medallion);
+            drawUnitIcon(canvas, icon, team, medallion.getPosition(), 0.82f);
+            textLeft = 52.f;
+
+            const char* cost = costForIcon(icon);
+            sf::CircleShape costChip(10.f, 24);
+            costChip.setOrigin(10.f, 10.f);
+            costChip.setPosition(static_cast<float>(size.x) - 17.f, 16.f + inset * 0.35f);
+            costChip.setFillColor(sf::Color(62, 48, 28));
+            costChip.setOutlineColor(sf::Color(255, 219, 93));
+            costChip.setOutlineThickness(1.5f);
+            canvas.draw(costChip);
+            drawTextCentered(canvas, font, cost, 13, sf::Color(255, 232, 124),
+                             sf::FloatRect(static_cast<float>(size.x) - 27.f, 6.f + inset * 0.35f, 20.f, 20.f));
         }
-        drawTextCentered(canvas, font, label, size.y >= 64 ? 24 : 14, sf::Color(37, 35, 29),
-                         sf::FloatRect(textLeft, 0.f, static_cast<float>(size.x) - textLeft - 8.f, static_cast<float>(size.y) - 3.f));
+
+        const unsigned int textSize = size.y >= 64 ? 24 : (icon == UnitKind::None ? 15 : 14);
+        drawTextCentered(canvas, font, label, textSize, sf::Color(39, 33, 25),
+                         sf::FloatRect(textLeft, 8.f + inset * 0.4f, static_cast<float>(size.x) - textLeft - 14.f, static_cast<float>(size.y) - 18.f));
+
+        if (pressed) {
+            sf::RectangleShape veil(sf::Vector2f(static_cast<float>(size.x), static_cast<float>(size.y)));
+            veil.setFillColor(sf::Color(30, 18, 10, 38));
+            canvas.draw(veil);
+        }
 
         canvas.display();
         commitTexture(texture, canvas);

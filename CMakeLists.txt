@@ -49,8 +49,19 @@ if(APPLE)
     target_compile_definitions(sfml_tbs PRIVATE GL_SILENCE_DEPRECATION)
 endif()
 
+add_executable(sfml_tbs_art_preview EXCLUDE_FROM_ALL
+    tools/art_preview.cpp
+    src/ArtAssets.cpp
+)
+target_include_directories(sfml_tbs_art_preview PRIVATE src)
+target_link_libraries(sfml_tbs_art_preview PRIVATE sfml-graphics sfml-window sfml-system)
+if(APPLE)
+    target_compile_definitions(sfml_tbs_art_preview PRIVATE GL_SILENCE_DEPRECATION)
+endif()
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(sfml_tbs PRIVATE -Wno-deprecated-declarations)
+    target_compile_options(sfml_tbs_art_preview PRIVATE -Wno-deprecated-declarations)
 endif()
 
 # The game loads assets through relative paths such as data/..., so keep a copy

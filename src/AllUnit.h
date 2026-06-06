@@ -101,7 +101,6 @@ public:
 class DisMoveableUnit : public Unit
 {
 	bool indanger;
-	bool cangenerate;
 
 public:
 	DisMoveableUnit(int _x, int _y, int _team, Game* _game);

@@ -38,10 +38,11 @@ namespace
 
     void drawUnitBase(sf::RenderWindow& window, Point point, sf::Color color)
     {
-        sf::CircleShape marker(7.f, 24);
-        marker.setOrigin(7.f, 7.f);
-        marker.setPosition(point.x * SqureSize + SqureSize / 2.f, point.y * SqureSize + SqureSize / 2.f + 3.f);
-        marker.setFillColor(sf::Color(color.r, color.g, color.b, 110));
+        sf::CircleShape marker(9.f, 28);
+        marker.setOrigin(9.f, 9.f);
+        marker.setScale(1.15f, 0.62f);
+        marker.setPosition(point.x * SqureSize + SqureSize / 2.f, point.y * SqureSize + SqureSize / 2.f + 7.f);
+        marker.setFillColor(sf::Color(color.r, color.g, color.b, 96));
         marker.setOutlineColor(sf::Color(color.r, color.g, color.b, 210));
         marker.setOutlineThickness(1.4f);
         window.draw(marker);
@@ -104,21 +105,21 @@ void Game::loadpic()
     art::makeButtonTexture(tStartBtnNormal, myfont, "START", art::ButtonState::Normal, sf::Vector2u(180, 72));
     art::makeButtonTexture(tStartBtnHover, myfont, "START", art::ButtonState::Hover, sf::Vector2u(190, 76));
     art::makeButtonTexture(tStartBtnClick, myfont, "START", art::ButtonState::Pressed, sf::Vector2u(170, 68));
-    art::makeButtonTexture(tEndBtnNormal, myfont, "END TURN", art::ButtonState::Normal, sf::Vector2u(112, 40));
-    art::makeButtonTexture(tEndBtnHover, myfont, "END TURN", art::ButtonState::Hover, sf::Vector2u(112, 40));
-    art::makeButtonTexture(tEndBtnClick, myfont, "END TURN", art::ButtonState::Pressed, sf::Vector2u(112, 40));
+    art::makeButtonTexture(tEndBtnNormal, myfont, "END TURN", art::ButtonState::Normal, sf::Vector2u(128, 44));
+    art::makeButtonTexture(tEndBtnHover, myfont, "END TURN", art::ButtonState::Hover, sf::Vector2u(128, 44));
+    art::makeButtonTexture(tEndBtnClick, myfont, "END TURN", art::ButtonState::Pressed, sf::Vector2u(128, 44));
     art::makeButtonTexture(tOverBtnNormal, myfont, "PLAY AGAIN", art::ButtonState::Normal, sf::Vector2u(240, 96));
     art::makeButtonTexture(tOverBtnHover, myfont, "PLAY AGAIN", art::ButtonState::Hover, sf::Vector2u(250, 100));
     art::makeButtonTexture(tOverBtnClick, myfont, "PLAY AGAIN", art::ButtonState::Pressed, sf::Vector2u(232, 92));
-    art::makeButtonTexture(tinf, myfont, "Infantry", art::ButtonState::Normal, sf::Vector2u(100, 50), art::UnitKind::Infantry, art::Team::Player);
-    art::makeButtonTexture(tinfHover, myfont, "Infantry", art::ButtonState::Hover, sf::Vector2u(100, 50), art::UnitKind::Infantry, art::Team::Player);
-    art::makeButtonTexture(tinfClick, myfont, "Infantry", art::ButtonState::Pressed, sf::Vector2u(100, 50), art::UnitKind::Infantry, art::Team::Player);
-    art::makeButtonTexture(tcav, myfont, "Cavalry", art::ButtonState::Normal, sf::Vector2u(100, 50), art::UnitKind::Cavalry, art::Team::Player);
-    art::makeButtonTexture(tcavHover, myfont, "Cavalry", art::ButtonState::Hover, sf::Vector2u(100, 50), art::UnitKind::Cavalry, art::Team::Player);
-    art::makeButtonTexture(tcavClick, myfont, "Cavalry", art::ButtonState::Pressed, sf::Vector2u(100, 50), art::UnitKind::Cavalry, art::Team::Player);
-    art::makeButtonTexture(tsho, myfont, "Shooter", art::ButtonState::Normal, sf::Vector2u(100, 50), art::UnitKind::Shooter, art::Team::Player);
-    art::makeButtonTexture(tshoHover, myfont, "Shooter", art::ButtonState::Hover, sf::Vector2u(100, 50), art::UnitKind::Shooter, art::Team::Player);
-    art::makeButtonTexture(tshoClick, myfont, "Shooter", art::ButtonState::Pressed, sf::Vector2u(100, 50), art::UnitKind::Shooter, art::Team::Player);
+    art::makeButtonTexture(tinf, myfont, "Infantry", art::ButtonState::Normal, sf::Vector2u(128, 54), art::UnitKind::Infantry, art::Team::Player);
+    art::makeButtonTexture(tinfHover, myfont, "Infantry", art::ButtonState::Hover, sf::Vector2u(128, 54), art::UnitKind::Infantry, art::Team::Player);
+    art::makeButtonTexture(tinfClick, myfont, "Infantry", art::ButtonState::Pressed, sf::Vector2u(128, 54), art::UnitKind::Infantry, art::Team::Player);
+    art::makeButtonTexture(tcav, myfont, "Cavalry", art::ButtonState::Normal, sf::Vector2u(128, 54), art::UnitKind::Cavalry, art::Team::Player);
+    art::makeButtonTexture(tcavHover, myfont, "Cavalry", art::ButtonState::Hover, sf::Vector2u(128, 54), art::UnitKind::Cavalry, art::Team::Player);
+    art::makeButtonTexture(tcavClick, myfont, "Cavalry", art::ButtonState::Pressed, sf::Vector2u(128, 54), art::UnitKind::Cavalry, art::Team::Player);
+    art::makeButtonTexture(tsho, myfont, "Shooter", art::ButtonState::Normal, sf::Vector2u(128, 54), art::UnitKind::Shooter, art::Team::Player);
+    art::makeButtonTexture(tshoHover, myfont, "Shooter", art::ButtonState::Hover, sf::Vector2u(128, 54), art::UnitKind::Shooter, art::Team::Player);
+    art::makeButtonTexture(tshoClick, myfont, "Shooter", art::ButtonState::Pressed, sf::Vector2u(128, 54), art::UnitKind::Shooter, art::Team::Player);
 
     startBtn.setTextures(tStartBtnNormal, tStartBtnHover, tStartBtnClick);
     EndTurnBtn.setTextures(tEndBtnNormal, tEndBtnHover, tEndBtnClick);
@@ -135,22 +136,22 @@ void Game::Initial()
     gameSceneState = SCENE_START;
     gameOver = false;
     const float panelTextX = static_cast<float>(config::PanelX + config::PanelPadding);
-    setupText(Globle_text, myfont, 18, sf::Color(38, 92, 68), "GameStart", panelTextX, 44.f);
-    setupText(UnitText, myfont, 16, sf::Color(38, 92, 68), "", panelTextX, 92.f);
-    setupText(UnitAttack, myfont, 16, sf::Color(38, 92, 68), "", panelTextX, 118.f);
-    setupText(UnitHP, myfont, 16, sf::Color(38, 92, 68), "", panelTextX, 144.f);
-    setupText(CommandText, myfont, 15, sf::Color(82, 60, 30), "", panelTextX, 174.f);
-    setupText(panelTitle, myfont, 18, sf::Color(27, 47, 42), "Command", panelTextX, 16.f);
-    setupText(panelHint, myfont, 14, sf::Color(96, 91, 78), "Capture gold\nto gain CMD", panelTextX, 232.f);
-    setupText(infantryLabel, myfont, 13, sf::Color(27, 47, 42), "Infantry 3", panelTextX, config::BuildInfantryY + 52.f);
-    setupText(shooterLabel, myfont, 13, sf::Color(27, 47, 42), "Shooter 4", panelTextX, config::BuildShooterY + 52.f);
-    setupText(cavalryLabel, myfont, 13, sf::Color(27, 47, 42), "Cavalry 6", panelTextX, config::BuildCavalryY + 52.f);
+    setupText(Globle_text, myfont, 17, sf::Color(229, 221, 189), "GameStart", panelTextX, 48.f);
+    setupText(UnitText, myfont, 14, sf::Color(201, 215, 186), "", panelTextX, 96.f);
+    setupText(UnitAttack, myfont, 14, sf::Color(201, 215, 186), "", panelTextX, 118.f);
+    setupText(UnitHP, myfont, 14, sf::Color(201, 215, 186), "", panelTextX, 140.f);
+    setupText(CommandText, myfont, 14, sf::Color(255, 218, 112), "", panelTextX, 176.f);
+    setupText(panelTitle, myfont, 19, sf::Color(255, 246, 208), "WAR ROOM", panelTextX, 16.f);
+    setupText(panelHint, myfont, 13, sf::Color(211, 199, 165), "Gold shrines\nadd income", panelTextX, 232.f);
+    setupText(infantryLabel, myfont, 11, sf::Color(228, 218, 185), "Hold line / cheap", panelTextX, config::BuildInfantryY + 57.f);
+    setupText(shooterLabel, myfont, 11, sf::Color(228, 218, 185), "Safe ranged burst", panelTextX, config::BuildShooterY + 57.f);
+    setupText(cavalryLabel, myfont, 11, sf::Color(228, 218, 185), "Big charge damage", panelTextX, config::BuildCavalryY + 57.f);
 
     sidePanel.setSize(sf::Vector2f(config::PanelWidth, config::WindowHeight));
     sidePanel.setPosition(config::PanelX, 0.f);
-    sidePanel.setFillColor(sf::Color(238, 232, 213));
-    sidePanel.setOutlineColor(sf::Color(94, 89, 74));
-    sidePanel.setOutlineThickness(1.f);
+    sidePanel.setFillColor(sf::Color(35, 43, 39));
+    sidePanel.setOutlineColor(sf::Color(19, 24, 22));
+    sidePanel.setOutlineThickness(2.f);
 
     EndTurnBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
     inf.setPosition(config::ButtonX, config::BuildInfantryY);
@@ -251,8 +252,9 @@ void Game::syncMazeFromTiles()
 
 void Game::AIlogic() {
     bool timepass = clock2.getElapsedTime().asMilliseconds() > 30.f;
-    if (Base_blue) {
-        Base_blue->generateUnit(rand()%3);
+    if (!aiProductionDone) {
+        runAIProduction();
+        aiProductionDone = true;
     }
     if (enemys.empty()) {
         playerturn = true;
@@ -260,6 +262,7 @@ void Game::AIlogic() {
         running = false;
         AIUnitreset();
         addTurnIncome(PLAYER);
+        aiProductionDone = false;
         return;
     }
     if (timepass) {
@@ -278,6 +281,7 @@ void Game::AIlogic() {
                 running = false;
                 AIUnitreset();
                 addTurnIncome(PLAYER);
+                aiProductionDone = false;
             }
         }
     }
@@ -409,6 +413,7 @@ void Game::GameInput(Vector2i mousePos, Event event) {
             clearSelection();
             updateResourceControl();
             addTurnIncome(AI);
+            aiProductionDone = false;
             Unitsreset(myunits);
             if (Base_red) {
                 Base_red->reset();
@@ -716,6 +721,31 @@ void Game::DrawSidePanel()
     cav.setPosition(config::ButtonX, config::BuildCavalryY);
 
     window.draw(sidePanel);
+
+    sf::RectangleShape accentLine(sf::Vector2f(3.f, static_cast<float>(config::WindowHeight)));
+    accentLine.setPosition(static_cast<float>(config::PanelX), 0.f);
+    accentLine.setFillColor(sf::Color(219, 166, 75));
+    window.draw(accentLine);
+
+    const auto drawPanelCard = [this](float y, float h, sf::Color fill, sf::Color outline) {
+        sf::RectangleShape shadow(sf::Vector2f(config::PanelWidth - 20.f, h));
+        shadow.setPosition(config::PanelX + 12.f, y + 4.f);
+        shadow.setFillColor(sf::Color(8, 11, 10, 70));
+        window.draw(shadow);
+
+        sf::RectangleShape card(sf::Vector2f(config::PanelWidth - 24.f, h));
+        card.setPosition(config::PanelX + 12.f, y);
+        card.setFillColor(fill);
+        card.setOutlineColor(outline);
+        card.setOutlineThickness(1.4f);
+        window.draw(card);
+    };
+
+    drawPanelCard(8.f, 72.f, sf::Color(47, 58, 51), sf::Color(93, 103, 81));
+    drawPanelCard(86.f, 126.f, sf::Color(41, 50, 45), sf::Color(77, 92, 74));
+    drawPanelCard(208.f, 72.f, sf::Color(60, 47, 31), sf::Color(197, 150, 67));
+    drawPanelCard(292.f, 300.f, sf::Color(42, 49, 44), sf::Color(81, 91, 73));
+
     window.draw(panelTitle);
     window.draw(Globle_text);
     window.draw(UnitText);
@@ -723,13 +753,15 @@ void Game::DrawSidePanel()
     window.draw(UnitHP);
     CommandText.setString("CMD: " + std::to_string(playerCommand)
         + "/" + std::to_string(config::MaxCommand)
+        + "\nGold: " + std::to_string(controlledResourceCount(PLAYER))
+        + "/" + std::to_string(resources.size())
         + "\nIncome: +" + std::to_string(resourceIncome(PLAYER)));
     window.draw(CommandText);
 
     window.draw(EndTurnBtn);
 
     const bool canBuild = Base_red && Base_red->UnitState == UState::UNITCLICK;
-    panelHint.setString(canBuild ? "Spend CMD\nto build" : "Capture gold\nto gain CMD");
+    panelHint.setString(canBuild ? "Click again:\nbuild more" : "Capture gold\nto gain CMD");
     inf.setColor(canBuild && canSpawnUnit(PLAYER, UName::INFANTARY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
     sho.setColor(canBuild && canSpawnUnit(PLAYER, UName::SHOOTER) ? sf::Color::White : sf::Color(255, 255, 255, 130));
     cav.setColor(canBuild && canSpawnUnit(PLAYER, UName::CAVALRY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
@@ -753,6 +785,7 @@ void Game::clear()
     MosOnUnit = nullptr;
     playerCommand = config::StartingCommand;
     aiCommand = config::StartingCommand;
+    aiProductionDone = false;
     resources.clear();
     Globle_text.setString("YourTurn");
     Base_red.reset();
@@ -951,6 +984,13 @@ int Game::resourceIncome(int team) const
     return income;
 }
 
+int Game::controlledResourceCount(int team) const
+{
+    return static_cast<int>(std::count_if(resources.begin(), resources.end(), [team](const ResourceNode& node) {
+        return node.owner == team;
+    }));
+}
+
 int Game::unitCost(int name) const
 {
     switch (name) {
@@ -965,15 +1005,57 @@ int Game::unitCost(int name) const
     }
 }
 
-bool Game::canSpawnUnit(int team, int name) const
+int Game::commandForTeam(int team) const
+{
+    return team == PLAYER ? playerCommand : aiCommand;
+}
+
+bool Game::hasUnitCapacity(int team) const
+{
+    return team == PLAYER ? myunits.size() < MaxUnit : enemys.size() < MaxUnit;
+}
+
+bool Game::hasSpawnTile(int team) const
+{
+    const DisMoveableUnit* base = team == PLAYER ? Base_red.get() : Base_blue.get();
+    if (base == nullptr) {
+        return false;
+    }
+
+    for (int i = base->x - 1; i < base->x + 3; ++i) {
+        for (int j = base->y - 1; j < base->y + 3; ++j) {
+            if (!isMapCell(i, j)) {
+                continue;
+            }
+            if (tiles[i + horizontalTiles * j].getID() == tile::Empty) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+std::string Game::spawnBlockReason(int team, int name) const
 {
     const int cost = unitCost(name);
     if (cost <= 0) {
-        return false;
+        return "Bad unit";
     }
-    const bool hasRoom = team == PLAYER ? myunits.size() < MaxUnit : enemys.size() < MaxUnit;
-    const int command = team == PLAYER ? playerCommand : aiCommand;
-    return hasRoom && command >= cost;
+    if (!hasUnitCapacity(team)) {
+        return "Unit cap";
+    }
+    if (commandForTeam(team) < cost) {
+        return "Need CMD";
+    }
+    if (!hasSpawnTile(team)) {
+        return "No room";
+    }
+    return "";
+}
+
+bool Game::canSpawnUnit(int team, int name) const
+{
+    return spawnBlockReason(team, name).empty();
 }
 
 bool Game::spendCommand(int team, int name)
@@ -983,6 +1065,35 @@ bool Game::spendCommand(int team, int name)
     }
     commandPool(*this, team) -= unitCost(name);
     return true;
+}
+
+void Game::runAIProduction()
+{
+    if (!Base_blue) {
+        return;
+    }
+
+    // AI production happens once at the start of its turn, but it may spend
+    // multiple chunks of CMD just like the player can by clicking repeatedly.
+    for (int i = 0; i < config::AIMaxBuildsPerTurn; ++i) {
+        const int priorities[] = {
+            aiCommand >= config::CavalryCost && enemys.size() < myunits.size() + 2 ? UName::CAVALRY : UName::INFANTARY,
+            UName::SHOOTER,
+            UName::INFANTARY,
+            UName::CAVALRY
+        };
+
+        bool spawned = false;
+        for (int code : priorities) {
+            if (Base_blue->generateUnit(code)) {
+                spawned = true;
+                break;
+            }
+        }
+        if (!spawned) {
+            return;
+        }
+    }
 }
 
 void Game::addTurnIncome(int team)

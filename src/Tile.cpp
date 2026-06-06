@@ -72,6 +72,25 @@ namespace
         plate.setOutlineThickness(1.2f);
         target.draw(plate);
     }
+
+    void drawGrassDetail(sf::RenderTarget& target, sf::Vector2f origin, int x, int y)
+    {
+        const sf::Color blade = (x + y) % 2 == 0
+            ? sf::Color(162, 184, 118, 72)
+            : sf::Color(232, 238, 182, 58);
+        sf::RectangleShape dash(sf::Vector2f(5.f, 1.f));
+        dash.setFillColor(blade);
+        dash.setPosition(origin + sf::Vector2f(4.f + static_cast<float>((x * 3 + y) % 7), 6.f + static_cast<float>((x + y * 2) % 8)));
+        dash.setRotation(static_cast<float>((x * 11 + y * 7) % 28) - 14.f);
+        target.draw(dash);
+
+        if ((x * 17 + y * 13) % 5 == 0) {
+            sf::CircleShape pebble(1.1f, 8);
+            pebble.setFillColor(sf::Color(101, 126, 84, 58));
+            pebble.setPosition(origin + sf::Vector2f(13.f, 13.f));
+            target.draw(pebble);
+        }
+    }
 }
 // Initialize a tile from a rectangle and optional tile id.
 MapPos::MapPos(sf::IntRect intrect, tile::ID ID):
@@ -138,6 +157,9 @@ void MapPos::draw(sf::RenderTarget& target, sf::RenderStates states) const
 
     const sf::Vector2f origin = rect.getPosition();
     switch (id) {
+    case tile::Empty:
+        drawGrassDetail(target, origin, x, y);
+        break;
     case tile::Mount:
         drawMount(target, origin);
         break;

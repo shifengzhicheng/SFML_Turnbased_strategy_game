@@ -12,16 +12,19 @@ namespace config
 
     inline constexpr int PanelX = MapWidth;
     inline constexpr int PanelPadding = 12;
-    inline constexpr int ButtonX = PanelX + 30;
+    inline constexpr int ButtonX = PanelX + 16;
     inline constexpr int EndTurnButtonY = 300;
-    inline constexpr int BuildInfantryY = 350;
-    inline constexpr int BuildShooterY = 420;
-    inline constexpr int BuildCavalryY = 490;
+    inline constexpr int BuildInfantryY = 346;
+    inline constexpr int BuildShooterY = 428;
+    inline constexpr int BuildCavalryY = 510;
+    inline constexpr int UnitTextureSize = 44;
+    inline constexpr float UnitSpriteScale = 0.66f;
 
     inline constexpr int PathStraightCost = 10;
     inline constexpr int PathDiagonalCost = 14;
     inline constexpr int StartingCommand = 8;
     inline constexpr int MaxCommand = 24;
+    inline constexpr int AIMaxBuildsPerTurn = 3;
     inline constexpr int BaseCommandIncome = 4;
     inline constexpr int ResourceCommandIncome = 2;
     inline constexpr int InfantryCost = 3;
