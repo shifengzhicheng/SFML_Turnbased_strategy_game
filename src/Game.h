@@ -193,6 +193,8 @@ public:
     void updateWorkers(float dt);
     void updateProduction(float dt);
     void updateDefenseTowers(float dt);
+    void updateResourceCaptures(float dt);
+    void cleanupDestroyedBuildings();
     void handleRealtimeMapClick(sf::Vector2i mousePos, sf::Event event);
     int resourceIncome(int team) const;
     int controlledResourceCount(int team) const;
@@ -203,6 +205,7 @@ public:
     int totalBuildingCount(int team, int type) const;
     int buildingCap(int type) const;
     int upgradeCostForNextLevel(int team) const;
+    int unitsNearPoint(int team, Point point, int radius) const;
     int commandForTeam(int team) const;
     float damageMultiplier(int team) const;
     bool hasUnitCapacity(int team) const;
@@ -214,6 +217,12 @@ public:
     bool requestBuildExtractor(int team, int resourceIndex);
     bool requestBuildBarracks(int team, Point point);
     bool requestBuildTower(int team, Point point);
+    Building* findResourceExtractor(int resourceIndex);
+    const Building* findResourceExtractor(int resourceIndex) const;
+    Building* chooseBuildingTarget(MoveableUnit& unit);
+    bool canAttackBuilding(const MoveableUnit& unit, const Building& building) const;
+    void autoAttackBuilding(MoveableUnit& unit, Building& building);
+    void resetWorkersForBuilding(int buildingId);
     void logEvent(const std::string& message) const;
     void logDebugSummary() const;
     void assignWorkers();

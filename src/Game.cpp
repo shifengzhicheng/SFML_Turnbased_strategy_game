@@ -61,6 +61,9 @@ namespace
         if (owner == AI) {
             return sf::Color(61, 128, 206);
         }
+        if (owner == -2) {
+            return sf::Color(236, 111, 72);
+        }
         return sf::Color(226, 180, 63);
     }
 
@@ -116,6 +119,26 @@ namespace
         default:
             return "Barracks";
         }
+    }
+
+    int buildingMaxHealth(int type)
+    {
+        switch (type) {
+        case building::Extractor:
+            return config::ExtractorHealth;
+        case building::DefenseTower:
+            return config::DefenseTowerHealth;
+        case building::Barracks:
+        default:
+            return config::BarracksHealth;
+        }
+    }
+
+    int distanceSquared(Point a, Point b)
+    {
+        const int dx = a.x - b.x;
+        const int dy = a.y - b.y;
+        return dx * dx + dy * dy;
     }
 
     sf::Vector2f unitCenter(const Unit& unit)
@@ -427,6 +450,8 @@ void Game::updateRealtime(float dt)
     syncMazeFromTiles();
     astar.setMaze(maze);
     applyPathResults();
+    cleanupDestroyedBuildings();
+    updateResourceCaptures(dt);
     updateResourceControl();
     updateRealtimeEconomy(dt);
     aiController.update(*this, dt);
@@ -435,6 +460,7 @@ void Game::updateRealtime(float dt)
     updateProduction(dt);
     updateDefenseTowers(dt);
     realtime::updateAutoCombat(*this, dt);
+    cleanupDestroyedBuildings();
     updateDebugSummary(dt);
 }
 
@@ -516,6 +542,35 @@ Worker* Game::findWorkerById(int id)
         return worker.id == id;
     });
     return it == workers.end() ? nullptr : &(*it);
+}
+
+Building* Game::findResourceExtractor(int resourceIndex)
+{
+    const auto it = std::find_if(buildings.begin(), buildings.end(), [resourceIndex](const Building& building) {
+        return building.type == building::Extractor && building.resourceIndex == resourceIndex;
+    });
+    return it == buildings.end() ? nullptr : &(*it);
+}
+
+const Building* Game::findResourceExtractor(int resourceIndex) const
+{
+    const auto it = std::find_if(buildings.begin(), buildings.end(), [resourceIndex](const Building& building) {
+        return building.type == building::Extractor && building.resourceIndex == resourceIndex;
+    });
+    return it == buildings.end() ? nullptr : &(*it);
+}
+
+void Game::resetWorkersForBuilding(int buildingId)
+{
+    for (auto& worker : workers) {
+        if (worker.buildingId != buildingId) {
+            continue;
+        }
+        worker.state = worker::Idle;
+        worker.buildingId = 0;
+        worker.path.clear();
+        worker.pendingPathRequest = 0;
+    }
 }
 
 int Game::workerCount(int team) const
@@ -742,6 +797,15 @@ int Game::upgradeCostForNextLevel(int team) const
     return config::UpgradeCost + level * config::UpgradeCostStep;
 }
 
+int Game::unitsNearPoint(int team, Point point, int radius) const
+{
+    const auto& units = team == PLAYER ? myunits : enemys;
+    const int radiusSquared = radius * radius;
+    return static_cast<int>(std::count_if(units.begin(), units.end(), [point, radiusSquared](const std::unique_ptr<MoveableUnit>& unit) {
+        return unit->Health > 0 && distanceSquared(Point(unit->x, unit->y), point) <= radiusSquared;
+    }));
+}
+
 bool Game::requestBuildExtractor(int team, int resourceIndex)
 {
     if (resourceIndex < 0 || resourceIndex >= static_cast<int>(resources.size())) {
@@ -770,6 +834,8 @@ bool Game::requestBuildExtractor(int team, int resourceIndex)
     building.point = resources[resourceIndex].point;
     building.resourceIndex = resourceIndex;
     building.buildSeconds = buildingSeconds(building.type);
+    building.maxHealth = buildingMaxHealth(building.type);
+    building.health = building.maxHealth;
     buildings.push_back(building);
     setTileID(building.point.x, building.point.y, buildingTileId(team, building.type));
     if (team == PLAYER) {
@@ -805,6 +871,8 @@ bool Game::requestBuildBarracks(int team, Point point)
     building.type = building::Barracks;
     building.point = point;
     building.buildSeconds = buildingSeconds(building.type);
+    building.maxHealth = buildingMaxHealth(building.type);
+    building.health = building.maxHealth;
     buildings.push_back(building);
     setTileID(point.x, point.y, buildingTileId(team, building.type));
     if (team == PLAYER) {
@@ -840,6 +908,8 @@ bool Game::requestBuildTower(int team, Point point)
     building.type = building::DefenseTower;
     building.point = point;
     building.buildSeconds = buildingSeconds(building.type);
+    building.maxHealth = buildingMaxHealth(building.type);
+    building.health = building.maxHealth;
     buildings.push_back(building);
     setTileID(point.x, point.y, buildingTileId(team, building.type));
     if (team == PLAYER) {
@@ -1022,6 +1092,51 @@ void Game::updateProduction(float dt)
     }
 }
 
+void Game::updateResourceCaptures(float dt)
+{
+    for (int i = 0; i < static_cast<int>(resources.size()); ++i) {
+        auto& node = resources[i];
+        Building* extractor = findResourceExtractor(i);
+        if (extractor == nullptr || !extractor->complete) {
+            node.contestingTeam = -1;
+            node.captureProgress = 0.f;
+            continue;
+        }
+
+        const int enemy = extractor->team == PLAYER ? AI : PLAYER;
+        const int defenders = unitsNearPoint(extractor->team, node.point, config::ResourceCaptureRadius);
+        const int attackers = unitsNearPoint(enemy, node.point, config::ResourceCaptureRadius);
+        if (attackers <= defenders || attackers <= 0) {
+            node.captureProgress = std::max(0.f, node.captureProgress - dt * 0.7f);
+            if (node.captureProgress <= 0.f) {
+                node.contestingTeam = -1;
+            }
+            continue;
+        }
+
+        if (node.contestingTeam != enemy) {
+            node.contestingTeam = enemy;
+            node.captureProgress = 0.f;
+        }
+        node.captureProgress += dt * static_cast<float>(attackers - defenders);
+        if (node.captureProgress < config::ResourceCaptureSeconds) {
+            continue;
+        }
+
+        const int previousTeam = extractor->team;
+        extractor->team = enemy;
+        node.contestingTeam = -1;
+        node.captureProgress = 0.f;
+        resetWorkersForBuilding(extractor->id);
+        setTileID(extractor->point.x, extractor->point.y, buildingTileId(extractor->team, extractor->type));
+        addFloatingText(sf::Vector2f(node.point.x * SqureSize + SqureSize / 2.f, node.point.y * SqureSize - 12.f),
+                        enemy == PLAYER ? "CAPTURED" : "ENEMY CAPTURED",
+                        enemy == PLAYER ? sf::Color(255, 220, 93) : sf::Color(145, 196, 255), 13);
+        logEvent(std::string(previousTeam == PLAYER ? "player" : "ai") + " mine captured by "
+            + (enemy == PLAYER ? "player" : "ai") + " id=" + std::to_string(extractor->id));
+    }
+}
+
 void Game::updateDefenseTowers(float dt)
 {
     const auto distanceSquared = [](Point a, Point b) {
@@ -1081,6 +1196,92 @@ void Game::updateDefenseTowers(float dt)
         addFloatingText(unitCenter(*target) + sf::Vector2f(0.f, -14.f),
                         "-" + std::to_string(damage), sf::Color(255, 218, 112), 13);
     }
+}
+
+void Game::cleanupDestroyedBuildings()
+{
+    for (auto it = buildings.begin(); it != buildings.end(); ) {
+        if (it->health > 0) {
+            ++it;
+            continue;
+        }
+
+        const Building destroyed = *it;
+        resetWorkersForBuilding(destroyed.id);
+        if (destroyed.type == building::Extractor && destroyed.resourceIndex >= 0
+            && destroyed.resourceIndex < static_cast<int>(resources.size())) {
+            auto& node = resources[destroyed.resourceIndex];
+            node.owner = -1;
+            node.contestingTeam = -1;
+            node.captureProgress = 0.f;
+            setTileID(destroyed.point.x, destroyed.point.y, tile::Resource);
+        }
+        else {
+            setTileID(destroyed.point.x, destroyed.point.y, tile::Empty);
+        }
+        addFloatingText(sf::Vector2f(destroyed.point.x * SqureSize, destroyed.point.y * SqureSize - 8.f),
+                        std::string(buildingName(destroyed.type)) + " down", sf::Color(255, 218, 112), 12);
+        logEvent(std::string(destroyed.team == PLAYER ? "player" : "ai") + " "
+            + buildingName(destroyed.type) + " destroyed id=" + std::to_string(destroyed.id));
+        it = buildings.erase(it);
+    }
+}
+
+Building* Game::chooseBuildingTarget(MoveableUnit& unit)
+{
+    Building* best = nullptr;
+    int bestScore = std::numeric_limits<int>::max();
+    for (auto& building : buildings) {
+        if (building.team == unit.myteam || building.health <= 0 || !building.complete) {
+            continue;
+        }
+
+        int priority = 400;
+        if (building.type == building::DefenseTower) {
+            priority = 0;
+        }
+        else if (building.type == building::Extractor) {
+            priority = 120;
+        }
+        else if (building.type == building::Barracks) {
+            priority = 220;
+        }
+
+        const int score = priority + distanceSquared(Point(unit.x, unit.y), building.point);
+        if (score < bestScore) {
+            bestScore = score;
+            best = &building;
+        }
+    }
+    return best;
+}
+
+bool Game::canAttackBuilding(const MoveableUnit& unit, const Building& building) const
+{
+    if (building.team == unit.myteam || building.health <= 0 || !building.complete) {
+        return false;
+    }
+    const int range = std::max(1, unit.myAttackRange());
+    return distanceSquared(Point(unit.x, unit.y), building.point) <= range * range;
+}
+
+void Game::autoAttackBuilding(MoveableUnit& unit, Building& building)
+{
+    if (!canAttackBuilding(unit, building)) {
+        return;
+    }
+
+    const float typeFactor = unit.unitName == UName::CAVALRY ? 1.15f : (unit.unitName == UName::SHOOTER ? 0.82f : 1.f);
+    const int damage = std::max(1, static_cast<int>(std::round(static_cast<float>(unit.myattack())
+        * damageMultiplier(unit.myteam) * config::BuildingDamageFactor * typeFactor)));
+    building.health -= damage;
+
+    const sf::Vector2f origin(building.point.x * SqureSize + SqureSize / 2.f, building.point.y * SqureSize + SqureSize / 2.f);
+    const sf::Vector2f attackVector = origin - unitCenter(unit);
+    unit.playFlash(sf::Color(255, 245, 180, 255), 0.14f);
+    unit.playAction(attackVector, 0.16f);
+    addAttackEffect(unitCenter(unit), origin, unit.myteam == PLAYER ? sf::Color(255, 211, 84) : sf::Color(118, 178, 255));
+    addFloatingText(origin + sf::Vector2f(0.f, -14.f), "-" + std::to_string(damage), sf::Color(255, 218, 112), 12);
 }
 
 MoveableUnit* Game::findMoveableUnitById(int id)
@@ -1729,7 +1930,19 @@ void Game::drawResourceNodes()
         crystal.setOutlineThickness(1.2f);
         window.draw(crystal);
 
-        sf::Text label("+" + std::to_string(config::ResourceCommandIncome), myfont, 11);
+        if (node.captureProgress > 0.f) {
+            const float pct = std::clamp(node.captureProgress / config::ResourceCaptureSeconds, 0.f, 1.f);
+            sf::RectangleShape capBg(sf::Vector2f(18.f, 3.f));
+            capBg.setPosition(center + sf::Vector2f(-9.f, 12.f));
+            capBg.setFillColor(sf::Color(31, 27, 21, 180));
+            window.draw(capBg);
+            sf::RectangleShape capBar(sf::Vector2f(18.f * pct, 3.f));
+            capBar.setPosition(capBg.getPosition());
+            capBar.setFillColor(node.contestingTeam == PLAYER ? sf::Color(255, 220, 93) : sf::Color(145, 196, 255));
+            window.draw(capBar);
+        }
+
+        sf::Text label("+" + std::to_string(node.income), myfont, 11);
         label.setFillColor(sf::Color(63, 49, 25));
         label.setOutlineColor(sf::Color(255, 245, 190, 180));
         label.setOutlineThickness(0.8f);
@@ -1775,6 +1988,18 @@ void Game::drawBuildings()
             queueText.setOutlineThickness(0.8f);
             queueText.setPosition(origin + sf::Vector2f(2.f, 10.f));
             window.draw(queueText);
+        }
+
+        if (building.maxHealth > 0 && building.health < building.maxHealth) {
+            const float pct = std::clamp(static_cast<float>(building.health) / static_cast<float>(building.maxHealth), 0.f, 1.f);
+            sf::RectangleShape hpBg(sf::Vector2f(18.f, 2.f));
+            hpBg.setPosition(origin + sf::Vector2f(1.f, 18.f));
+            hpBg.setFillColor(sf::Color(42, 23, 20, 190));
+            window.draw(hpBg);
+            sf::RectangleShape hpBar(sf::Vector2f(18.f * pct, 2.f));
+            hpBar.setPosition(hpBg.getPosition());
+            hpBar.setFillColor(sf::Color(112, 230, 118));
+            window.draw(hpBar);
         }
     }
 }
@@ -1870,14 +2095,15 @@ void Game::drawTutorialOverlay()
         "",
         "Automation",
         "  Drones auto-build first. When work is done, they return to harvesting.",
-        "  Extractors only pay income while a drone is actively harvesting there.",
-        "  Combat units auto-path, choose targets, and attack on cooldown.",
+        "  Extractors only pay income while a drone is harvesting and the mine is not contested.",
+        "  Combat units auto-path, attack enemy units, then raid towers, mines, and barracks.",
         "  Towers auto-fire at enemies inside range and also scale with LEVEL.",
+        "  Enemy mines can be captured by holding the area with more units than defenders.",
         "",
         "Unlocks",
-        "  Infantry: needs 1 Barracks.",
-        "  Shooter: needs 1 Barracks and 1 Mine or Upgrade 1.",
-        "  Cavalry: needs 2 Barracks and 2 Mines or Upgrade 2.",
+        "  Infantry: 9 CMD, needs 1 Barracks.",
+        "  Shooter: 14 CMD, needs 1 Barracks and 1 Mine or Upgrade 1.",
+        "  Cavalry: 22 CMD, needs 2 Barracks and 2 Mines or Upgrade 2.",
         "",
         "Hotkeys",
         "  H: show / hide this guide.  C: restart map.  Esc: back to menu."
@@ -2146,20 +2372,27 @@ void Game::placeResourceNodes()
 {
     const int mapW = width / SqureSize;
     const int mapH = height / SqureSize;
-    const std::vector<Point> targets = {
-        Point(mapW / 2, mapH / 2),
-        Point(mapW / 2, mapH / 3),
-        Point(mapW / 2, mapH * 2 / 3),
-        Point(mapW / 3, mapH / 2),
-        Point(mapW * 2 / 3, mapH / 2)
+    struct ResourceTarget
+    {
+        Point point;
+        int income = config::ResourceCommandIncome;
+    };
+    const std::vector<ResourceTarget> targets = {
+        {Point(Red_baseP.x + 8, Red_baseP.y + 4), 6},
+        {Point(Blue_baseP.x - 8, Blue_baseP.y - 4), 6},
+        {Point(mapW / 2, mapH / 2), 10},
+        {Point(mapW / 2, mapH / 4), 7},
+        {Point(mapW / 2, mapH * 3 / 4), 7},
+        {Point(mapW / 3, mapH / 2), 8},
+        {Point(mapW * 2 / 3, mapH / 2), 8}
     };
 
     for (const auto& target : targets) {
-        Point best = target;
+        Point best = target.point;
         bool found = false;
-        for (int radius = 0; radius < 10 && !found; ++radius) {
-            for (int y = target.y - radius; y <= target.y + radius && !found; ++y) {
-                for (int x = target.x - radius; x <= target.x + radius; ++x) {
+        for (int radius = 0; radius < 18 && !found; ++radius) {
+            for (int y = target.point.y - radius; y <= target.point.y + radius && !found; ++y) {
+                for (int x = target.point.x - radius; x <= target.point.x + radius; ++x) {
                     if (!isMapCell(x, y)) {
                         continue;
                     }
@@ -2167,7 +2400,7 @@ void Game::placeResourceNodes()
                     const bool duplicate = std::any_of(resources.begin(), resources.end(), [x, y](const ResourceNode& node) {
                         return nearPoint(node.point, Point(x, y), 4);
                     });
-                    if (!duplicate && id == tile::Empty && !nearPoint(Point(x, y), Red_baseP, 7) && !nearPoint(Point(x, y), Blue_baseP, 7)) {
+                    if (!duplicate && id == tile::Empty && !nearPoint(Point(x, y), Red_baseP, 4) && !nearPoint(Point(x, y), Blue_baseP, 4)) {
                         best = Point(x, y);
                         found = true;
                         break;
@@ -2179,9 +2412,9 @@ void Game::placeResourceNodes()
             continue;
         }
 
-        // Clear a tiny capture plaza so resource fights are readable.
-        for (int y = best.y - 1; y <= best.y + 1; ++y) {
-            for (int x = best.x - 1; x <= best.x + 1; ++x) {
+        // Clear a small capture plaza so resource fights and hand-offs are readable.
+        for (int y = best.y - 2; y <= best.y + 2; ++y) {
+            for (int x = best.x - 2; x <= best.x + 2; ++x) {
                 if (isMapCell(x, y)) {
                     setTileID(x, y, tile::Empty);
                 }
@@ -2190,6 +2423,7 @@ void Game::placeResourceNodes()
         ResourceNode node;
         node.point = best;
         node.owner = -1;
+        node.income = target.income;
         resources.push_back(node);
         setTileID(best.x, best.y, tile::Resource);
     }
@@ -2201,22 +2435,21 @@ void Game::updateResourceControl()
         auto& node = resources[i];
         const int previousOwner = node.owner;
         node.owner = -1;
-        for (const auto& building : buildings) {
-            if (building.type == building::Extractor
-                && building.resourceIndex == static_cast<int>(i)
-                && hasActiveHarvester(building)) {
-                node.owner = building.team;
-                break;
-            }
+        const Building* extractor = findResourceExtractor(static_cast<int>(i));
+        if (extractor != nullptr && extractor->complete) {
+            const int enemy = extractor->team == PLAYER ? AI : PLAYER;
+            const bool contested = node.contestingTeam == enemy && node.captureProgress > 0.f;
+            node.owner = contested ? -2 : (hasActiveHarvester(*extractor) ? extractor->team : -1);
         }
 
         if (node.owner != previousOwner) {
             node.pulseClock.restart();
             const sf::Vector2f pos(node.point.x * SqureSize + SqureSize / 2.f, node.point.y * SqureSize - 4.f);
-            const std::string text = node.owner == PLAYER ? "MINE ONLINE" : (node.owner == AI ? "ENEMY MINE" : "MINE IDLE");
+            const std::string text = node.owner == PLAYER ? "MINE ONLINE"
+                : (node.owner == AI ? "ENEMY MINE" : (node.owner == -2 ? "CONTESTED" : "MINE IDLE"));
             const sf::Color color = node.owner == PLAYER
                 ? sf::Color(255, 220, 93)
-                : (node.owner == AI ? sf::Color(145, 196, 255) : sf::Color(205, 196, 158));
+                : (node.owner == AI ? sf::Color(145, 196, 255) : (node.owner == -2 ? sf::Color(255, 126, 84) : sf::Color(205, 196, 158)));
             addFloatingText(pos, text, color, 12);
             startScreenShake(0.10f, 1.5f);
         }
@@ -2228,7 +2461,7 @@ int Game::resourceIncome(int team) const
     int income = config::BaseCommandIncome;
     for (const auto& node : resources) {
         if (node.owner == team) {
-            income += config::ResourceCommandIncome;
+            income += node.income;
         }
     }
     return income;

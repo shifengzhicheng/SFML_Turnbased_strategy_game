@@ -322,11 +322,11 @@ namespace
     {
         switch (icon) {
         case art::UnitKind::Infantry:
-            return "3";
+            return "9";
         case art::UnitKind::Shooter:
-            return "4";
+            return "14";
         case art::UnitKind::Cavalry:
-            return "6";
+            return "22";
         default:
             return "";
         }

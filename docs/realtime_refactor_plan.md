@@ -55,5 +55,13 @@ The current milestone implements the full first RTS loop:
   economy has a predictable ceiling instead of unbounded structure spam.
 - Tech upgrades advance through levels; each level increases global unit and
   tower damage through `TechDamageBonus`.
+- Unit/building costs were raised so early-game choices matter: opening mine,
+  first barracks, first tower, and first tech level are now real trade-offs.
+- Resource nodes now support contention and capture. A mine stops paying while
+  contested, and ownership flips after one side holds the area long enough.
+- Buildings have HP. Units can raid towers, mines, and barracks; destroyed mines
+  return the tile to a rebuildable resource point.
+- Resource layout now includes safer natural nodes plus higher-value central and
+  flank nodes, giving the map clearer expansion and conflict zones.
 - Run `TBS_LOG=1 ./sfml_tbs --simulate 120` from a build directory to print a
   120-second AI/economy timeline without entering the interactive loop.

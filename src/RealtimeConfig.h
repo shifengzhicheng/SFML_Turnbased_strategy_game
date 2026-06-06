@@ -4,7 +4,7 @@ namespace realtime
 {
     inline constexpr bool Enabled = true;
     inline constexpr float EconomyTickSeconds = 2.6f;
-    inline constexpr float AIThinkSeconds = 2.8f;
+    inline constexpr float AIThinkSeconds = 3.2f;
     inline constexpr int AIUnitsPerBurst = 1;
     inline constexpr int StartingWorkers = 2;
     inline constexpr int MaxWorkers = 6;
@@ -24,7 +24,7 @@ namespace realtime
     inline constexpr float ExtractorBuildSeconds = 5.5f;
     inline constexpr float BarracksBuildSeconds = 9.0f;
     inline constexpr float DefenseTowerBuildSeconds = 6.5f;
-    inline constexpr float InfantryTrainSeconds = 3.6f;
-    inline constexpr float ShooterTrainSeconds = 4.6f;
-    inline constexpr float CavalryTrainSeconds = 6.2f;
+    inline constexpr float InfantryTrainSeconds = 4.8f;
+    inline constexpr float ShooterTrainSeconds = 6.0f;
+    inline constexpr float CavalryTrainSeconds = 8.0f;
 }

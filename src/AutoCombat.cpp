@@ -139,12 +139,26 @@ namespace
             return;
         }
 
+        Building* buildingTarget = game.chooseBuildingTarget(unit);
+        if (buildingTarget != nullptr && game.canAttackBuilding(unit, *buildingTarget)) {
+            unit.UnitState = UState::UNITNORMAL;
+            unit.mypath.clear();
+            unit.pendingPathRequest = 0;
+            if (unit.realtimeAttackTimer >= unit.realtimeAttackCooldownSeconds()) {
+                unit.realtimeAttackTimer = 0.f;
+                game.autoAttackBuilding(unit, *buildingTarget);
+            }
+            return;
+        }
+
         if (unit.realtimeMoveTimer < unit.realtimeMoveStepSeconds()) {
             return;
         }
         unit.realtimeMoveTimer -= unit.realtimeMoveStepSeconds();
 
-        const Point goal = chooseApproachPoint(game, unit, target);
+        const Point goal = buildingTarget != nullptr
+            ? game.findBuildStandPoint(*buildingTarget)
+            : chooseApproachPoint(game, unit, target);
         refreshPathIfNeeded(game, unit, goal);
         if (unit.mypath.empty()) {
             unit.UnitState = UState::UNITNORMAL;
