@@ -17,6 +17,8 @@ namespace art
         Infantry,
         Shooter,
         Cavalry,
+        Siege,
+        Guardian,
         Base,
         None
     };

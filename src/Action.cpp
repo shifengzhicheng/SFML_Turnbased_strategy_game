@@ -13,14 +13,20 @@ namespace
 
 	bool isCombatUnit(int unitName)
 	{
-		return unitName == UName::SHOOTER || unitName == UName::INFANTARY || unitName == UName::CAVALRY;
+		return unitName == UName::SHOOTER
+			|| unitName == UName::INFANTARY
+			|| unitName == UName::CAVALRY
+			|| unitName == UName::SIEGE
+			|| unitName == UName::GUARDIAN;
 	}
 
 	bool counters(int attacker, int defender)
 	{
 		return (attacker == UName::SHOOTER && defender == UName::INFANTARY)
 			|| (attacker == UName::INFANTARY && defender == UName::CAVALRY)
-			|| (attacker == UName::CAVALRY && defender == UName::SHOOTER);
+			|| (attacker == UName::CAVALRY && (defender == UName::SHOOTER || defender == UName::SIEGE))
+			|| (attacker == UName::SIEGE && defender == UName::GUARDIAN)
+			|| (attacker == UName::GUARDIAN && defender == UName::CAVALRY);
 	}
 
 	sf::Vector2f unitCenter(Unit* unit)
@@ -48,8 +54,8 @@ namespace
 			return result;
 		}
 
-		// The triangle is intentionally small and readable: shooter > infantry,
-		// infantry > cavalry, cavalry > shooter.
+		// The readable counter web stays small: core units form a triangle,
+		// while cavalry dives siege and siege cracks heavy guardians.
 		if (counters(attacker->unitName, defender->unitName)) {
 			result.amount = static_cast<int>(std::round(static_cast<float>(baseDamage) * 1.45f));
 			result.counter = true;

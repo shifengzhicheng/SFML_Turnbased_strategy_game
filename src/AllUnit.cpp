@@ -96,6 +96,40 @@ Cavalry::Cavalry(int _team, int _x, int _y, Game* _mygame) : MoveableUnit(_team,
 	myinfo.attackconsume = 10;
 }
 
+Siege::Siege(int _team, int _x, int _y, Game* _mygame) : MoveableUnit(_team, _x, _y, _mygame)
+{
+	UnitState = 0;
+	unitName = UName::SIEGE;
+	Health = 320;
+	art::makeUnitTexture(mytexture, art::UnitKind::Siege, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
+	setTexture(mytexture);
+	UnitText.setString("320/320");
+	placeUnitSprite(*this, _x, _y, config::UnitSpriteScale);
+	placeHealthLabel(UnitText, _x, _y);
+	myActionPoint = 12;
+	myinfo.actionPoint = 12;
+	myinfo.Health = 320;
+	attackmethod = make_unique<bombard>(mygame);
+	myinfo.attackconsume = 3;
+}
+
+Guardian::Guardian(int _team, int _x, int _y, Game* _mygame) : MoveableUnit(_team, _x, _y, _mygame)
+{
+	UnitState = 0;
+	unitName = UName::GUARDIAN;
+	Health = 820;
+	art::makeUnitTexture(mytexture, art::UnitKind::Guardian, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
+	setTexture(mytexture);
+	UnitText.setString("820/820");
+	placeUnitSprite(*this, _x, _y, config::UnitSpriteScale);
+	placeHealthLabel(UnitText, _x, _y);
+	myActionPoint = 16;
+	myinfo.actionPoint = 16;
+	myinfo.Health = 820;
+	attackmethod = make_unique<crush>(mygame);
+	myinfo.attackconsume = 4;
+}
+
 void MoveableUnit::Showpath(sf::Vector2f mousePos)
 {
 	mygame->drawPaths.clear();
@@ -516,6 +550,10 @@ float MoveableUnit::realtimeMoveStepSeconds() const
 		return realtime::ShooterStepSeconds;
 	case UName::CAVALRY:
 		return realtime::CavalryStepSeconds;
+	case UName::SIEGE:
+		return realtime::SiegeStepSeconds;
+	case UName::GUARDIAN:
+		return realtime::GuardianStepSeconds;
 	case UName::INFANTARY:
 	default:
 		return realtime::InfantryStepSeconds;
@@ -529,6 +567,10 @@ float MoveableUnit::realtimeAttackCooldownSeconds() const
 		return realtime::ShooterAttackCooldown;
 	case UName::CAVALRY:
 		return realtime::CavalryAttackCooldown;
+	case UName::SIEGE:
+		return realtime::SiegeAttackCooldown;
+	case UName::GUARDIAN:
+		return realtime::GuardianAttackCooldown;
 	case UName::INFANTARY:
 	default:
 		return realtime::InfantryAttackCooldown;

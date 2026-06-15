@@ -43,3 +43,17 @@ public:
 		range = 2;
 	}
 };
+class bombard : public Attacker {
+public:
+	bombard(Game* _game) : Attacker(_game) {
+		damage = 72;
+		range = 8;
+	}
+};
+class crush : public Attacker {
+public:
+	crush(Game* _game) : Attacker(_game) {
+		damage = 112;
+		range = 2;
+	}
+};

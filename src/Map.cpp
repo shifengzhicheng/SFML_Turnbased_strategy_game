@@ -189,6 +189,94 @@ namespace
         }
     }
 
+    void placeTributary(std::vector<std::vector<int>>& map, const std::vector<std::vector<bool>>& routeMask,
+                        GridPoint red, GridPoint blue, std::mt19937& rng)
+    {
+        const int lines = static_cast<int>(map.size());
+        const int cols = static_cast<int>(map.front().size());
+        std::uniform_int_distribution<int> drift(-1, 1);
+        std::uniform_int_distribution<int> chance(0, 99);
+        int x = cols / 2 + drift(rng) * 4;
+
+        for (int y = 2; y < lines - 2; ++y) {
+            if (chance(rng) < 42) {
+                x = std::clamp(x + drift(rng), 3, cols - 4);
+            }
+            const bool ford = (y % 11 == 0) || nearMask(routeMask, x, y, 2) || nearBase(GridPoint{x, y}, red, blue, 9);
+            if (ford) {
+                continue;
+            }
+            setIfInside(map, x, y, 2);
+            if (chance(rng) < 28) {
+                setIfInside(map, x + 1, y, 2);
+            }
+        }
+    }
+
+    void placeResourceCover(std::vector<std::vector<int>>& map, const std::vector<std::vector<bool>>& routeMask,
+                            const std::vector<GridPoint>& plazas, GridPoint red, GridPoint blue,
+                            std::mt19937& rng)
+    {
+        const int lines = static_cast<int>(map.size());
+        const int cols = static_cast<int>(map.front().size());
+        std::uniform_int_distribution<int> chance(0, 99);
+
+        for (const auto& plaza : plazas) {
+            for (int y = plaza.y - 6; y <= plaza.y + 6; ++y) {
+                for (int x = plaza.x - 6; x <= plaza.x + 6; ++x) {
+                    if (!inside(x, y, cols, lines) || map[y][x] != 0 || routeMask[y][x] || nearBase(GridPoint{x, y}, red, blue, 8)) {
+                        continue;
+                    }
+                    const int dx = x - plaza.x;
+                    const int dy = y - plaza.y;
+                    const int dist2 = dx * dx + dy * dy;
+                    if (dist2 < 16 || dist2 > 36) {
+                        continue;
+                    }
+
+                    // Broken rings create tactical cover around resources while
+                    // preserving clear lanes into the plaza.
+                    const bool onCardinalGate = std::abs(dx) <= 1 || std::abs(dy) <= 1;
+                    if (!onCardinalGate && chance(rng) < 42) {
+                        map[y][x] = chance(rng) < 72 ? 3 : 1;
+                    }
+                }
+            }
+        }
+    }
+
+    void placeRidgeFingers(std::vector<std::vector<int>>& map, const std::vector<std::vector<bool>>& routeMask,
+                           GridPoint red, GridPoint blue, std::mt19937& rng)
+    {
+        const int lines = static_cast<int>(map.size());
+        const int cols = static_cast<int>(map.front().size());
+        std::uniform_int_distribution<int> chance(0, 99);
+        const std::vector<GridPoint> anchors = {
+            GridPoint{cols / 4, lines / 3},
+            GridPoint{cols * 3 / 4, lines * 2 / 3},
+            GridPoint{cols / 3, lines * 3 / 4},
+            GridPoint{cols * 2 / 3, lines / 4}
+        };
+
+        for (const auto& anchor : anchors) {
+            int x = anchor.x;
+            int y = anchor.y;
+            for (int step = 0; step < 12; ++step) {
+                x += step % 2 == 0 ? 1 : 0;
+                y += step % 2 == 0 ? 0 : 1;
+                if (!inside(x, y, cols, lines) || map[y][x] != 0 || routeMask[y][x] || nearBase(GridPoint{x, y}, red, blue, 8)) {
+                    continue;
+                }
+                if (chance(rng) < 70) {
+                    map[y][x] = 1;
+                }
+                if (inside(x + 1, y, cols, lines) && map[y][x + 1] == 0 && !routeMask[y][x + 1] && chance(rng) < 35) {
+                    map[y][x + 1] = 1;
+                }
+            }
+        }
+    }
+
     void addBorder(std::vector<std::vector<int>>& map)
     {
         const int lines = static_cast<int>(map.size());
@@ -248,16 +336,19 @@ void mapgenerator::gmap(std::vector<std::vector<int>>& initMap, int cols, int li
     }
 
     placeRiver(initMap, routeMask, red, blue, rng);
+    placeTributary(initMap, routeMask, red, blue, rng);
 
-    const int mountainClusters = std::max(5, cols * lines / 360);
+    const int mountainClusters = std::max(7, cols * lines / 320);
     for (int i = 0; i < mountainClusters; ++i) {
         placeCluster(initMap, routeMask, GridPoint{xDist(rng), yDist(rng)}, mountainRadius(rng), 1, red, blue, rng);
     }
 
-    const int forestClusters = std::max(8, cols * lines / 240);
+    const int forestClusters = std::max(10, cols * lines / 210);
     for (int i = 0; i < forestClusters; ++i) {
         placeCluster(initMap, routeMask, GridPoint{xDist(rng), yDist(rng)}, forestRadius(rng), 3, red, blue, rng);
     }
+    placeRidgeFingers(initMap, routeMask, red, blue, rng);
+    placeResourceCover(initMap, routeMask, plazas, red, blue, rng);
 
     for (int y = 0; y < lines; ++y) {
         for (int x = 0; x < cols; ++x) {

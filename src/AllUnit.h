@@ -16,7 +16,7 @@ namespace UState {
 }
 namespace UName {
 	enum UnitName {
-		SHOOTER, INFANTARY, CAVALRY, BASE
+		SHOOTER, INFANTARY, CAVALRY, SIEGE, GUARDIAN, BASE
 	};
 }
 struct defaultInfo
@@ -138,4 +138,14 @@ class Infantry : public MoveableUnit
 {
 public:
 	Infantry(int _team, int _x, int _y, Game* _mygame);
+};
+class Siege : public MoveableUnit
+{
+public:
+	Siege(int _team, int _x, int _y, Game* _mygame);
+};
+class Guardian : public MoveableUnit
+{
+public:
+	Guardian(int _team, int _x, int _y, Game* _mygame);
 };

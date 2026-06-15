@@ -15,6 +15,7 @@
 #include "Map.h"
 #include "Effects.h"
 #include "Config.h"
+#include "RealtimeConfig.h"
 #include "AIController.h"
 #include "Building.h"
 #include "PathfindingService.h"
@@ -84,6 +85,8 @@ public:
     bool debugLogging = false;
     float playerIncomeTimer = 0.f;
     float aiIncomeTimer = 0.f;
+    float playerWorkerTimer = realtime::WorkerTrainSeconds;
+    float aiWorkerTimer = realtime::WorkerTrainSeconds;
     float gameTimeSeconds = 0.f;
     float debugSummaryTimer = 0.f;
     AIController aiController;
@@ -103,7 +106,7 @@ public:
     sf::Texture tEndBtnNormal, tEndBtnHover, tEndBtnClick;
     sf::Texture tOverBtnNormal, tOverBtnHover, tOverBtnClick;
     Button startBtn,EndTurnBtn;
-    Button inf, cav, sho;
+    Button inf, cav, sho, siegeBtn, guardianBtn;
     Button upgradeBtn;
     Button helpBtn;
     Button towerBtn;
@@ -111,6 +114,8 @@ public:
     sf::Texture tinf, tinfHover, tinfClick;
     sf::Texture tcav, tcavHover, tcavClick;
     sf::Texture tsho, tshoHover, tshoClick;
+    sf::Texture tSiege, tSiegeHover, tSiegeClick;
+    sf::Texture tGuardian, tGuardianHover, tGuardianClick;
     sf::Texture tUpgrade, tUpgradeHover, tUpgradeClick;
     sf::Texture tHelp, tHelpHover, tHelpClick;
     sf::Texture tTower, tTowerHover, tTowerClick;
@@ -122,6 +127,8 @@ public:
     sf::Text infantryLabel;
     sf::Text shooterLabel;
     sf::Text cavalryLabel;
+    sf::Text siegeLabel;
+    sf::Text guardianLabel;
     sf::Text towerLabel;
 
     Game();
@@ -184,6 +191,7 @@ public:
     bool isCellWalkableForUnit(int x, int y) const;
     bool isCellReservedForSpawn(int x, int y) const;
     bool isBuildableCell(int x, int y) const;
+    bool isBuildSiteInInfluence(int team, Point point, int type) const;
     
     void clear();
 
@@ -227,6 +235,7 @@ public:
     void logEvent(const std::string& message) const;
     void logDebugSummary() const;
     void assignWorkers();
+    bool tryAutoRecruitWorker(int team);
     int workerCount(int team) const;
     int assignedWorkerCount(int buildingId) const;
     bool hasActiveHarvester(const Building& building) const;

@@ -305,6 +305,80 @@ namespace
             target.draw(reins);
             break;
         }
+        case art::UnitKind::Siege: {
+            sf::ConvexShape carriage(6);
+            carriage.setPoint(0, sf::Vector2f(center.x - 10.f * scale, center.y + 5.f * scale));
+            carriage.setPoint(1, sf::Vector2f(center.x - 7.f * scale, center.y - 4.f * scale));
+            carriage.setPoint(2, sf::Vector2f(center.x + 3.f * scale, center.y - 8.f * scale));
+            carriage.setPoint(3, sf::Vector2f(center.x + 11.f * scale, center.y - 1.f * scale));
+            carriage.setPoint(4, sf::Vector2f(center.x + 8.f * scale, center.y + 8.f * scale));
+            carriage.setPoint(5, sf::Vector2f(center.x - 4.f * scale, center.y + 10.f * scale));
+            carriage.setFillColor(sf::Color(87, 73, 56));
+            carriage.setOutlineColor(dark);
+            carriage.setOutlineThickness(1.f * scale);
+            target.draw(carriage);
+
+            sf::RectangleShape barrel(sf::Vector2f(21.f * scale, 4.4f * scale));
+            barrel.setOrigin(3.f * scale, 2.2f * scale);
+            barrel.setPosition(center.x - 3.f * scale, center.y - 5.f * scale);
+            barrel.setRotation(-18.f);
+            barrel.setFillColor(sf::Color(221, 218, 196));
+            barrel.setOutlineColor(sf::Color(38, 35, 31));
+            barrel.setOutlineThickness(0.8f * scale);
+            target.draw(barrel);
+
+            sf::CircleShape wheelL(3.7f * scale, 18);
+            wheelL.setOrigin(3.7f * scale, 3.7f * scale);
+            wheelL.setPosition(center.x - 7.2f * scale, center.y + 8.f * scale);
+            wheelL.setFillColor(sf::Color(48, 42, 36));
+            wheelL.setOutlineColor(brass);
+            wheelL.setOutlineThickness(0.9f * scale);
+            target.draw(wheelL);
+
+            sf::CircleShape wheelR = wheelL;
+            wheelR.setPosition(center.x + 7.2f * scale, center.y + 5.8f * scale);
+            target.draw(wheelR);
+
+            sf::CircleShape spark(2.3f * scale, 12);
+            spark.setOrigin(2.3f * scale, 2.3f * scale);
+            spark.setPosition(center.x + 11.f * scale, center.y - 9.f * scale);
+            spark.setFillColor(sf::Color(255, 226, 112));
+            target.draw(spark);
+            break;
+        }
+        case art::UnitKind::Guardian: {
+            sf::ConvexShape armor(8);
+            armor.setPoint(0, sf::Vector2f(center.x - 8.f * scale, center.y + 10.f * scale));
+            armor.setPoint(1, sf::Vector2f(center.x - 11.f * scale, center.y + 1.f * scale));
+            armor.setPoint(2, sf::Vector2f(center.x - 8.f * scale, center.y - 8.f * scale));
+            armor.setPoint(3, sf::Vector2f(center.x - 1.f * scale, center.y - 12.f * scale));
+            armor.setPoint(4, sf::Vector2f(center.x + 8.f * scale, center.y - 8.f * scale));
+            armor.setPoint(5, sf::Vector2f(center.x + 11.f * scale, center.y + 1.f * scale));
+            armor.setPoint(6, sf::Vector2f(center.x + 7.f * scale, center.y + 10.f * scale));
+            armor.setPoint(7, sf::Vector2f(center.x - 1.f * scale, center.y + 13.f * scale));
+            armor.setFillColor(mix(main, sf::Color(65, 73, 70), 0.55f));
+            armor.setOutlineColor(sf::Color(31, 35, 33));
+            armor.setOutlineThickness(1.2f * scale);
+            target.draw(armor);
+
+            sf::RectangleShape crest(sf::Vector2f(4.f * scale, 14.f * scale));
+            crest.setOrigin(2.f * scale, 7.f * scale);
+            crest.setPosition(center.x, center.y - 1.f * scale);
+            crest.setFillColor(brass);
+            crest.setRotation(-12.f);
+            target.draw(crest);
+
+            sf::CircleShape core(4.8f * scale, 22);
+            core.setOrigin(4.8f * scale, 4.8f * scale);
+            core.setPosition(center.x + 1.f * scale, center.y - 2.f * scale);
+            core.setFillColor(sf::Color(255, 229, 120));
+            core.setOutlineColor(sf::Color(71, 53, 28));
+            core.setOutlineThickness(0.8f * scale);
+            target.draw(core);
+
+            drawSword(target, center + sf::Vector2f(8.f * scale, 2.f * scale), scale * 1.1f, sf::Color(250, 244, 211), dark);
+            break;
+        }
         default:
             break;
         }
@@ -327,6 +401,10 @@ namespace
             return "18";
         case art::UnitKind::Cavalry:
             return "30";
+        case art::UnitKind::Siege:
+            return "44";
+        case art::UnitKind::Guardian:
+            return "58";
         default:
             return "";
         }

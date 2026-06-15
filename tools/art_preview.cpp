@@ -33,7 +33,7 @@ int main(int argc, char** argv)
     }
 
     sf::RenderTexture canvas;
-    if (!canvas.create(920, 500)) {
+    if (!canvas.create(920, 560)) {
         return 1;
     }
     canvas.clear(sf::Color(28, 35, 32));
@@ -68,24 +68,28 @@ int main(int argc, char** argv)
     }
     canvas.draw(grid);
 
-    sf::Texture infantry, shooter, cavalry, enemy, endTurn, infButton, shoButton, cavButton;
+    sf::Texture infantry, shooter, cavalry, siege, guardian, enemy, endTurn, infButton, shoButton, cavButton, siegeButton, guardianButton;
     art::makeUnitTexture(infantry, art::UnitKind::Infantry, art::Team::Player);
     art::makeUnitTexture(shooter, art::UnitKind::Shooter, art::Team::Player);
     art::makeUnitTexture(cavalry, art::UnitKind::Cavalry, art::Team::Player);
+    art::makeUnitTexture(siege, art::UnitKind::Siege, art::Team::Player);
+    art::makeUnitTexture(guardian, art::UnitKind::Guardian, art::Team::Player);
     art::makeUnitTexture(enemy, art::UnitKind::Shooter, art::Team::Enemy);
     art::makeButtonTexture(endTurn, font, "END TURN", art::ButtonState::Hover, sf::Vector2u(128, 44));
-    art::makeButtonTexture(infButton, font, "Infantry", art::ButtonState::Normal, sf::Vector2u(128, 54), art::UnitKind::Infantry, art::Team::Player);
-    art::makeButtonTexture(shoButton, font, "Shooter", art::ButtonState::Hover, sf::Vector2u(128, 54), art::UnitKind::Shooter, art::Team::Player);
-    art::makeButtonTexture(cavButton, font, "Cavalry", art::ButtonState::Pressed, sf::Vector2u(128, 54), art::UnitKind::Cavalry, art::Team::Player);
+    art::makeButtonTexture(infButton, font, "Infantry", art::ButtonState::Normal, sf::Vector2u(128, 42), art::UnitKind::Infantry, art::Team::Player);
+    art::makeButtonTexture(shoButton, font, "Shooter", art::ButtonState::Hover, sf::Vector2u(128, 42), art::UnitKind::Shooter, art::Team::Player);
+    art::makeButtonTexture(cavButton, font, "Cavalry", art::ButtonState::Pressed, sf::Vector2u(128, 42), art::UnitKind::Cavalry, art::Team::Player);
+    art::makeButtonTexture(siegeButton, font, "Siege", art::ButtonState::Normal, sf::Vector2u(128, 42), art::UnitKind::Siege, art::Team::Player);
+    art::makeButtonTexture(guardianButton, font, "Guard", art::ButtonState::Hover, sf::Vector2u(128, 42), art::UnitKind::Guardian, art::Team::Player);
 
-    const sf::Vector2f unitPositions[] = {{104.f, 124.f}, {164.f, 164.f}, {244.f, 244.f}, {384.f, 164.f}};
-    const sf::Texture* unitTextures[] = {&infantry, &shooter, &cavalry, &enemy};
-    for (int i = 0; i < 4; ++i) {
+    const sf::Vector2f unitPositions[] = {{104.f, 124.f}, {164.f, 164.f}, {244.f, 244.f}, {324.f, 204.f}, {404.f, 244.f}, {464.f, 164.f}};
+    const sf::Texture* unitTextures[] = {&infantry, &shooter, &cavalry, &siege, &guardian, &enemy};
+    for (int i = 0; i < 6; ++i) {
         sf::CircleShape base(9.f, 24);
         base.setOrigin(9.f, 9.f);
         base.setScale(1.15f, 0.62f);
         base.setPosition(unitPositions[i].x + 10.f, unitPositions[i].y + 17.f);
-        base.setFillColor(i == 3 ? sf::Color(61, 128, 206, 110) : sf::Color(218, 76, 60, 110));
+        base.setFillColor(i == 5 ? sf::Color(61, 128, 206, 110) : sf::Color(218, 76, 60, 110));
         canvas.draw(base);
 
         sf::Sprite sprite(*unitTextures[i]);
@@ -94,9 +98,9 @@ int main(int argc, char** argv)
         canvas.draw(sprite);
     }
 
-    const sf::Vector2f closePositions[] = {{96.f, 448.f}, {176.f, 448.f}, {256.f, 448.f}, {336.f, 448.f}};
-    const char* names[] = {"Inf", "Bow", "Cav", "Enemy"};
-    for (int i = 0; i < 4; ++i) {
+    const sf::Vector2f closePositions[] = {{96.f, 448.f}, {176.f, 448.f}, {256.f, 448.f}, {336.f, 448.f}, {416.f, 448.f}, {496.f, 448.f}};
+    const char* names[] = {"Inf", "Bow", "Cav", "Siege", "Guard", "Enemy"};
+    for (int i = 0; i < 6; ++i) {
         sf::Sprite sprite(*unitTextures[i]);
         sprite.setOrigin(unitTextures[i]->getSize().x / 2.f, unitTextures[i]->getSize().y / 2.f);
         sprite.setPosition(closePositions[i]);
@@ -124,7 +128,7 @@ int main(int argc, char** argv)
     crystal.setOutlineThickness(2.f);
     canvas.draw(crystal);
 
-    sf::RectangleShape panel(sf::Vector2f(176.f, 440.f));
+    sf::RectangleShape panel(sf::Vector2f(176.f, 500.f));
     panel.setPosition(642.f, 40.f);
     panel.setFillColor(sf::Color(35, 43, 39));
     panel.setOutlineColor(sf::Color(219, 166, 75));
@@ -137,15 +141,19 @@ int main(int argc, char** argv)
     drawLabel(canvas, font, "Click again:", 660.f, 170.f);
     drawLabel(canvas, font, "build more", 660.f, 190.f);
 
-    sf::Sprite b1(endTurn), b2(infButton), b3(shoButton), b4(cavButton);
+    sf::Sprite b1(endTurn), b2(infButton), b3(shoButton), b4(cavButton), b5(siegeButton), b6(guardianButton);
     b1.setPosition(666.f, 226.f);
-    b2.setPosition(666.f, 284.f);
-    b3.setPosition(666.f, 354.f);
-    b4.setPosition(666.f, 424.f);
+    b2.setPosition(666.f, 278.f);
+    b3.setPosition(666.f, 326.f);
+    b4.setPosition(666.f, 374.f);
+    b5.setPosition(666.f, 422.f);
+    b6.setPosition(666.f, 470.f);
     canvas.draw(b1);
     canvas.draw(b2);
     canvas.draw(b3);
     canvas.draw(b4);
+    canvas.draw(b5);
+    canvas.draw(b6);
 
     canvas.display();
     const std::string out = argc > 1 ? argv[1] : "build/art_preview.png";

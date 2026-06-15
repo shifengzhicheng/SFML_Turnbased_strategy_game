@@ -158,6 +158,10 @@ namespace
             return realtime::ShooterTrainSeconds;
         case UName::CAVALRY:
             return realtime::CavalryTrainSeconds;
+        case UName::SIEGE:
+            return realtime::SiegeTrainSeconds;
+        case UName::GUARDIAN:
+            return realtime::GuardianTrainSeconds;
         case UName::INFANTARY:
         default:
             return realtime::InfantryTrainSeconds;
@@ -210,15 +214,22 @@ void Game::loadpic()
     art::makeButtonTexture(tOverBtnNormal, myfont, "PLAY AGAIN", art::ButtonState::Normal, sf::Vector2u(240, 96));
     art::makeButtonTexture(tOverBtnHover, myfont, "PLAY AGAIN", art::ButtonState::Hover, sf::Vector2u(250, 100));
     art::makeButtonTexture(tOverBtnClick, myfont, "PLAY AGAIN", art::ButtonState::Pressed, sf::Vector2u(232, 92));
-    art::makeButtonTexture(tinf, myfont, "Infantry", art::ButtonState::Normal, sf::Vector2u(128, 54), art::UnitKind::Infantry, art::Team::Player);
-    art::makeButtonTexture(tinfHover, myfont, "Infantry", art::ButtonState::Hover, sf::Vector2u(128, 54), art::UnitKind::Infantry, art::Team::Player);
-    art::makeButtonTexture(tinfClick, myfont, "Infantry", art::ButtonState::Pressed, sf::Vector2u(128, 54), art::UnitKind::Infantry, art::Team::Player);
-    art::makeButtonTexture(tcav, myfont, "Cavalry", art::ButtonState::Normal, sf::Vector2u(128, 54), art::UnitKind::Cavalry, art::Team::Player);
-    art::makeButtonTexture(tcavHover, myfont, "Cavalry", art::ButtonState::Hover, sf::Vector2u(128, 54), art::UnitKind::Cavalry, art::Team::Player);
-    art::makeButtonTexture(tcavClick, myfont, "Cavalry", art::ButtonState::Pressed, sf::Vector2u(128, 54), art::UnitKind::Cavalry, art::Team::Player);
-    art::makeButtonTexture(tsho, myfont, "Shooter", art::ButtonState::Normal, sf::Vector2u(128, 54), art::UnitKind::Shooter, art::Team::Player);
-    art::makeButtonTexture(tshoHover, myfont, "Shooter", art::ButtonState::Hover, sf::Vector2u(128, 54), art::UnitKind::Shooter, art::Team::Player);
-    art::makeButtonTexture(tshoClick, myfont, "Shooter", art::ButtonState::Pressed, sf::Vector2u(128, 54), art::UnitKind::Shooter, art::Team::Player);
+    const sf::Vector2u unitButtonSize(128, 42);
+    art::makeButtonTexture(tinf, myfont, "Infantry", art::ButtonState::Normal, unitButtonSize, art::UnitKind::Infantry, art::Team::Player);
+    art::makeButtonTexture(tinfHover, myfont, "Infantry", art::ButtonState::Hover, unitButtonSize, art::UnitKind::Infantry, art::Team::Player);
+    art::makeButtonTexture(tinfClick, myfont, "Infantry", art::ButtonState::Pressed, unitButtonSize, art::UnitKind::Infantry, art::Team::Player);
+    art::makeButtonTexture(tcav, myfont, "Cavalry", art::ButtonState::Normal, unitButtonSize, art::UnitKind::Cavalry, art::Team::Player);
+    art::makeButtonTexture(tcavHover, myfont, "Cavalry", art::ButtonState::Hover, unitButtonSize, art::UnitKind::Cavalry, art::Team::Player);
+    art::makeButtonTexture(tcavClick, myfont, "Cavalry", art::ButtonState::Pressed, unitButtonSize, art::UnitKind::Cavalry, art::Team::Player);
+    art::makeButtonTexture(tsho, myfont, "Shooter", art::ButtonState::Normal, unitButtonSize, art::UnitKind::Shooter, art::Team::Player);
+    art::makeButtonTexture(tshoHover, myfont, "Shooter", art::ButtonState::Hover, unitButtonSize, art::UnitKind::Shooter, art::Team::Player);
+    art::makeButtonTexture(tshoClick, myfont, "Shooter", art::ButtonState::Pressed, unitButtonSize, art::UnitKind::Shooter, art::Team::Player);
+    art::makeButtonTexture(tSiege, myfont, "Siege", art::ButtonState::Normal, unitButtonSize, art::UnitKind::Siege, art::Team::Player);
+    art::makeButtonTexture(tSiegeHover, myfont, "Siege", art::ButtonState::Hover, unitButtonSize, art::UnitKind::Siege, art::Team::Player);
+    art::makeButtonTexture(tSiegeClick, myfont, "Siege", art::ButtonState::Pressed, unitButtonSize, art::UnitKind::Siege, art::Team::Player);
+    art::makeButtonTexture(tGuardian, myfont, "Guard", art::ButtonState::Normal, unitButtonSize, art::UnitKind::Guardian, art::Team::Player);
+    art::makeButtonTexture(tGuardianHover, myfont, "Guard", art::ButtonState::Hover, unitButtonSize, art::UnitKind::Guardian, art::Team::Player);
+    art::makeButtonTexture(tGuardianClick, myfont, "Guard", art::ButtonState::Pressed, unitButtonSize, art::UnitKind::Guardian, art::Team::Player);
     art::makeButtonTexture(tUpgrade, myfont, "UPGRADE", art::ButtonState::Normal, sf::Vector2u(128, 44));
     art::makeButtonTexture(tUpgradeHover, myfont, "UPGRADE", art::ButtonState::Hover, sf::Vector2u(128, 44));
     art::makeButtonTexture(tUpgradeClick, myfont, "UPGRADE", art::ButtonState::Pressed, sf::Vector2u(128, 44));
@@ -235,6 +246,8 @@ void Game::loadpic()
     inf.setTextures(tinf, tinfHover, tinfClick);
     cav.setTextures(tcav, tcavHover, tcavClick);
     sho.setTextures(tsho, tshoHover, tshoClick);
+    siegeBtn.setTextures(tSiege, tSiegeHover, tSiegeClick);
+    guardianBtn.setTextures(tGuardian, tGuardianHover, tGuardianClick);
     upgradeBtn.setTextures(tUpgrade, tUpgradeHover, tUpgradeClick);
     helpBtn.setTextures(tHelp, tHelpHover, tHelpClick);
     towerBtn.setTextures(tTower, tTowerHover, tTowerClick);
@@ -254,9 +267,11 @@ void Game::Initial()
     setupText(CommandText, myfont, 14, sf::Color(255, 218, 112), "", panelTextX, 176.f);
     setupText(panelTitle, myfont, 19, sf::Color(255, 246, 208), "AUTO WAR", panelTextX, 16.f);
     setupText(panelHint, myfont, 13, sf::Color(211, 199, 165), "Select base\nto train", panelTextX, 232.f);
-    setupText(infantryLabel, myfont, 11, sf::Color(228, 218, 185), "12 CMD core", panelTextX, config::BuildInfantryY + 57.f);
-    setupText(shooterLabel, myfont, 11, sf::Color(228, 218, 185), "18 CMD mine/Lv1", panelTextX, config::BuildShooterY + 57.f);
-    setupText(cavalryLabel, myfont, 11, sf::Color(228, 218, 185), "30 CMD 2 rax", panelTextX, config::BuildCavalryY + 57.f);
+    setupText(infantryLabel, myfont, 10, sf::Color(228, 218, 185), "12 core", panelTextX, config::BuildInfantryY + 43.f);
+    setupText(shooterLabel, myfont, 10, sf::Color(228, 218, 185), "18 mine/Lv1", panelTextX, config::BuildShooterY + 43.f);
+    setupText(cavalryLabel, myfont, 10, sf::Color(228, 218, 185), "30 2 rax", panelTextX, config::BuildCavalryY + 43.f);
+    setupText(siegeLabel, myfont, 10, sf::Color(228, 218, 185), "44 Lv2 siege", panelTextX, config::BuildSiegeY + 43.f);
+    setupText(guardianLabel, myfont, 10, sf::Color(228, 218, 185), "58 Lv3 tank", panelTextX, config::BuildGuardianY + 43.f);
     setupText(towerLabel, myfont, 11, sf::Color(228, 218, 185), "Base build mode", panelTextX, config::BuildTowerY + 46.f);
 
     sidePanel.setSize(sf::Vector2f(config::PanelWidth, config::WindowHeight));
@@ -271,6 +286,8 @@ void Game::Initial()
     inf.setPosition(config::ButtonX, config::BuildInfantryY);
     sho.setPosition(config::ButtonX, config::BuildShooterY);
     cav.setPosition(config::ButtonX, config::BuildCavalryY);
+    siegeBtn.setPosition(config::ButtonX, config::BuildSiegeY);
+    guardianBtn.setPosition(config::ButtonX, config::BuildGuardianY);
     towerBtn.setPosition(config::ButtonX, config::BuildTowerY);
 }
 
@@ -382,6 +399,29 @@ bool Game::isBuildableCell(int x, int y) const
     return tiles[y * horizontalTiles + x].getID() == tile::Empty && !isCellReservedForSpawn(x, y) && !workerOnCell;
 }
 
+bool Game::isBuildSiteInInfluence(int team, Point point, int type) const
+{
+    if (type == building::Extractor) {
+        return true;
+    }
+
+    const Point base = team == PLAYER ? Red_baseP : Blue_baseP;
+    const int radiusSquared = config::BuildInfluenceRadius * config::BuildInfluenceRadius;
+    if (distanceSquared(point, base) <= radiusSquared) {
+        return true;
+    }
+
+    for (const auto& building : buildings) {
+        if (building.team != team || !building.complete) {
+            continue;
+        }
+        if (distanceSquared(point, building.point) <= radiusSquared) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void Game::setTileID(int x, int y, tile::ID id)
 {
     const auto index = y * horizontalTiles + x;
@@ -453,6 +493,8 @@ void Game::updateRealtime(float dt)
     updateResourceControl();
     updateRealtimeEconomy(dt);
     aiController.update(*this, dt);
+    playerWorkerTimer = std::min(playerWorkerTimer + dt, realtime::WorkerTrainSeconds);
+    aiWorkerTimer = std::min(aiWorkerTimer + dt, realtime::WorkerTrainSeconds);
     assignWorkers();
     updateWorkers(dt);
     updateProduction(dt);
@@ -576,6 +618,33 @@ int Game::workerCount(int team) const
     return static_cast<int>(std::count_if(workers.begin(), workers.end(), [team](const Worker& worker) {
         return worker.team == team;
     }));
+}
+
+bool Game::tryAutoRecruitWorker(int team)
+{
+    if (workerCount(team) >= realtime::MaxWorkers || commandPool(*this, team) < config::WorkerCost) {
+        return false;
+    }
+
+    float& timer = team == PLAYER ? playerWorkerTimer : aiWorkerTimer;
+    if (timer < realtime::WorkerTrainSeconds) {
+        return false;
+    }
+
+    const Point spawn = workerSpawnPoint(team);
+    if (!isCellWalkableForUnit(spawn.x, spawn.y) || isCellReservedForSpawn(spawn.x, spawn.y)) {
+        return false;
+    }
+
+    commandPool(*this, team) -= config::WorkerCost;
+    timer = 0.f;
+    createWorker(team, spawn);
+    if (team == PLAYER) {
+        addFloatingText(sf::Vector2f(spawn.x * SqureSize, spawn.y * SqureSize - 8.f),
+                        "Drone -" + std::to_string(config::WorkerCost), sf::Color(218, 255, 134), 12);
+    }
+    logEvent(std::string(team == PLAYER ? "player" : "ai") + " recruited drone id=" + std::to_string(workers.back().id));
+    return true;
 }
 
 int Game::assignedWorkerCount(int buildingId) const
@@ -757,10 +826,10 @@ int Game::buildingCap(int team, int type) const
 {
     const int tech = team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
     if (type == building::Barracks) {
-        return std::min(config::BarracksCap, config::BarracksBaseCap + tech);
+        return std::min(config::BarracksCap, config::BarracksBaseCap + tech + completedBuildingCount(team, building::Extractor) / 2);
     }
     if (type == building::DefenseTower) {
-        return std::min(config::TowerCap, config::TowerBaseCap + tech);
+        return std::min(config::TowerCap, config::TowerBaseCap + tech + completedBuildingCount(team, building::Extractor) / 3);
     }
     return static_cast<int>(resources.size());
 }
@@ -854,10 +923,12 @@ bool Game::requestBuildBarracks(int team, Point point)
         }
         return false;
     }
-    if (!isBuildableCell(point.x, point.y) || commandPool(*this, team) < config::BarracksCost) {
+    if (!isBuildableCell(point.x, point.y)
+        || !isBuildSiteInInfluence(team, point, building::Barracks)
+        || commandPool(*this, team) < config::BarracksCost) {
         if (team == PLAYER) {
             addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
-                            commandPool(*this, team) < config::BarracksCost ? "Need CMD" : "Bad site",
+                            commandPool(*this, team) < config::BarracksCost ? "Need CMD" : (!isBuildSiteInInfluence(team, point, building::Barracks) ? "Too far" : "Bad site"),
                             sf::Color(255, 214, 96), 12);
         }
         return false;
@@ -891,10 +962,12 @@ bool Game::requestBuildTower(int team, Point point)
         }
         return false;
     }
-    if (!isBuildableCell(point.x, point.y) || commandPool(*this, team) < config::TowerCost) {
+    if (!isBuildableCell(point.x, point.y)
+        || !isBuildSiteInInfluence(team, point, building::DefenseTower)
+        || commandPool(*this, team) < config::TowerCost) {
         if (team == PLAYER) {
             addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
-                            commandPool(*this, team) < config::TowerCost ? "Need CMD" : "Bad site",
+                            commandPool(*this, team) < config::TowerCost ? "Need CMD" : (!isBuildSiteInInfluence(team, point, building::DefenseTower) ? "Too far" : "Bad site"),
                             sf::Color(255, 214, 96), 12);
         }
         return false;
@@ -932,11 +1005,8 @@ void Game::assignWorkers()
         }
 
         Worker* worker = findAvailableWorker(building.team, true);
-        if (worker == nullptr) {
-            if (workerCount(building.team) < realtime::MaxWorkers) {
-                createWorker(building.team, workerSpawnPoint(building.team));
-                worker = &workers.back();
-            }
+        if (worker == nullptr && tryAutoRecruitWorker(building.team)) {
+            worker = &workers.back();
         }
         if (worker != nullptr) {
             assignWorkerToBuilding(*worker, building);
@@ -949,8 +1019,7 @@ void Game::assignWorkers()
         }
 
         Worker* worker = findIdleWorker(building.team);
-        if (worker == nullptr && workerCount(building.team) < realtime::MaxWorkers) {
-            createWorker(building.team, workerSpawnPoint(building.team));
+        if (worker == nullptr && tryAutoRecruitWorker(building.team)) {
             worker = &workers.back();
         }
         if (worker != nullptr) {
@@ -1320,7 +1389,19 @@ void Game::autoAttackBuilding(MoveableUnit& unit, Building& building)
         return;
     }
 
-    const float typeFactor = unit.unitName == UName::CAVALRY ? 1.15f : (unit.unitName == UName::SHOOTER ? 0.82f : 1.f);
+    float typeFactor = 1.f;
+    if (unit.unitName == UName::CAVALRY) {
+        typeFactor = 1.15f;
+    }
+    else if (unit.unitName == UName::SHOOTER) {
+        typeFactor = 0.82f;
+    }
+    else if (unit.unitName == UName::SIEGE) {
+        typeFactor = 2.05f;
+    }
+    else if (unit.unitName == UName::GUARDIAN) {
+        typeFactor = 1.35f;
+    }
     const int damage = std::max(1, static_cast<int>(std::round(static_cast<float>(unit.myattack())
         * damageMultiplier(unit.myteam) * config::BuildingDamageFactor * typeFactor)));
     building.health -= damage;
@@ -1771,6 +1852,12 @@ bool Game::createUnit(int team, int name, int x, int y)
     case UName::CAVALRY:
         unit = make_unique<Cavalry>(team, x, y, this);
         break;
+    case UName::SIEGE:
+        unit = make_unique<Siege>(team, x, y, this);
+        break;
+    case UName::GUARDIAN:
+        unit = make_unique<Guardian>(team, x, y, this);
+        break;
     default:
         return false;
     }
@@ -1825,6 +1912,14 @@ void Game::handleBuildButtons(Vector2i mousePos, Event event)
     if (cav.checkMouse(mousePos, event) == RELEASE) {
         enqueueUnit(PLAYER, UName::CAVALRY);
         cav.setState(NORMAL);
+    }
+    if (siegeBtn.checkMouse(mousePos, event) == RELEASE) {
+        enqueueUnit(PLAYER, UName::SIEGE);
+        siegeBtn.setState(NORMAL);
+    }
+    if (guardianBtn.checkMouse(mousePos, event) == RELEASE) {
+        enqueueUnit(PLAYER, UName::GUARDIAN);
+        guardianBtn.setState(NORMAL);
     }
 }
 
@@ -2139,11 +2234,11 @@ void Game::drawTutorialOverlay()
         "  Left click a gold node: queue an Extractor. The base auto-sends a drone.",
         "  Select the red base, then left click open land: queue a Barracks.",
         "  Select the red base, click Tower, then click open land: build defense.",
-        "  Click Infantry / Shooter / Cavalry: queue units in the least-busy Barracks.",
+        "  Click unit buttons: queue units in the least-busy Barracks.",
         "  Click Upgrade: spend CMD to enter the next LEVEL; units hit harder and caps rise.",
         "",
         "Automation",
-        "  Drones auto-build first. When work is done, they return to harvesting.",
+        "  Drones auto-build first. Extra drones cost CMD and train at the base.",
         "  Extractors only pay income while a drone is harvesting and the mine is not contested.",
         "  Combat units auto-path, attack enemy units, then raid towers, mines, and barracks.",
         "  Towers auto-fire at enemies inside range and also scale with LEVEL.",
@@ -2153,6 +2248,8 @@ void Game::drawTutorialOverlay()
         "  Infantry: 12 CMD, needs 1 Barracks.",
         "  Shooter: 18 CMD, needs 1 Barracks and 1 Mine or Upgrade 1.",
         "  Cavalry: 30 CMD, needs 2 Barracks and 2 Mines or Upgrade 2.",
+        "  Siege: 44 CMD, needs LEVEL 2, 2 Barracks, 2 Mines; shreds buildings.",
+        "  Guardian: 58 CMD, needs LEVEL 3, 3 Barracks, 3 Mines; anchors pushes.",
         "",
         "Hotkeys",
         "  H: show / hide this guide.  C: restart map.  Esc: back to menu."
@@ -2240,6 +2337,7 @@ void Game::DrawSidePanel()
         + "\nTick: +" + std::to_string(resourceIncome(PLAYER))
         + "\nDrone: " + std::to_string(workerCount(PLAYER))
         + "/" + std::to_string(realtime::MaxWorkers)
+        + " +" + std::to_string(config::WorkerCost)
         + "\nRax: " + std::to_string(completedBuildingCount(PLAYER, building::Barracks))
         + "/" + std::to_string(buildingCap(PLAYER, building::Barracks))
         + "  Lv: " + std::to_string(playerUpgradeLevel)
@@ -2265,11 +2363,13 @@ void Game::DrawSidePanel()
     const bool canBuild = Base_red && Base_red->UnitState == UState::UNITCLICK;
     panelHint.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 216.f);
     panelHint.setString(canBuild
-        ? (towerPlacementMode ? "Tower mode: click land\nClick gold: mine" : "Click land: rax\nTower btn: defense")
+        ? (towerPlacementMode ? "Tower: click in range\nClick gold: mine" : "Click in range: rax\nTower btn: defense")
         : "Click gold: mine\nSelect base: build");
     inf.setColor(canQueueUnit(PLAYER, UName::INFANTARY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
     sho.setColor(canQueueUnit(PLAYER, UName::SHOOTER) ? sf::Color::White : sf::Color(255, 255, 255, 130));
     cav.setColor(canQueueUnit(PLAYER, UName::CAVALRY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
+    siegeBtn.setColor(canQueueUnit(PLAYER, UName::SIEGE) ? sf::Color::White : sf::Color(255, 255, 255, 130));
+    guardianBtn.setColor(canQueueUnit(PLAYER, UName::GUARDIAN) ? sf::Color::White : sf::Color(255, 255, 255, 130));
     const bool canQueueTower = canBuild
         && commandForTeam(PLAYER) >= config::TowerCost
         && totalBuildingCount(PLAYER, building::DefenseTower) < buildingCap(PLAYER, building::DefenseTower);
@@ -2283,6 +2383,10 @@ void Game::DrawSidePanel()
     window.draw(shooterLabel);
     window.draw(cav);
     window.draw(cavalryLabel);
+    window.draw(siegeBtn);
+    window.draw(siegeLabel);
+    window.draw(guardianBtn);
+    window.draw(guardianLabel);
     window.draw(towerBtn);
     window.draw(towerLabel);
 }
@@ -2300,6 +2404,8 @@ void Game::clear()
     aiProductionDone = false;
     playerIncomeTimer = 0.f;
     aiIncomeTimer = 0.f;
+    playerWorkerTimer = realtime::WorkerTrainSeconds;
+    aiWorkerTimer = realtime::WorkerTrainSeconds;
     gameTimeSeconds = 0.f;
     debugSummaryTimer = 0.f;
     towerPlacementMode = false;
@@ -2532,6 +2638,10 @@ int Game::unitCost(int name) const
         return config::ShooterCost;
     case UName::CAVALRY:
         return config::CavalryCost;
+    case UName::SIEGE:
+        return config::SiegeCost;
+    case UName::GUARDIAN:
+        return config::GuardianCost;
     default:
         return 0;
     }
@@ -2549,6 +2659,10 @@ bool Game::isUnitUnlocked(int team, int name) const
         return barracks >= 1 && (extractors >= 1 || upgrade >= 1);
     case UName::CAVALRY:
         return barracks >= 2 && (extractors >= 2 || upgrade >= 2);
+    case UName::SIEGE:
+        return barracks >= 2 && extractors >= 2 && upgrade >= 2;
+    case UName::GUARDIAN:
+        return barracks >= 3 && extractors >= 3 && upgrade >= 3;
     default:
         return false;
     }
@@ -2833,13 +2947,25 @@ void Game::runAIProduction()
     const int playerInfantry = countUnitsNamed(myunits, UName::INFANTARY);
     const int playerShooters = countUnitsNamed(myunits, UName::SHOOTER);
     const int playerCavalry = countUnitsNamed(myunits, UName::CAVALRY);
+    const int playerSiege = countUnitsNamed(myunits, UName::SIEGE);
+    const int playerGuardian = countUnitsNamed(myunits, UName::GUARDIAN);
     const int counterPick = playerShooters > playerInfantry
         ? UName::CAVALRY
-        : (playerCavalry > playerShooters ? UName::INFANTARY : UName::SHOOTER);
+        : (playerCavalry + playerGuardian > playerShooters ? UName::INFANTARY : UName::SHOOTER);
     const int pressurePick = enemys.size() + 2 < myunits.size() ? UName::CAVALRY : UName::INFANTARY;
+    int techPick = counterPick;
+    if (isUnitUnlocked(AI, UName::GUARDIAN)) {
+        techPick = UName::GUARDIAN;
+    }
+    else if (isUnitUnlocked(AI, UName::SIEGE)) {
+        techPick = playerSiege > 0 ? UName::CAVALRY : UName::SIEGE;
+    }
     const int priorities[] = {
+        techPick,
         counterPick,
         pressurePick,
+        UName::SIEGE,
+        UName::GUARDIAN,
         UName::SHOOTER,
         UName::INFANTARY
     };

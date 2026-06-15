@@ -113,6 +113,8 @@ namespace
         }
 
         const int priorities[] = {
+            UName::GUARDIAN,
+            UName::SIEGE,
             UName::SHOOTER,
             UName::INFANTARY,
             UName::CAVALRY
