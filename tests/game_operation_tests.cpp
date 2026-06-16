@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "AutoCombat.h"
 #include "BuildingDefinition.h"
 
 #include <cstdlib>
@@ -129,6 +130,25 @@ int main()
     game.setTileID(12, 10, tile::Empty);
     require(game.myunits.back()->canAutoAttack(game.enemys.back().get()),
             "clearing the obstacle should restore line-of-sight attacks");
+
+    game.clear();
+    for (int y = 9; y <= 11; ++y) {
+        for (int x = 9; x <= 12; ++x) {
+            game.setTileID(x, y, tile::Empty);
+        }
+    }
+    require(game.createUnit(PLAYER, UName::INFANTARY, 10, 10, lane::Mid),
+            "moving test unit should spawn");
+    require(game.createUnit(PLAYER, UName::INFANTARY, 11, 10, lane::Mid),
+            "blocking test unit should spawn");
+    MoveableUnit* crowdedMover = game.myunits.front().get();
+    crowdedMover->mypath.clear();
+    crowdedMover->mypath.push_back(Point(11, 10));
+    realtime::updateAutoCombat(game, 1.0f);
+    require(!(crowdedMover->x == 10 && crowdedMover->y == 10),
+            "crowded movement should side-step instead of waiting in place");
+    require(!(crowdedMover->x == 11 && crowdedMover->y == 10),
+            "crowded movement should not step into an occupied reserved cell");
 
     game.gameOver = true;
     game.clear();

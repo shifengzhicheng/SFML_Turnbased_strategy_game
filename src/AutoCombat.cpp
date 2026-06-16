@@ -6,8 +6,10 @@
 #include "UnitGeometry.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <limits>
+#include <set>
 
 namespace
 {
@@ -22,6 +24,21 @@ namespace
     {
         return distanceSquared(Point(a.x, a.y), Point(b.x, b.y));
     }
+
+    struct MovementReservations
+    {
+        std::set<std::pair<int, int>> cells;
+
+        bool isReserved(Point point) const
+        {
+            return cells.count({point.x, point.y}) > 0;
+        }
+
+        void reserve(Point point)
+        {
+            cells.insert({point.x, point.y});
+        }
+    };
 
     Unit* betterTarget(MoveableUnit& unit, Unit* current, Unit* candidate)
     {
@@ -123,7 +140,49 @@ namespace
         game.requestPathForUnit(unit, goal);
     }
 
-    void updateUnit(Game& game, MoveableUnit& unit, float dt)
+    bool tryReservedMove(Game& game, MoveableUnit& unit, Point next, MovementReservations& reservations)
+    {
+        if (reservations.isReserved(next) || !game.canUnitStepInto(unit, next)) {
+            return false;
+        }
+
+        reservations.reserve(next);
+        unit.UnitState = UState::MOVING;
+        unit.move(next);
+        return true;
+    }
+
+    Point chooseAlternateStep(Game& game, MoveableUnit& unit, Point goal, MovementReservations& reservations)
+    {
+        const Point current(unit.x, unit.y);
+        const int currentScore = distanceSquared(current, goal);
+        const std::array<Point, 4> candidates = {{
+            Point(current.x + 1, current.y),
+            Point(current.x - 1, current.y),
+            Point(current.x, current.y + 1),
+            Point(current.x, current.y - 1),
+        }};
+
+        Point best(-1, -1);
+        int bestScore = std::numeric_limits<int>::max();
+        for (const Point candidate : candidates) {
+            if (reservations.isReserved(candidate) || !game.canUnitStepInto(unit, candidate)) {
+                continue;
+            }
+
+            const int score = distanceSquared(candidate, goal);
+            if (score > currentScore + 2) {
+                continue;
+            }
+            if (score < bestScore) {
+                bestScore = score;
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    void updateUnit(Game& game, MoveableUnit& unit, float dt, MovementReservations& reservations)
     {
         if (unit.Health <= 0) {
             return;
@@ -178,9 +237,16 @@ namespace
 
         const Point next = unit.mypath.front();
         unit.mypath.pop_front();
-        if (game.canUnitStepInto(unit, next)) {
-            unit.UnitState = UState::MOVING;
-            unit.move(next);
+        if (tryReservedMove(game, unit, next, reservations)) {
+            return;
+        }
+
+        const Point alternate = chooseAlternateStep(game, unit, goal, reservations);
+        if (alternate.x >= 0 && tryReservedMove(game, unit, alternate, reservations)) {
+            // The previous path was blocked by a transient crowd. Step aside
+            // once, then force a fresh path next movement tick.
+            unit.mypath.clear();
+            unit.realtimePathTimer = realtime::PathRefreshSeconds;
         }
         else {
             unit.mypath.clear();
@@ -193,11 +259,12 @@ namespace realtime
 {
     void updateAutoCombat(Game& game, float dt)
     {
+        MovementReservations reservations;
         for (auto& unit : game.myunits) {
-            updateUnit(game, *unit, dt);
+            updateUnit(game, *unit, dt, reservations);
         }
         for (auto& unit : game.enemys) {
-            updateUnit(game, *unit, dt);
+            updateUnit(game, *unit, dt, reservations);
         }
     }
 }
