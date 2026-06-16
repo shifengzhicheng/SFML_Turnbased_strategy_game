@@ -649,7 +649,9 @@ void Game::updateRealtime(float dt)
     cleanupDestroyedBuildings();
     updateComebackTimers(dt);
     updateRealtimeEconomy(dt);
-    aiController.update(*this, dt);
+    if (!externalAIControl) {
+        aiController.update(*this, dt);
+    }
     assignWorkers();
     updateWorkers(dt);
     updateProduction(dt);
@@ -3868,26 +3870,26 @@ void Game::runAIProduction()
     };
 
     int desiredEconomy = 1;
-    if (gameTimeSeconds > 40.f) desiredEconomy = 2;
-    if (gameTimeSeconds > 95.f) desiredEconomy = 3;
-    if (gameTimeSeconds > 165.f) desiredEconomy = 4;
-    if (gameTimeSeconds > 280.f) desiredEconomy = 5;
-    if (gameTimeSeconds > 420.f) desiredEconomy = 7;
-    if (gameTimeSeconds > 590.f) desiredEconomy = 9;
-    if (gameTimeSeconds > 760.f) desiredEconomy = 11;
-    if (gameTimeSeconds > 900.f) desiredEconomy = config::MaxEconomyLevel;
+    if (gameTimeSeconds > 25.f) desiredEconomy = 2;
+    if (gameTimeSeconds > 70.f) desiredEconomy = 3;
+    if (gameTimeSeconds > 135.f) desiredEconomy = 4;
+    if (gameTimeSeconds > 230.f) desiredEconomy = 5;
+    if (gameTimeSeconds > 360.f) desiredEconomy = 7;
+    if (gameTimeSeconds > 520.f) desiredEconomy = 9;
+    if (gameTimeSeconds > 700.f) desiredEconomy = 11;
+    if (gameTimeSeconds > 840.f) desiredEconomy = config::MaxEconomyLevel;
     if (playerEconomyLevel > aiEconomyLevel + 1 || macroMode) {
         ++desiredEconomy;
     }
     desiredEconomy = std::clamp(desiredEconomy, 0, config::MaxEconomyLevel);
 
-    int allowedTech = static_cast<int>(gameTimeSeconds / 54.f);
-    allowedTech = std::min(allowedTech, aiEconomyLevel + (gameTimeSeconds > 720.f ? 7 : 4));
+    int allowedTech = static_cast<int>(gameTimeSeconds / 46.f);
+    allowedTech = std::min(allowedTech, aiEconomyLevel + (gameTimeSeconds > 600.f ? 7 : 5));
     if (playerUpgradeLevel > aiUpgradeLevel) {
         allowedTech = std::max(allowedTech, playerUpgradeLevel + 1);
     }
-    if (gameTimeSeconds > 720.f) {
-        allowedTech = std::max(allowedTech, 11 + static_cast<int>((gameTimeSeconds - 720.f) / 48.f));
+    if (gameTimeSeconds > 620.f) {
+        allowedTech = std::max(allowedTech, 10 + static_cast<int>((gameTimeSeconds - 620.f) / 46.f));
     }
     if (gameTimeSeconds > 840.f) {
         allowedTech = config::MaxTechLevel;
@@ -3895,11 +3897,11 @@ void Game::runAIProduction()
     allowedTech = std::clamp(allowedTech, 0, config::MaxTechLevel);
 
     int desiredBarracks = 1;
-    if (gameTimeSeconds > 100.f && aiEconomyLevel >= 2) desiredBarracks = 2;
-    if (gameTimeSeconds > 250.f && aiUpgradeLevel >= 3) desiredBarracks = 3;
-    if (gameTimeSeconds > 430.f && aiUpgradeLevel >= 6) desiredBarracks = 4;
-    if (gameTimeSeconds > 640.f && aiUpgradeLevel >= 9) desiredBarracks = 5;
-    if (gameTimeSeconds > 820.f) desiredBarracks = 6;
+    if (gameTimeSeconds > 80.f && aiEconomyLevel >= 1) desiredBarracks = 2;
+    if (gameTimeSeconds > 210.f && aiUpgradeLevel >= 2) desiredBarracks = 3;
+    if (gameTimeSeconds > 360.f && aiUpgradeLevel >= 5) desiredBarracks = 4;
+    if (gameTimeSeconds > 560.f && aiUpgradeLevel >= 8) desiredBarracks = 5;
+    if (gameTimeSeconds > 760.f) desiredBarracks = 6;
     if (armyBehind || siegeMode) ++desiredBarracks;
     desiredBarracks = std::min(desiredBarracks, buildingCap(AI, building::Barracks));
 
@@ -3929,7 +3931,7 @@ void Game::runAIProduction()
         }
     };
 
-    const bool openingNeedsUnits = enemys.size() < 8 && gameTimeSeconds < 185.f && playerPressure < 4;
+    const bool openingNeedsUnits = enemys.size() < 4 && gameTimeSeconds < 110.f && playerPressure < 4;
     if (!openingNeedsUnits) {
         tryMajorAction(aiEconomyLevel < desiredEconomy && commandForTeam(AI) >= economyUpgradeCost(AI),
                        GameOperation(gameop::UpgradeEconomy));
@@ -3947,10 +3949,14 @@ void Game::runAIProduction()
         GameOperation(gameop::BuildTower, laneWithMostPlayerUnits()));
 
     if (openingNeedsUnits && !majorActionTaken) {
-        tryMajorAction(aiEconomyLevel < std::min(3, desiredEconomy)
-            && enemys.size() >= 5
+        tryMajorAction(aiEconomyLevel < std::min(2, desiredEconomy)
+            && enemys.size() >= 3
             && commandForTeam(AI) >= economyUpgradeCost(AI),
             GameOperation(gameop::UpgradeEconomy));
+        tryMajorAction(aiUpgradeLevel < std::min(1, allowedTech)
+            && enemys.size() >= 3
+            && commandForTeam(AI) >= upgradeCostForNextLevel(AI),
+            GameOperation(gameop::UpgradeTech));
     }
 
     int reserve = 0;
@@ -3997,10 +4003,20 @@ void Game::runAIProduction()
     std::vector<int> priorities;
     priorities.reserve(8);
     if (defenseMode) {
-        priorities = {UName::GUARDIAN, UName::INFANTARY, UName::CAVALRY, counterPick, UName::SHOOTER};
+        if (gameTimeSeconds < 420.f) {
+            priorities = {UName::CAVALRY, UName::SHOOTER, UName::INFANTARY, counterPick, UName::GUARDIAN};
+        }
+        else {
+            priorities = {UName::GUARDIAN, UName::INFANTARY, UName::CAVALRY, counterPick, UName::SHOOTER};
+        }
     }
     else if (siegeMode) {
         priorities = {UName::SIEGE, UName::GUARDIAN, UName::CAVALRY, counterPick, UName::SHOOTER, UName::INFANTARY};
+    }
+    else if (gameTimeSeconds < 300.f) {
+        // Rotate a small opening roster so the AI does not look like it only
+        // understands infantry spam before siege/guardian tech comes online.
+        priorities = {UName::SHOOTER, UName::INFANTARY, UName::CAVALRY, UName::INFANTARY, UName::SIEGE, UName::GUARDIAN};
     }
     else {
         priorities = {counterPick, UName::SHOOTER, UName::CAVALRY, UName::INFANTARY, UName::SIEGE, UName::GUARDIAN};
@@ -4018,6 +4034,32 @@ void Game::runAIProduction()
         }
         return bestLoad == std::numeric_limits<int>::max() ? 0 : bestLoad;
     };
+    const auto aiPlannedUnitCount = [this](int unitName) {
+        int total = countUnitsNamed(enemys, unitName);
+        for (const auto& building : buildings) {
+            if (building.team != AI || building.type != building::Barracks) {
+                continue;
+            }
+            if (building.production.activeUnit == unitName) {
+                ++total;
+            }
+            total += static_cast<int>(std::count_if(
+                building.production.orders.begin(),
+                building.production.orders.end(),
+                [unitName](const ProductionOrder& order) { return order.unit == unitName; }));
+        }
+        return total;
+    };
+
+    if (gameTimeSeconds < 120.f && !defenseMode && leastLoadedBarracks() >= 2) {
+        const int openingMacroCost = aiEconomyLevel < 1
+            ? economyUpgradeCost(AI)
+            : (aiUpgradeLevel < 1 ? upgradeCostForNextLevel(AI) : 0);
+        if (openingMacroCost > 0 && commandForTeam(AI) < openingMacroCost) {
+            logEvent("ai opening banks CMD for early economy/tech");
+            return;
+        }
+    }
 
     int orders = realtime::AIUnitsPerBurst + aiUpgradeLevel / 5;
     if (aiEconomyLevel >= 4) ++orders;
@@ -4032,9 +4074,40 @@ void Game::runAIProduction()
         if (leastLoadedBarracks() >= queueLoadLimit && commandForTeam(AI) < reserve + 160 && !armyEmergency) {
             break;
         }
+        if (gameTimeSeconds > 75.f && gameTimeSeconds < 155.f
+            && !defenseMode
+            && isUnitUnlocked(AI, UName::SHOOTER)
+            && commandForTeam(AI) >= config::InfantryCost
+            && commandForTeam(AI) < config::ShooterCost
+            && leastLoadedBarracks() <= 2) {
+            logEvent("ai opening banks CMD for first shooter");
+            break;
+        }
+        const bool wantsOpeningCavalry = gameTimeSeconds > 185.f && gameTimeSeconds < 380.f
+            && !defenseMode
+            && isUnitUnlocked(AI, UName::CAVALRY)
+            && aiPlannedUnitCount(UName::CAVALRY) < 1;
+        if (wantsOpeningCavalry
+            && commandForTeam(AI) >= config::InfantryCost
+            && commandForTeam(AI) < config::CavalryCost
+            && leastLoadedBarracks() <= 2) {
+            logEvent("ai opening banks CMD for first cavalry");
+            break;
+        }
+
+        std::vector<int> orderPriorities = priorities;
+        if (wantsOpeningCavalry && commandForTeam(AI) >= config::CavalryCost) {
+            orderPriorities = {UName::CAVALRY, UName::SHOOTER, UName::INFANTARY, UName::SIEGE, UName::GUARDIAN};
+        }
+        if (!wantsOpeningCavalry && gameTimeSeconds < 300.f && !defenseMode && !siegeMode && !orderPriorities.empty()) {
+            const auto shift = static_cast<std::ptrdiff_t>(
+                (static_cast<int>(gameTimeSeconds / realtime::AIThinkSeconds) + i)
+                % static_cast<int>(orderPriorities.size()));
+            std::rotate(orderPriorities.begin(), orderPriorities.begin() + shift, orderPriorities.end());
+        }
 
         bool queued = false;
-        for (int code : priorities) {
+        for (int code : orderPriorities) {
             const int cost = unitCost(code);
             if (cost <= 0 || !canQueueUnit(AI, code)) {
                 continue;

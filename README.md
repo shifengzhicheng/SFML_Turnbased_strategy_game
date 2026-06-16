@@ -62,6 +62,7 @@ ctest --test-dir build --output-on-failure
 ./build/sfml_tbs --simulate-plan rush 800
 ./build/sfml_tbs --simulate-plan greedy 800
 ./build/sfml_tbs --simulate-plan balanced 900 --simulate-dt 0.25
+./build/sfml_tbs --train-policies 40 420 20260616 --simulate-dt 0.25
 ./build/sfml_tbs --simulate-ignore-gameover 900
 ```
 
@@ -69,6 +70,7 @@ ctest --test-dir build --output-on-failure
 `GameOperation` 入口执行“选线、升经济、升科技、造兵营/塔、排兵”等操作，
 便于比较不同策略是否真的容易上手、节奏是否合理。模拟不会 sleep 等真实时间；
 `--simulate-dt` 可以把每 tick 推进到最多 `0.25`，用来快速跑长局且避免跳过移动节奏。
+`--train-policies` 会让两个从随机权重开始的轻量策略模型自对弈，使用胜负/基地血量/军队/经济科技差更新操作偏好。
 如果需要复现实验地图，可以设置 `TBS_MAP_SEED=123` 后再运行模拟。
 
 ## 当前玩法

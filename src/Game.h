@@ -134,6 +134,7 @@ public:
     bool tutorialVisible = false;
     bool towerPlacementMode = false;
     bool debugLogging = false;
+    bool externalAIControl = false;
     float playerIncomeTimer = 0.f;
     float aiIncomeTimer = 0.f;
     float playerBaseAttackTimer = 0.f;
