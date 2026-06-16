@@ -209,6 +209,7 @@ public:
     void updateComebackTimers(float dt);
     void updateEmergencyBaseTraining(float dt);
     void cleanupDestroyedBuildings();
+    void cleanupDestroyedUnits();
     void handleRealtimeMapClick(sf::Vector2i mousePos, sf::Event event);
     int resourceIncome(int team) const;
     int economyLevelForTeam(int team) const;

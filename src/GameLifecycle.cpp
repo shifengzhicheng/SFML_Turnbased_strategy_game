@@ -137,6 +137,7 @@ void Game::clear()
     effects.clear();
     running = false;
     gameWin = false;
+    gameOver = false;
     MosOnUnit = nullptr;
     playerCommand = config::StartingCommand;
     aiCommand = config::StartingCommand;

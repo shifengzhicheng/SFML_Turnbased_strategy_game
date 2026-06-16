@@ -115,5 +115,22 @@ int main()
     require(edgeAttacker->canAutoAttack(game.Base_blue.get()),
             "base range checks should use the whole 2x2 footprint, not only the top-left tile");
 
+    game.gameOver = true;
+    game.clear();
+    require(!game.gameOver,
+            "clear should reset gameOver so simulations and rematches can start");
+
+    game.clear();
+    const int aiCommandBeforeBounty = game.aiCommand;
+    const Point cleanupSpawn = game.findSpawnPointAround(game.Red_baseP);
+    require(game.createUnit(PLAYER, UName::INFANTARY, cleanupSpawn.x, cleanupSpawn.y, lane::Mid),
+            "test unit should spawn for realtime cleanup");
+    game.myunits.back()->Health = 0;
+    game.updateRealtime(0.25f);
+    require(game.myunits.empty(),
+            "realtime update should remove destroyed player units without relying on rendering");
+    require(game.aiCommand > aiCommandBeforeBounty,
+            "realtime destroyed-unit cleanup should award kill bounty");
+
     return 0;
 }

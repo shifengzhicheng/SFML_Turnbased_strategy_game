@@ -40,6 +40,7 @@ void Game::updateRealtime(float dt)
     updateDefenseTowers(dt);
     updateBaseDefenses(dt);
     realtime::updateAutoCombat(*this, dt);
+    cleanupDestroyedUnits();
     if ((Base_red && Base_red->Health <= 0) || (Base_blue && Base_blue->Health <= 0)) {
         gameOver = true;
     }
@@ -134,32 +135,36 @@ void Game::logicBeforeDraw()
     if (Base_red) {
         Base_red->updatemystate();
     }
-    for (auto u = myunits.begin(); u != myunits.end(); ) {
-        (*u)->updatemystate();
-        if ((*u)->isdead()) {
-            awardKillBounty(AI, (*u)->unitName, Point((*u)->x, (*u)->y));
-            if (MosOnUnit == u->get()) {
+    for (auto& unit : myunits) {
+        unit->updatemystate();
+    }
+    for (auto& unit : enemys) {
+        unit->updatemystate();
+    }
+}
+
+void Game::cleanupDestroyedUnits()
+{
+    const auto removeDead = [this](std::list<std::unique_ptr<MoveableUnit>>& units, int bountyReceiver) {
+        for (auto it = units.begin(); it != units.end(); ) {
+            MoveableUnit& unit = **it;
+            if (!unit.isdead()) {
+                ++it;
+                continue;
+            }
+
+            awardKillBounty(bountyReceiver, unit.unitName, Point(unit.x, unit.y));
+            if (MosOnUnit == &unit) {
                 MosOnUnit = nullptr;
             }
-            u = myunits.erase(u);
+            it = units.erase(it);
         }
-        else {
-            ++u;
-        }
-    }
-    for (auto u = enemys.begin(); u != enemys.end(); ) {
-        (*u)->updatemystate();
-        if ((*u)->isdead()) {
-            awardKillBounty(PLAYER, (*u)->unitName, Point((*u)->x, (*u)->y));
-            if (MosOnUnit == u->get()) {
-                MosOnUnit = nullptr;
-            }
-            u = enemys.erase(u);
-        }
-        else {
-            ++u;
-        }
-    }
+    };
+
+    // Unit death is simulation state, not rendering state. Keeping cleanup here
+    // makes CLI simulations, AI training, and the visible game follow one path.
+    removeDead(myunits, AI);
+    removeDead(enemys, PLAYER);
 }
 
 void Game::logicAfterDraw()
