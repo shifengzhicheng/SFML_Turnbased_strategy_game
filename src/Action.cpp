@@ -120,6 +120,12 @@ void Attacker::Attack(MoveableUnit* me, Unit* u)
 			mygame->addFloatingText(targetCenter + sf::Vector2f(0.f, -32.f), "RESIST", sf::Color(156, 205, 255), 12);
 		}
 		if (u->Health <= 0) {
+			if (auto* defeated = dynamic_cast<MoveableUnit*>(u)) {
+				defeated->mypath.clear();
+				defeated->pendingPathRequest = 0;
+				defeated->realtimeMoveTimer = 0.f;
+				defeated->UnitState = UState::UNITNORMAL;
+			}
 			mygame->addFloatingText(targetCenter + sf::Vector2f(0.f, -48.f), "KO!", sf::Color(255, 245, 206), 17);
 			if (useActionPoints) {
 				me->gainActionPoint(3);

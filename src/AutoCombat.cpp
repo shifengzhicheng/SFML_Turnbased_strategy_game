@@ -66,7 +66,8 @@ namespace
     Point chooseApproachPoint(Game& game, MoveableUnit& unit, Unit* target)
     {
         const Point targetPoint = target != nullptr ? Point(target->x, target->y) : fallbackEnemyBase(game, unit);
-        if (game.isCellWalkableForUnit(targetPoint.x, targetPoint.y)) {
+        if (!game.isCellOccupiedByUnit(targetPoint.x, targetPoint.y, unit.entityId)
+            && game.isCellWalkableForUnit(targetPoint.x, targetPoint.y)) {
             return targetPoint;
         }
 
@@ -76,7 +77,7 @@ namespace
         for (int radius = 1; radius <= searchRadius; ++radius) {
             for (int y = targetPoint.y - radius; y <= targetPoint.y + radius; ++y) {
                 for (int x = targetPoint.x - radius; x <= targetPoint.x + radius; ++x) {
-                    if (!game.isCellWalkableForUnit(x, y)) {
+                    if (!game.isCellWalkableForUnit(x, y) || game.isCellOccupiedByUnit(x, y, unit.entityId)) {
                         continue;
                     }
                     const int toTarget = distanceSquared(Point(x, y), targetPoint);
@@ -132,6 +133,9 @@ namespace
             unit.UnitState = UState::UNITNORMAL;
             unit.mypath.clear();
             unit.pendingPathRequest = 0;
+            // Do not bank movement time while attacking; otherwise a unit can
+            // sprint through several frames immediately after its target dies.
+            unit.realtimeMoveTimer = 0.f;
             if (unit.realtimeAttackTimer >= unit.realtimeAttackCooldownSeconds()) {
                 unit.realtimeAttackTimer = 0.f;
                 unit.autoAttack(target);
@@ -144,6 +148,7 @@ namespace
             unit.UnitState = UState::UNITNORMAL;
             unit.mypath.clear();
             unit.pendingPathRequest = 0;
+            unit.realtimeMoveTimer = 0.f;
             if (unit.realtimeAttackTimer >= unit.realtimeAttackCooldownSeconds()) {
                 unit.realtimeAttackTimer = 0.f;
                 game.autoAttackBuilding(unit, *buildingTarget);
@@ -168,12 +173,13 @@ namespace
 
         const Point next = unit.mypath.front();
         unit.mypath.pop_front();
-        if (game.isCellWalkableForUnit(next.x, next.y)) {
+        if (game.canUnitStepInto(unit, next)) {
             unit.UnitState = UState::MOVING;
             unit.move(next);
         }
         else {
             unit.mypath.clear();
+            unit.realtimePathTimer = realtime::PathRefreshSeconds;
         }
     }
 }

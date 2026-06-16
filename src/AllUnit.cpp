@@ -415,7 +415,7 @@ bool MoveableUnit::isdead()
 void MoveableUnit::move(Point p)
 {
 	const bool canMove = mygame->isRealtimeMode()
-		? mygame->isCellWalkableForUnit(p.x, p.y)
+		? mygame->canUnitStepInto(*this, p)
 		: mygame->tiles[p.y*mygame->horizontalTiles+p.x].getID()==tile::Empty;
 	if (canMove) {
 		if (!mygame->isRealtimeMode()) {

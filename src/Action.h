@@ -26,7 +26,7 @@ class shot :public Attacker {
 public:
 	shot(Game* _game): Attacker(_game) {
 		damage = 30;
-		range = 12;
+		range = 6;
 	}
 };
 class fight :public Attacker {
