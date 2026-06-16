@@ -32,8 +32,8 @@ endif()
 set(SFML_TBS_GAME_SOURCES
     src/Game.cpp
     src/GameBalance.cpp
+    src/GameBuildingPlacement.cpp
     src/GameCombat.cpp
-    src/GameConstruction.cpp
     src/GameEconomy.cpp
     src/GameInput.cpp
     src/GameOperations.cpp
@@ -42,9 +42,11 @@ set(SFML_TBS_GAME_SOURCES
     src/GameEffectsFacade.cpp
     src/GameHudRender.cpp
     src/GameOverlayRender.cpp
+    src/GameProduction.cpp
     src/GameRender.cpp
     src/GameWorldRender.cpp
     src/GameUpdate.cpp
+    src/GameWorkers.cpp
     src/GameWorld.cpp
     src/Action.cpp
     src/AIController.cpp
