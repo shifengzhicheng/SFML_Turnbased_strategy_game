@@ -29,9 +29,16 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     endforeach()
 endif()
 
-add_executable(sfml_tbs
-    src/main.cpp
+set(SFML_TBS_GAME_SOURCES
     src/Game.cpp
+    src/GameCombat.cpp
+    src/GameConstruction.cpp
+    src/GameEconomy.cpp
+    src/GameInput.cpp
+    src/GameLifecycle.cpp
+    src/GameRender.cpp
+    src/GameUpdate.cpp
+    src/GameWorld.cpp
     src/AllUnit.cpp
     src/Action.cpp
     src/AIController.cpp
@@ -45,6 +52,11 @@ add_executable(sfml_tbs
     src/PathfindingService.cpp
     src/Tile.cpp
     src/Worker.cpp
+)
+
+add_executable(sfml_tbs
+    src/main.cpp
+    ${SFML_TBS_GAME_SOURCES}
 )
 
 target_include_directories(sfml_tbs PRIVATE src)
@@ -101,4 +113,18 @@ if(BUILD_TESTING)
     )
     target_include_directories(sfml_tbs_realtime_config_tests PRIVATE src)
     add_test(NAME realtime_config_tests COMMAND sfml_tbs_realtime_config_tests)
+
+    add_executable(sfml_tbs_game_operation_tests
+        tests/game_operation_tests.cpp
+        ${SFML_TBS_GAME_SOURCES}
+    )
+    target_include_directories(sfml_tbs_game_operation_tests PRIVATE src)
+    target_link_libraries(sfml_tbs_game_operation_tests PRIVATE sfml-graphics sfml-window sfml-system)
+    if(APPLE)
+        target_compile_definitions(sfml_tbs_game_operation_tests PRIVATE GL_SILENCE_DEPRECATION)
+    endif()
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_compile_options(sfml_tbs_game_operation_tests PRIVATE -Wno-deprecated-declarations)
+    endif()
+    add_test(NAME game_operation_tests COMMAND sfml_tbs_game_operation_tests)
 endif()
