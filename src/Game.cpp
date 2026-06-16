@@ -341,16 +341,19 @@ Game::~Game() = default;
 void Game::loadpic()
 {
     art::makeIntroTexture(background, myfont);
-    art::makeButtonTexture(tStartBtnNormal, myfont, "START", art::ButtonState::Normal, sf::Vector2u(180, 72));
-    art::makeButtonTexture(tStartBtnHover, myfont, "START", art::ButtonState::Hover, sf::Vector2u(190, 76));
-    art::makeButtonTexture(tStartBtnClick, myfont, "START", art::ButtonState::Pressed, sf::Vector2u(170, 68));
+    art::makeButtonTexture(tStartBtnNormal, myfont, "START", art::ButtonState::Normal, sf::Vector2u(210, 72));
+    art::makeButtonTexture(tStartBtnHover, myfont, "START", art::ButtonState::Hover, sf::Vector2u(210, 72));
+    art::makeButtonTexture(tStartBtnClick, myfont, "START", art::ButtonState::Pressed, sf::Vector2u(210, 72));
+    art::makeButtonTexture(tStartHelpNormal, myfont, "HELP", art::ButtonState::Normal, sf::Vector2u(170, 72));
+    art::makeButtonTexture(tStartHelpHover, myfont, "HELP", art::ButtonState::Hover, sf::Vector2u(170, 72));
+    art::makeButtonTexture(tStartHelpClick, myfont, "HELP", art::ButtonState::Pressed, sf::Vector2u(170, 72));
     const sf::Vector2u sideButtonSize(config::SideButtonWidth, config::SideButtonHeight);
     art::makeButtonTexture(tEndBtnNormal, myfont, "END TURN", art::ButtonState::Normal, sideButtonSize);
     art::makeButtonTexture(tEndBtnHover, myfont, "END TURN", art::ButtonState::Hover, sideButtonSize);
     art::makeButtonTexture(tEndBtnClick, myfont, "END TURN", art::ButtonState::Pressed, sideButtonSize);
-    art::makeButtonTexture(tOverBtnNormal, myfont, "PLAY AGAIN", art::ButtonState::Normal, sf::Vector2u(240, 96));
-    art::makeButtonTexture(tOverBtnHover, myfont, "PLAY AGAIN", art::ButtonState::Hover, sf::Vector2u(250, 100));
-    art::makeButtonTexture(tOverBtnClick, myfont, "PLAY AGAIN", art::ButtonState::Pressed, sf::Vector2u(232, 92));
+    art::makeButtonTexture(tOverBtnNormal, myfont, "PLAY AGAIN", art::ButtonState::Normal, sf::Vector2u(240, 84));
+    art::makeButtonTexture(tOverBtnHover, myfont, "PLAY AGAIN", art::ButtonState::Hover, sf::Vector2u(240, 84));
+    art::makeButtonTexture(tOverBtnClick, myfont, "PLAY AGAIN", art::ButtonState::Pressed, sf::Vector2u(240, 84));
     const sf::Vector2u unitButtonSize(config::SideButtonWidth, config::SideButtonHeight);
     art::makeButtonTexture(tinf, myfont, "Infantry", art::ButtonState::Normal, unitButtonSize, art::UnitKind::Infantry, art::Team::Player);
     art::makeButtonTexture(tinfHover, myfont, "Infantry", art::ButtonState::Hover, unitButtonSize, art::UnitKind::Infantry, art::Team::Player);
@@ -384,6 +387,7 @@ void Game::loadpic()
     art::makeButtonTexture(tTowerClick, myfont, "Tower", art::ButtonState::Pressed, sideButtonSize);
 
     startBtn.setTextures(tStartBtnNormal, tStartBtnHover, tStartBtnClick);
+    startHelpBtn.setTextures(tStartHelpNormal, tStartHelpHover, tStartHelpClick);
     EndTurnBtn.setTextures(tEndBtnNormal, tEndBtnHover, tEndBtnClick);
     endGame.setTextures(tOverBtnNormal, tOverBtnHover, tOverBtnClick);
     inf.setTextures(tinf, tinfHover, tinfClick);
@@ -1945,7 +1949,8 @@ void Game::Unitsreset(list<unique_ptr<MoveableUnit>>& us) {
 }
 
 void Game::startInput(Vector2i mousePos, Event event) {
-    helpBtn.setPosition(600.f, 290.f);
+    startBtn.setPosition(470.f, 410.f);
+    startHelpBtn.setPosition(710.f, 410.f);
     if (event.type == sf::Event::KeyPressed) {
         if (event.key.code == sf::Keyboard::H) {
             tutorialVisible = !tutorialVisible;
@@ -1956,9 +1961,9 @@ void Game::startInput(Vector2i mousePos, Event event) {
             return;
         }
     }
-    if (helpBtn.checkMouse(mousePos, event) == RELEASE) {
+    if (startHelpBtn.checkMouse(mousePos, event) == RELEASE) {
         tutorialVisible = !tutorialVisible;
-        helpBtn.setState(NORMAL);
+        startHelpBtn.setState(NORMAL);
         return;
     }
     if (tutorialVisible) {
@@ -2010,14 +2015,10 @@ void Game::GameInput(Vector2i mousePos, Event event) {
             tutorialVisible = false;
             return;
         }
-        if (event.key.code == sf::Keyboard::Escape)
-        {
-            gameSceneState = gameSeceneState::SCENE_START;
-        }
-        // Reset state and restart.
-        else if (event.key.code == sf::Keyboard::C)
+        if (event.key.code == sf::Keyboard::C)
         {
             clear();
+            gameSceneState = SCENE_GAME;
         }
     }
     if (tutorialVisible) {
@@ -2134,30 +2135,18 @@ void Game::Input()
 }
 
 void Game::overinput(sf::Vector2i mousePos, sf::Event event) {
+    endGame.setPosition(550.f, 372.f);
+    tutorialVisible = false;
     if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::H) {
-            tutorialVisible = !tutorialVisible;
-            return;
-        }
-        if (event.key.code == sf::Keyboard::Escape && tutorialVisible) {
-            tutorialVisible = false;
-            return;
-        }
-        if (event.key.code == sf::Keyboard::Escape)
-        {
-            gameSceneState = gameSeceneState::SCENE_START;
-        }
-        // Reset state and restart.
-        else if (event.key.code == sf::Keyboard::C)
+        if (event.key.code == sf::Keyboard::C)
         {
             clear();
+            gameSceneState = SCENE_GAME;
         }
     }
-    if (tutorialVisible) {
-        return;
-    }
     if (endGame.checkMouse(mousePos, event) == RELEASE) {
-        gameSceneState = SCENE_START;
+        clear();
+        gameSceneState = SCENE_GAME;
         endGame.setState(NORMAL);
     }
 }
@@ -2290,17 +2279,90 @@ void Game::Draw()
 {
     switch (gameSceneState)
     {
-    case SCENE_START:
-        back.setPosition(Vector2f(0,0));
-        window.draw(back);
-        startBtn.setPosition(600, 200);
-        helpBtn.setPosition(600, 290);
+    case SCENE_START: {
+        const sf::View defaultView(sf::FloatRect(0.f, 0.f, config::WindowWidth, config::WindowHeight));
+        window.setView(defaultView);
+
+        sf::RectangleShape sky(sf::Vector2f(static_cast<float>(config::WindowWidth), static_cast<float>(config::WindowHeight)));
+        sky.setFillColor(sf::Color(24, 35, 31));
+        window.draw(sky);
+
+        for (int i = 0; i < 9; ++i) {
+            sf::CircleShape haze(130.f + static_cast<float>(i % 3) * 34.f, 64);
+            haze.setOrigin(haze.getRadius(), haze.getRadius());
+            haze.setPosition(120.f + static_cast<float>(i) * 156.f, 90.f + static_cast<float>((i * 73) % 420));
+            haze.setScale(1.45f, 0.48f);
+            haze.setRotation(static_cast<float>((i * 19) % 360));
+            haze.setFillColor(i % 2 == 0 ? sf::Color(219, 166, 75, 24) : sf::Color(78, 135, 115, 22));
+            window.draw(haze);
+        }
+
+        sf::RectangleShape horizon(sf::Vector2f(static_cast<float>(config::WindowWidth), 210.f));
+        horizon.setPosition(0.f, 510.f);
+        horizon.setFillColor(sf::Color(34, 45, 36, 210));
+        window.draw(horizon);
+
+        sf::RectangleShape heroShadow(sf::Vector2f(720.f, 360.f));
+        heroShadow.setPosition(310.f, 126.f);
+        heroShadow.setFillColor(sf::Color(8, 12, 10, 118));
+        window.draw(heroShadow);
+
+        sf::RectangleShape hero(sf::Vector2f(720.f, 360.f));
+        hero.setPosition(300.f, 112.f);
+        hero.setFillColor(sf::Color(45, 58, 50, 232));
+        hero.setOutlineColor(sf::Color(224, 171, 82, 210));
+        hero.setOutlineThickness(2.2f);
+        window.draw(hero);
+
+        sf::Text title("COMMAND LINES", myfont, 48);
+        title.setFillColor(sf::Color(255, 236, 176));
+        title.setOutlineColor(sf::Color(30, 22, 14, 220));
+        title.setOutlineThickness(2.f);
+        title.setLetterSpacing(1.25f);
+        title.setPosition(365.f, 146.f);
+        window.draw(title);
+
+        sf::Text subtitle("A 10-minute rogue RTS auto-battler", myfont, 18);
+        subtitle.setFillColor(sf::Color(206, 224, 190));
+        subtitle.setPosition(415.f, 214.f);
+        window.draw(subtitle);
+
+        const char* cards[] = {"1. Grow CMD", "2. Pick a lane", "3. Draft tactics"};
+        for (int i = 0; i < 3; ++i) {
+            sf::RectangleShape card(sf::Vector2f(188.f, 76.f));
+            card.setPosition(368.f + static_cast<float>(i) * 204.f, 274.f);
+            card.setFillColor(sf::Color(36, 46, 40, 230));
+            card.setOutlineColor(i == 1 ? sf::Color(126, 190, 139, 210) : sf::Color(192, 141, 66, 190));
+            card.setOutlineThickness(1.4f);
+            window.draw(card);
+
+            sf::CircleShape gem(12.f, 6);
+            gem.setOrigin(12.f, 12.f);
+            gem.setPosition(card.getPosition() + sf::Vector2f(24.f, 22.f));
+            gem.setFillColor(i == 0 ? sf::Color(244, 199, 90) : (i == 1 ? sf::Color(109, 184, 138) : sf::Color(140, 184, 238)));
+            window.draw(gem);
+
+            sf::Text cardText(cards[i], myfont, 14);
+            cardText.setFillColor(sf::Color(236, 232, 202));
+            cardText.setPosition(card.getPosition() + sf::Vector2f(46.f, 15.f));
+            window.draw(cardText);
+        }
+
+        startBtn.setPosition(470.f, 410.f);
+        startHelpBtn.setPosition(710.f, 410.f);
         window.draw(startBtn);
-        window.draw(helpBtn);
+        window.draw(startHelpBtn);
+
+        sf::Text hint("Simple loop: Economy -> Barracks -> Pick a lane -> Draft upgrades", myfont, 13);
+        hint.setFillColor(sf::Color(229, 214, 160));
+        hint.setPosition(430.f, 516.f);
+        window.draw(hint);
+
         if (tutorialVisible) {
             drawTutorialOverlay();
         }
         break;
+    }
     case SCENE_GAME: {
         const sf::View defaultView(sf::FloatRect(0.f, 0.f, config::WindowWidth, config::WindowHeight));
         sf::View gameView(defaultView);
@@ -2433,21 +2495,58 @@ void Game::Draw()
         
         break;
     }
-    case SCEN_GAMEOVER:
-        if (gameWin == false) {
-            Globle_text.setString("You Lose");
-            window.draw(Globle_text);
+    case SCEN_GAMEOVER: {
+        const sf::View defaultView(sf::FloatRect(0.f, 0.f, config::WindowWidth, config::WindowHeight));
+        window.setView(defaultView);
+
+        sf::RectangleShape backdrop(sf::Vector2f(static_cast<float>(config::WindowWidth), static_cast<float>(config::WindowHeight)));
+        backdrop.setFillColor(gameWin ? sf::Color(30, 54, 43) : sf::Color(55, 39, 34));
+        window.draw(backdrop);
+
+        for (int i = 0; i < 7; ++i) {
+            sf::CircleShape flare(115.f + static_cast<float>(i % 2) * 42.f, 60);
+            flare.setOrigin(flare.getRadius(), flare.getRadius());
+            flare.setPosition(168.f + static_cast<float>(i) * 176.f, 110.f + static_cast<float>((i * 91) % 430));
+            flare.setScale(1.35f, 0.52f);
+            flare.setFillColor(gameWin ? sf::Color(219, 184, 92, 28) : sf::Color(124, 88, 72, 34));
+            window.draw(flare);
         }
-        if (gameWin == true) {
-            Globle_text.setString("You Win");
-            window.draw(Globle_text);
-        }
-        endGame.setPosition(600,300);
+
+        sf::RectangleShape panelShadow(sf::Vector2f(620.f, 344.f));
+        panelShadow.setPosition(372.f, 154.f);
+        panelShadow.setFillColor(sf::Color(8, 10, 9, 120));
+        window.draw(panelShadow);
+
+        sf::RectangleShape panel(sf::Vector2f(620.f, 344.f));
+        panel.setPosition(360.f, 140.f);
+        panel.setFillColor(sf::Color(39, 49, 43, 238));
+        panel.setOutlineColor(gameWin ? sf::Color(239, 196, 102) : sf::Color(210, 113, 86));
+        panel.setOutlineThickness(2.4f);
+        window.draw(panel);
+
+        sf::Text result(gameWin ? "VICTORY" : "DEFEAT", myfont, 50);
+        result.setFillColor(gameWin ? sf::Color(255, 236, 168) : sf::Color(255, 184, 142));
+        result.setOutlineColor(sf::Color(22, 18, 14, 230));
+        result.setOutlineThickness(2.f);
+        result.setLetterSpacing(1.25f);
+        result.setPosition(gameWin ? 545.f : 560.f, 178.f);
+        window.draw(result);
+
+        sf::Text summary(gameWin ? "Your build order broke the enemy core." : "The enemy policy found a stronger timing.", myfont, 18);
+        summary.setFillColor(sf::Color(226, 232, 202));
+        summary.setPosition(gameWin ? 478.f : 475.f, 255.f);
+        window.draw(summary);
+
+        sf::Text stats("Time " + std::to_string(static_cast<int>(gameTimeSeconds)) + "s   Your Lv " + std::to_string(playerUpgradeLevel)
+            + " / AI Lv " + std::to_string(aiUpgradeLevel), myfont, 15);
+        stats.setFillColor(sf::Color(212, 204, 166));
+        stats.setPosition(506.f, 306.f);
+        window.draw(stats);
+
+        endGame.setPosition(550.f, 372.f);
         window.draw(endGame);
-        if (tutorialVisible) {
-            drawTutorialOverlay();
-        }
         break;
+    }
     default:
         break;
     }

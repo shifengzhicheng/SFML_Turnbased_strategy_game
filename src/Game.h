@@ -169,9 +169,10 @@ public:
 
 
     sf::Texture tStartBtnNormal, tStartBtnHover, tStartBtnClick;
+    sf::Texture tStartHelpNormal, tStartHelpHover, tStartHelpClick;
     sf::Texture tEndBtnNormal, tEndBtnHover, tEndBtnClick;
     sf::Texture tOverBtnNormal, tOverBtnHover, tOverBtnClick;
-    Button startBtn,EndTurnBtn;
+    Button startBtn, startHelpBtn, EndTurnBtn;
     Button inf, cav, sho, siegeBtn, guardianBtn;
     Button upgradeBtn;
     Button economyBtn;
