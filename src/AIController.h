@@ -1,5 +1,7 @@
 #pragma once
 
+#include "PolicyModel.h"
+
 #include <array>
 #include <random>
 
@@ -13,7 +15,7 @@ public:
 
 private:
     static constexpr int FeatureCount = 12;
-    static constexpr int ActionCount = 10;
+    static constexpr int ActionCount = policy::ActionCount;
 
     float thinkTimer = 0.f;
     int decisionStep = 0;

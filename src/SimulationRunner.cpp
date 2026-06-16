@@ -1,6 +1,7 @@
 #include "SimulationRunner.h"
 
 #include "Game.h"
+#include "PolicyModel.h"
 #include "RealtimeConfig.h"
 
 #include <algorithm>
@@ -384,22 +385,7 @@ namespace
         }
     };
 
-    enum class PolicyAction
-    {
-        Economy,
-        Tech,
-        Barracks,
-        Tower,
-        Infantry,
-        Shooter,
-        Cavalry,
-        Siege,
-        Guardian,
-        Wait,
-        Count
-    };
-
-    constexpr std::size_t PolicyActionCount = static_cast<std::size_t>(PolicyAction::Count);
+    constexpr std::size_t PolicyActionCount = policy::ActionCountSize;
     constexpr std::size_t PolicyFeatureCount = 13;
 
     struct PolicyChoice
@@ -414,35 +400,6 @@ namespace
         int action = 0;
         bool success = false;
     };
-
-    const char* policyActionName(int action)
-    {
-        switch (static_cast<PolicyAction>(action)) {
-        case PolicyAction::Economy:
-            return "eco";
-        case PolicyAction::Tech:
-            return "tech";
-        case PolicyAction::Barracks:
-            return "rax";
-        case PolicyAction::Tower:
-            return "tower";
-        case PolicyAction::Infantry:
-            return "inf";
-        case PolicyAction::Shooter:
-            return "shoot";
-        case PolicyAction::Cavalry:
-            return "cav";
-        case PolicyAction::Siege:
-            return "siege";
-        case PolicyAction::Guardian:
-            return "guard";
-        case PolicyAction::Wait:
-            return "wait";
-        case PolicyAction::Count:
-        default:
-            return "unknown";
-        }
-    }
 
     std::array<float, PolicyFeatureCount> policyFeatures(const Game& game, int team)
     {
@@ -470,48 +427,31 @@ namespace
         };
     }
 
-    int unitForPolicyAction(PolicyAction action)
-    {
-        switch (action) {
-        case PolicyAction::Shooter:
-            return UName::SHOOTER;
-        case PolicyAction::Cavalry:
-            return UName::CAVALRY;
-        case PolicyAction::Siege:
-            return UName::SIEGE;
-        case PolicyAction::Guardian:
-            return UName::GUARDIAN;
-        case PolicyAction::Infantry:
-        default:
-            return UName::INFANTARY;
-        }
-    }
-
     std::vector<PolicyChoice> legalPolicyChoices(const Game& game, int team, std::mt19937& rng)
     {
         std::vector<PolicyChoice> choices;
         std::uniform_int_distribution<int> laneDist(0, lane::Count - 1);
-        const auto push = [&](PolicyAction action, const GameOperation& operation) {
+        const auto push = [&](policy::Action action, const GameOperation& operation) {
             choices.push_back(PolicyChoice{static_cast<int>(action), operation});
         };
 
-        push(PolicyAction::Wait, GameOperation(gameop::SelectLane, laneDist(rng)));
+        push(policy::Action::Wait, GameOperation(gameop::SelectLane, laneDist(rng)));
         if (game.economyUpgradeCost(team) > 0 && game.commandForTeam(team) >= game.economyUpgradeCost(team)) {
-            push(PolicyAction::Economy, GameOperation(gameop::UpgradeEconomy));
+            push(policy::Action::Economy, GameOperation(gameop::UpgradeEconomy));
         }
         if (game.upgradeCostForNextLevel(team) > 0 && game.commandForTeam(team) >= game.upgradeCostForNextLevel(team)) {
-            push(PolicyAction::Tech, GameOperation(gameop::UpgradeTech));
+            push(policy::Action::Tech, GameOperation(gameop::UpgradeTech));
         }
         if (game.totalBuildingCount(team, building::Barracks) < game.buildingCap(team, building::Barracks)
             && game.commandForTeam(team) >= config::BarracksCost) {
-            push(PolicyAction::Barracks, GameOperation(gameop::BuildBarracks, laneDist(rng)));
+            push(policy::Action::Barracks, GameOperation(gameop::BuildBarracks, laneDist(rng)));
         }
         if (game.totalBuildingCount(team, building::DefenseTower) < game.buildingCap(team, building::DefenseTower)
             && game.commandForTeam(team) >= config::TowerCost) {
-            push(PolicyAction::Tower, GameOperation(gameop::BuildTower, laneDist(rng)));
+            push(policy::Action::Tower, GameOperation(gameop::BuildTower, laneDist(rng)));
         }
-        for (PolicyAction action : {PolicyAction::Infantry, PolicyAction::Shooter, PolicyAction::Cavalry, PolicyAction::Siege, PolicyAction::Guardian}) {
-            const int unit = unitForPolicyAction(action);
+        for (policy::Action action : {policy::Action::Infantry, policy::Action::Shooter, policy::Action::Cavalry, policy::Action::Siege, policy::Action::Guardian}) {
+            const int unit = policy::unitForAction(action);
             if (game.canQueueUnit(team, unit)) {
                 push(action, GameOperation(gameop::QueueUnit, laneDist(rng), unit));
             }
@@ -587,7 +527,7 @@ namespace
                 if (!out.empty()) {
                     out += " ";
                 }
-                out += policyActionName(static_cast<int>(i));
+                out += policy::actionName(static_cast<policy::Action>(i));
                 out += "=";
                 out += std::to_string(actionCounts[i]);
             }

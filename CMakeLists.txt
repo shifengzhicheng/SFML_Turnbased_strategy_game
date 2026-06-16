@@ -50,6 +50,7 @@ set(SFML_TBS_GAME_SOURCES
     src/Effects.cpp
     src/Map.cpp
     src/PathfindingService.cpp
+    src/PolicyModel.cpp
     src/Tile.cpp
     src/Worker.cpp
 )

@@ -4,6 +4,7 @@
 #include "Building.h"
 #include "Config.h"
 #include "Game.h"
+#include "PolicyModel.h"
 #include "RealtimeConfig.h"
 
 #include <algorithm>
@@ -18,59 +19,14 @@
 
 namespace
 {
-    enum class ModelAction
-    {
-        Economy,
-        Tech,
-        Barracks,
-        Tower,
-        Infantry,
-        Shooter,
-        Cavalry,
-        Siege,
-        Guardian,
-        Wait,
-        Count
-    };
+    constexpr int ActionCount = policy::ActionCount;
+    constexpr int FeatureCount = 12;
 
     struct Candidate
     {
-        ModelAction action = ModelAction::Wait;
+        policy::Action action = policy::Action::Wait;
         GameOperation operation;
     };
-
-    constexpr int ActionCount = static_cast<int>(ModelAction::Count);
-    constexpr int FeatureCount = 12;
-
-    int actionIndex(ModelAction action)
-    {
-        return static_cast<int>(action);
-    }
-
-    int unitForAction(ModelAction action)
-    {
-        switch (action) {
-        case ModelAction::Shooter:
-            return UName::SHOOTER;
-        case ModelAction::Cavalry:
-            return UName::CAVALRY;
-        case ModelAction::Siege:
-            return UName::SIEGE;
-        case ModelAction::Guardian:
-            return UName::GUARDIAN;
-        case ModelAction::Infantry:
-        default:
-            return UName::INFANTARY;
-        }
-    }
-
-    bool isMacro(ModelAction action)
-    {
-        return action == ModelAction::Economy
-            || action == ModelAction::Tech
-            || action == ModelAction::Barracks
-            || action == ModelAction::Tower;
-    }
 
     int countUnitsNamed(const std::list<std::unique_ptr<MoveableUnit>>& units, int name)
     {
@@ -130,14 +86,14 @@ namespace
         return scores[bestLane] > 0 ? bestLane : laneWithMostPlayerUnits(game);
     }
 
-    int chooseModelLane(const Game& game, ModelAction action, int orderIndex)
+    int chooseModelLane(const Game& game, policy::Action action, int orderIndex)
     {
         const int playerPressure = game.unitsNearPoint(PLAYER, game.Blue_baseP, 13);
         const int aiPressure = game.unitsNearPoint(AI, game.Red_baseP, 13);
-        if (action == ModelAction::Tower || playerPressure >= 4) {
+        if (action == policy::Action::Tower || playerPressure >= 4) {
             return laneWithMostPlayerUnits(game);
         }
-        if (action == ModelAction::Siege || aiPressure > 0 || game.totalBuildingCount(PLAYER, building::DefenseTower) > 0) {
+        if (action == policy::Action::Siege || aiPressure > 0 || game.totalBuildingCount(PLAYER, building::DefenseTower) > 0) {
             return laneWithMostPlayerStructures(game);
         }
         return (static_cast<int>(game.gameTimeSeconds / 34.f) + orderIndex) % lane::Count;
@@ -210,41 +166,32 @@ namespace
         return std::min(desired, game.buildingCap(AI, building::Barracks));
     }
 
-    bool isUnitAction(ModelAction action)
-    {
-        return action == ModelAction::Infantry
-            || action == ModelAction::Shooter
-            || action == ModelAction::Cavalry
-            || action == ModelAction::Siege
-            || action == ModelAction::Guardian;
-    }
-
     std::vector<Candidate> legalCandidates(Game& game, bool allowMacro, int orderIndex)
     {
         std::vector<Candidate> candidates;
-        const auto push = [&](ModelAction action, const GameOperation& operation) {
+        const auto push = [&](policy::Action action, const GameOperation& operation) {
             candidates.push_back(Candidate{action, operation});
         };
 
-        push(ModelAction::Wait, GameOperation(gameop::SelectLane, chooseModelLane(game, ModelAction::Wait, orderIndex)));
+        push(policy::Action::Wait, GameOperation(gameop::SelectLane, chooseModelLane(game, policy::Action::Wait, orderIndex)));
         if (allowMacro && game.economyUpgradeCost(AI) > 0 && game.aiCommand >= game.economyUpgradeCost(AI)) {
-            push(ModelAction::Economy, GameOperation(gameop::UpgradeEconomy));
+            push(policy::Action::Economy, GameOperation(gameop::UpgradeEconomy));
         }
         if (allowMacro && game.upgradeCostForNextLevel(AI) > 0 && game.aiCommand >= game.upgradeCostForNextLevel(AI)) {
-            push(ModelAction::Tech, GameOperation(gameop::UpgradeTech));
+            push(policy::Action::Tech, GameOperation(gameop::UpgradeTech));
         }
         if (allowMacro
             && game.totalBuildingCount(AI, building::Barracks) < game.buildingCap(AI, building::Barracks)
             && game.aiCommand >= config::BarracksCost) {
-            push(ModelAction::Barracks, GameOperation(gameop::BuildBarracks, chooseModelLane(game, ModelAction::Barracks, orderIndex)));
+            push(policy::Action::Barracks, GameOperation(gameop::BuildBarracks, chooseModelLane(game, policy::Action::Barracks, orderIndex)));
         }
         if (allowMacro
             && game.totalBuildingCount(AI, building::DefenseTower) < game.buildingCap(AI, building::DefenseTower)
             && game.aiCommand >= config::TowerCost) {
-            push(ModelAction::Tower, GameOperation(gameop::BuildTower, chooseModelLane(game, ModelAction::Tower, orderIndex)));
+            push(policy::Action::Tower, GameOperation(gameop::BuildTower, chooseModelLane(game, policy::Action::Tower, orderIndex)));
         }
-        for (ModelAction action : {ModelAction::Infantry, ModelAction::Shooter, ModelAction::Cavalry, ModelAction::Siege, ModelAction::Guardian}) {
-            const int unit = unitForAction(action);
+        for (policy::Action action : {policy::Action::Infantry, policy::Action::Shooter, policy::Action::Cavalry, policy::Action::Siege, policy::Action::Guardian}) {
+            const int unit = policy::unitForAction(action);
             if (game.canQueueUnit(AI, unit)) {
                 push(action, GameOperation(gameop::QueueUnit, chooseModelLane(game, action, orderIndex), unit));
             }
@@ -270,7 +217,7 @@ namespace
             {{-0.48f,  0.05f, -0.95f,  0.06f,  0.02f, -0.18f,  0.00f,  0.82f, -0.70f,  0.22f, -0.50f,  0.12f}}
         }};
 
-        const int index = actionIndex(candidate.action);
+        const int index = policy::actionIndex(candidate.action);
         float score = 0.f;
         for (int i = 0; i < FeatureCount; ++i) {
             score += weights[static_cast<std::size_t>(index)][static_cast<std::size_t>(i)] * f[static_cast<std::size_t>(i)];
@@ -313,7 +260,7 @@ namespace
             && !openingNeedsUnits;
 
         switch (candidate.action) {
-        case ModelAction::Economy:
+        case policy::Action::Economy:
             score += needsEconomy ? 1.35f : -1.0f;
             if (prioritizeEconomy) {
                 score += 0.85f;
@@ -322,7 +269,7 @@ namespace
                 score -= 0.35f;
             }
             break;
-        case ModelAction::Tech:
+        case policy::Action::Tech:
             score += needsTech ? 1.85f : -0.8f;
             if (prioritizeTech) {
                 score += 0.85f;
@@ -332,34 +279,34 @@ namespace
             }
             score += game.aiEconomyLevel >= 1 ? 0.25f : -0.20f;
             break;
-        case ModelAction::Barracks:
+        case policy::Action::Barracks:
             score += game.totalBuildingCount(AI, building::Barracks) < barracksTarget ? 1.25f : -0.9f;
             if (needsFirstBarracks) {
                 score += 2.15f;
             }
             break;
-        case ModelAction::Tower:
+        case policy::Action::Tower:
             score += pressure ? 1.5f : -0.9f;
             break;
-        case ModelAction::Infantry:
+        case policy::Action::Infantry:
             score += game.gameTimeSeconds < 80.f ? 0.7f : 0.08f;
             break;
-        case ModelAction::Shooter:
+        case policy::Action::Shooter:
             score += game.gameTimeSeconds < 220.f ? 0.65f : 0.20f;
             score += countUnitsNamed(game.myunits, UName::INFANTARY) * 0.02f;
             break;
-        case ModelAction::Cavalry:
+        case policy::Action::Cavalry:
             score += game.gameTimeSeconds > 180.f ? 0.75f : -0.25f;
             score += countUnitsNamed(game.myunits, UName::SHOOTER) * 0.04f;
             score += countUnitsNamed(game.myunits, UName::SIEGE) * 0.08f;
             break;
-        case ModelAction::Siege:
+        case policy::Action::Siege:
             score += (playerTurtling || game.gameTimeSeconds > 520.f) ? 1.45f : -0.75f;
             break;
-        case ModelAction::Guardian:
+        case policy::Action::Guardian:
             score += (pressure || game.gameTimeSeconds > 620.f) ? 0.9f : -0.55f;
             break;
-        case ModelAction::Wait: {
+        case policy::Action::Wait: {
             const int macroCost = needsFirstBarracks ? config::BarracksCost
                 : (needsTech ? techCost : (needsEconomy ? economyCost : 0));
             score += (macroCost > 0 && game.aiCommand + 18 >= macroCost) ? 1.05f : -0.8f;
@@ -371,14 +318,14 @@ namespace
             }
             break;
         }
-        case ModelAction::Count:
+        case policy::Action::Count:
             break;
         }
 
         // A model-only AI tends to greedily spend every small budget on units.
         // This reserve term keeps it banking toward tech/economy timings unless
         // the base is under real pressure.
-        if (isUnitAction(candidate.action) && !openingNeedsUnits) {
+        if (policy::isUnitAction(candidate.action) && !openingNeedsUnits) {
             const int unitCost = game.unitCost(candidate.operation.unitName);
             if (bankForTech || (prioritizeTech && safeToBank && game.aiCommand < techCost + unitCost)) {
                 score -= 1.18f;
@@ -389,7 +336,7 @@ namespace
             }
         }
 
-        if (candidate.action != ModelAction::Wait) {
+        if (candidate.action != policy::Action::Wait) {
             score -= static_cast<float>(recentActions[static_cast<std::size_t>(index)]) * 0.18f;
         }
         return score;
@@ -435,7 +382,7 @@ void AIController::update(Game& game, float dt)
             }
         }
 
-        if (best.action == ModelAction::Wait) {
+        if (best.action == policy::Action::Wait) {
             game.logEvent("ai policy waits to bank command");
             break;
         }
@@ -445,13 +392,13 @@ void AIController::update(Game& game, float dt)
         if (!ok) {
             break;
         }
-        if (isMacro(best.action)) {
+        if (policy::isMacroAction(best.action)) {
             macroUsed = true;
         }
         for (int& count : recentActions) {
             count = std::max(0, count - 1);
         }
-        recentActions[static_cast<std::size_t>(actionIndex(best.action))] += 3;
+        recentActions[static_cast<std::size_t>(policy::actionIndex(best.action))] += 3;
     }
     ++decisionStep;
 }
