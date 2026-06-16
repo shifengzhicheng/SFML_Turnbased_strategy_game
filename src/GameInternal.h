@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Game.h"
+#include "BuildingDefinition.h"
 #include "UnitDefinition.h"
 
 #include <algorithm>
@@ -217,43 +218,34 @@ namespace game_internal
 
     inline float buildingSeconds(int type)
     {
-        if (type == building::DefenseTower) {
-            return realtime::DefenseTowerBuildSeconds;
+        if (const BuildingDefinition* definition = findBuildingDefinition(type)) {
+            return definition->buildSeconds;
         }
         return realtime::BarracksBuildSeconds;
     }
 
     inline const char* buildingName(int type)
     {
-        switch (type) {
-        case building::DefenseTower:
-            return "Tower";
-        case building::Barracks:
-        default:
-            return "Barracks";
+        if (const BuildingDefinition* definition = findBuildingDefinition(type)) {
+            return definition->debugName;
         }
+        return "Unknown";
     }
 
     inline int buildingMaxHealth(int type)
     {
-        switch (type) {
-        case building::DefenseTower:
-            return config::DefenseTowerHealth;
-        case building::Barracks:
-        default:
-            return config::BarracksHealth;
+        if (const BuildingDefinition* definition = findBuildingDefinition(type)) {
+            return definition->maxHealth;
         }
+        return config::BarracksHealth;
     }
 
     inline int buildingCommandCost(int type)
     {
-        switch (type) {
-        case building::DefenseTower:
-            return config::TowerCost;
-        case building::Barracks:
-        default:
-            return config::BarracksCost;
+        if (const BuildingDefinition* definition = findBuildingDefinition(type)) {
+            return definition->commandCost;
         }
+        return 0;
     }
 
     inline int distanceSquared(Point a, Point b)

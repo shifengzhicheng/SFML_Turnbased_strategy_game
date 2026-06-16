@@ -2,6 +2,7 @@
 
 #include "AllUnit.h"
 #include "Building.h"
+#include "BuildingDefinition.h"
 #include "Config.h"
 #include "Game.h"
 #include "PolicyModel.h"
@@ -182,12 +183,12 @@ namespace
         }
         if (allowMacro
             && game.totalBuildingCount(AI, building::Barracks) < game.buildingCap(AI, building::Barracks)
-            && game.aiCommand >= config::BarracksCost) {
+            && game.aiCommand >= buildingDefinition(building::Barracks).commandCost) {
             push(policy::Action::Barracks, GameOperation(gameop::BuildBarracks, chooseModelLane(game, policy::Action::Barracks, orderIndex)));
         }
         if (allowMacro
             && game.totalBuildingCount(AI, building::DefenseTower) < game.buildingCap(AI, building::DefenseTower)
-            && game.aiCommand >= config::TowerCost) {
+            && game.aiCommand >= buildingDefinition(building::DefenseTower).commandCost) {
             push(policy::Action::Tower, GameOperation(gameop::BuildTower, chooseModelLane(game, policy::Action::Tower, orderIndex)));
         }
         for (policy::Action action : {policy::Action::Infantry, policy::Action::Shooter, policy::Action::Cavalry, policy::Action::Siege, policy::Action::Guardian}) {
@@ -307,7 +308,7 @@ namespace
             score += (pressure || game.gameTimeSeconds > 620.f) ? 0.9f : -0.55f;
             break;
         case policy::Action::Wait: {
-            const int macroCost = needsFirstBarracks ? config::BarracksCost
+            const int macroCost = needsFirstBarracks ? buildingDefinition(building::Barracks).commandCost
                 : (needsTech ? techCost : (needsEconomy ? economyCost : 0));
             score += (macroCost > 0 && game.aiCommand + 18 >= macroCost) ? 1.05f : -0.8f;
             if (bankForTech) {

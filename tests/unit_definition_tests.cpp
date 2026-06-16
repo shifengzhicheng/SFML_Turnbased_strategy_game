@@ -1,4 +1,5 @@
 #include "AllUnit.h"
+#include "BuildingDefinition.h"
 #include "Config.h"
 #include "RealtimeConfig.h"
 #include "UnitDefinition.h"
@@ -71,6 +72,24 @@ int main()
         threw = true;
     }
     require(threw, "unknown unitDefinition lookups should fail loudly");
+
+    const auto& buildings = buildingDefinitions();
+    require(buildings.size() == 2, "the building table should expose two buildable structures");
+    require(buildingDefinition(building::Barracks).commandCost == config::BarracksCost,
+            "barracks cost should stay sourced from Config");
+    require(buildingDefinition(building::Barracks).buildSeconds == realtime::BarracksBuildSeconds,
+            "barracks build time should stay sourced from RealtimeConfig");
+    require(buildingDefinition(building::DefenseTower).maxHealth == config::DefenseTowerHealth,
+            "tower health should stay sourced from Config");
+
+    threw = false;
+    try {
+        (void)buildingDefinition(-999);
+    }
+    catch (const std::out_of_range&) {
+        threw = true;
+    }
+    require(threw, "unknown buildingDefinition lookups should fail loudly");
 
     return 0;
 }

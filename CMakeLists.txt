@@ -61,6 +61,7 @@ set(SFML_TBS_GAME_SOURCES
     src/Astar.cpp
     src/AutoCombat.cpp
     src/Building.cpp
+    src/BuildingDefinition.cpp
     src/Button.cpp
     src/Effects.cpp
     src/Map.cpp

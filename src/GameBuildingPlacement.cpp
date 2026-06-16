@@ -17,6 +17,7 @@ using namespace game_internal;
 
 bool Game::requestBuildBarracks(int team, Point point)
 {
+    const int cost = buildingCommandCost(building::Barracks);
     if (totalBuildingCount(team, building::Barracks) >= buildingCap(team, building::Barracks)) {
         if (team == PLAYER) {
             addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
@@ -26,16 +27,16 @@ bool Game::requestBuildBarracks(int team, Point point)
     }
     if (!isBuildableCell(point.x, point.y)
         || !isBuildSiteInInfluence(team, point, building::Barracks)
-        || commandPool(*this, team) < config::BarracksCost) {
+        || commandPool(*this, team) < cost) {
         if (team == PLAYER) {
             addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
-                            commandPool(*this, team) < config::BarracksCost ? "Need CMD" : (!isBuildSiteInInfluence(team, point, building::Barracks) ? "Too far" : "Bad site"),
+                            commandPool(*this, team) < cost ? "Need CMD" : (!isBuildSiteInInfluence(team, point, building::Barracks) ? "Too far" : "Bad site"),
                             sf::Color(255, 214, 96), 12);
         }
         return false;
     }
 
-    commandPool(*this, team) -= config::BarracksCost;
+    commandPool(*this, team) -= cost;
     Building building;
     building.id = nextEntityId++;
     building.team = team;
@@ -56,6 +57,7 @@ bool Game::requestBuildBarracks(int team, Point point)
 
 bool Game::requestBuildTower(int team, Point point)
 {
+    const int cost = buildingCommandCost(building::DefenseTower);
     if (totalBuildingCount(team, building::DefenseTower) >= buildingCap(team, building::DefenseTower)) {
         if (team == PLAYER) {
             addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
@@ -65,16 +67,16 @@ bool Game::requestBuildTower(int team, Point point)
     }
     if (!isBuildableCell(point.x, point.y)
         || !isBuildSiteInInfluence(team, point, building::DefenseTower)
-        || commandPool(*this, team) < config::TowerCost) {
+        || commandPool(*this, team) < cost) {
         if (team == PLAYER) {
             addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
-                            commandPool(*this, team) < config::TowerCost ? "Need CMD" : (!isBuildSiteInInfluence(team, point, building::DefenseTower) ? "Too far" : "Bad site"),
+                            commandPool(*this, team) < cost ? "Need CMD" : (!isBuildSiteInInfluence(team, point, building::DefenseTower) ? "Too far" : "Bad site"),
                             sf::Color(255, 214, 96), 12);
         }
         return false;
     }
 
-    commandPool(*this, team) -= config::TowerCost;
+    commandPool(*this, team) -= cost;
     Building building;
     building.id = nextEntityId++;
     building.team = team;

@@ -1,5 +1,6 @@
 #include "PolicyTrainer.h"
 
+#include "BuildingDefinition.h"
 #include "Game.h"
 #include "PolicyModel.h"
 #include "RealtimeConfig.h"
@@ -69,11 +70,11 @@ std::vector<PolicyChoice> legalPolicyChoices(const Game& game, int team, std::mt
         push(policy::Action::Tech, GameOperation(gameop::UpgradeTech));
     }
     if (game.totalBuildingCount(team, building::Barracks) < game.buildingCap(team, building::Barracks)
-        && game.commandForTeam(team) >= config::BarracksCost) {
+        && game.commandForTeam(team) >= buildingDefinition(building::Barracks).commandCost) {
         push(policy::Action::Barracks, GameOperation(gameop::BuildBarracks, laneDist(rng)));
     }
     if (game.totalBuildingCount(team, building::DefenseTower) < game.buildingCap(team, building::DefenseTower)
-        && game.commandForTeam(team) >= config::TowerCost) {
+        && game.commandForTeam(team) >= buildingDefinition(building::DefenseTower).commandCost) {
         push(policy::Action::Tower, GameOperation(gameop::BuildTower, laneDist(rng)));
     }
     for (policy::Action action : {policy::Action::Infantry, policy::Action::Shooter, policy::Action::Cavalry, policy::Action::Siege, policy::Action::Guardian}) {

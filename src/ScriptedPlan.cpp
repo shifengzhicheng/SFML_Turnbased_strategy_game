@@ -1,5 +1,6 @@
 #include "ScriptedPlan.h"
 
+#include "BuildingDefinition.h"
 #include "Game.h"
 #include "RealtimeConfig.h"
 
@@ -42,9 +43,9 @@ int estimatedOperationCost(const Game& game, int team, const GameOperation& oper
     case gameop::UpgradeTech:
         return game.upgradeCostForNextLevel(team);
     case gameop::BuildBarracks:
-        return config::BarracksCost;
+        return buildingDefinition(building::Barracks).commandCost;
     case gameop::BuildTower:
-        return config::TowerCost;
+        return buildingDefinition(building::DefenseTower).commandCost;
     case gameop::QueueUnit:
         return game.unitCost(operation.unitName);
     case gameop::SelectLane:
@@ -310,7 +311,7 @@ private:
             reserve = std::max(reserve, game.upgradeCostForNextLevel(PLAYER));
         }
         if (game.totalBuildingCount(PLAYER, building::Barracks) < desiredBarracks) {
-            reserve = std::max(reserve, config::BarracksCost);
+            reserve = std::max(reserve, buildingDefinition(building::Barracks).commandCost);
         }
         if (plan == ScriptedPlan::Rush) {
             reserve /= 2;

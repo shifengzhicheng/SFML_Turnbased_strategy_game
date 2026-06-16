@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "BuildingDefinition.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -35,7 +36,7 @@ int main()
             "build operation should update selected lane");
     require(game.totalBuildingCount(PLAYER, building::Barracks) == 1,
             "one barracks should be queued");
-    require(game.playerCommand == 1000 - config::BarracksCost,
+    require(game.playerCommand == 1000 - buildingDefinition(building::Barracks).commandCost,
             "barracks should spend CMD exactly once");
 
     Building* barracks = game.findBuildingById(game.buildings.front().id);

@@ -226,7 +226,7 @@ void Game::DrawSidePanel()
     upgradeCost.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), config::EndTurnButtonY + config::SideButtonHeight - 2.f);
     window.draw(upgradeCost);
 
-    const bool canBuildBarracks = commandForTeam(PLAYER) >= config::BarracksCost
+    const bool canBuildBarracks = commandForTeam(PLAYER) >= buildingCommandCost(building::Barracks)
         && totalBuildingCount(PLAYER, building::Barracks) < buildingCap(PLAYER, building::Barracks);
     inf.setColor(canQueueUnit(PLAYER, UName::INFANTARY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
     sho.setColor(canQueueUnit(PLAYER, UName::SHOOTER) ? sf::Color::White : sf::Color(255, 255, 255, 130));
@@ -234,7 +234,7 @@ void Game::DrawSidePanel()
     siegeBtn.setColor(canQueueUnit(PLAYER, UName::SIEGE) ? sf::Color::White : sf::Color(255, 255, 255, 130));
     guardianBtn.setColor(canQueueUnit(PLAYER, UName::GUARDIAN) ? sf::Color::White : sf::Color(255, 255, 255, 130));
     barracksBtn.setColor(canBuildBarracks ? sf::Color::White : sf::Color(255, 255, 255, 130));
-    const bool canQueueTower = commandForTeam(PLAYER) >= config::TowerCost
+    const bool canQueueTower = commandForTeam(PLAYER) >= buildingCommandCost(building::DefenseTower)
         && totalBuildingCount(PLAYER, building::DefenseTower) < buildingCap(PLAYER, building::DefenseTower);
     towerBtn.setColor(canQueueTower ? sf::Color::White : sf::Color(255, 255, 255, 130));
 
@@ -244,7 +244,7 @@ void Game::DrawSidePanel()
         text.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), static_cast<float>(buttonY + config::SideButtonHeight - 1));
         text.setString(value);
     };
-    setLabel(barracksLabel, std::to_string(config::BarracksCost) + " | cap "
+    setLabel(barracksLabel, std::to_string(buildingCommandCost(building::Barracks)) + " | cap "
         + std::to_string(totalBuildingCount(PLAYER, building::Barracks)) + "/"
         + std::to_string(buildingCap(PLAYER, building::Barracks)) + " auto near base", config::BuildBarracksY);
     setLabel(infantryLabel, std::to_string(config::InfantryCost) + " | steady frontline", config::BuildInfantryY);
@@ -252,7 +252,7 @@ void Game::DrawSidePanel()
     setLabel(cavalryLabel, std::to_string(config::CavalryCost) + " | fastest dive", config::BuildCavalryY);
     setLabel(siegeLabel, std::to_string(config::SiegeCost) + " | very slow tower-breaker", config::BuildSiegeY);
     setLabel(guardianLabel, std::to_string(config::GuardianCost) + " | slow heavy tank", config::BuildGuardianY);
-    setLabel(towerLabel, std::to_string(config::TowerCost) + " | cap "
+    setLabel(towerLabel, std::to_string(buildingCommandCost(building::DefenseTower)) + " | cap "
         + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower)) + "/"
         + std::to_string(buildingCap(PLAYER, building::DefenseTower)) + " anti-rush", config::BuildTowerY);
 
@@ -272,4 +272,3 @@ void Game::DrawSidePanel()
     window.draw(towerBtn);
     window.draw(towerLabel);
 }
-
