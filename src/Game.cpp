@@ -297,13 +297,14 @@ void Game::loadpic()
     art::makeButtonTexture(tStartBtnNormal, myfont, "START", art::ButtonState::Normal, sf::Vector2u(180, 72));
     art::makeButtonTexture(tStartBtnHover, myfont, "START", art::ButtonState::Hover, sf::Vector2u(190, 76));
     art::makeButtonTexture(tStartBtnClick, myfont, "START", art::ButtonState::Pressed, sf::Vector2u(170, 68));
-    art::makeButtonTexture(tEndBtnNormal, myfont, "END TURN", art::ButtonState::Normal, sf::Vector2u(128, 44));
-    art::makeButtonTexture(tEndBtnHover, myfont, "END TURN", art::ButtonState::Hover, sf::Vector2u(128, 44));
-    art::makeButtonTexture(tEndBtnClick, myfont, "END TURN", art::ButtonState::Pressed, sf::Vector2u(128, 44));
+    const sf::Vector2u sideButtonSize(config::SideButtonWidth, config::SideButtonHeight);
+    art::makeButtonTexture(tEndBtnNormal, myfont, "END TURN", art::ButtonState::Normal, sideButtonSize);
+    art::makeButtonTexture(tEndBtnHover, myfont, "END TURN", art::ButtonState::Hover, sideButtonSize);
+    art::makeButtonTexture(tEndBtnClick, myfont, "END TURN", art::ButtonState::Pressed, sideButtonSize);
     art::makeButtonTexture(tOverBtnNormal, myfont, "PLAY AGAIN", art::ButtonState::Normal, sf::Vector2u(240, 96));
     art::makeButtonTexture(tOverBtnHover, myfont, "PLAY AGAIN", art::ButtonState::Hover, sf::Vector2u(250, 100));
     art::makeButtonTexture(tOverBtnClick, myfont, "PLAY AGAIN", art::ButtonState::Pressed, sf::Vector2u(232, 92));
-    const sf::Vector2u unitButtonSize(128, 42);
+    const sf::Vector2u unitButtonSize(config::SideButtonWidth, config::SideButtonHeight);
     art::makeButtonTexture(tinf, myfont, "Infantry", art::ButtonState::Normal, unitButtonSize, art::UnitKind::Infantry, art::Team::Player);
     art::makeButtonTexture(tinfHover, myfont, "Infantry", art::ButtonState::Hover, unitButtonSize, art::UnitKind::Infantry, art::Team::Player);
     art::makeButtonTexture(tinfClick, myfont, "Infantry", art::ButtonState::Pressed, unitButtonSize, art::UnitKind::Infantry, art::Team::Player);
@@ -319,21 +320,21 @@ void Game::loadpic()
     art::makeButtonTexture(tGuardian, myfont, "Guard", art::ButtonState::Normal, unitButtonSize, art::UnitKind::Guardian, art::Team::Player);
     art::makeButtonTexture(tGuardianHover, myfont, "Guard", art::ButtonState::Hover, unitButtonSize, art::UnitKind::Guardian, art::Team::Player);
     art::makeButtonTexture(tGuardianClick, myfont, "Guard", art::ButtonState::Pressed, unitButtonSize, art::UnitKind::Guardian, art::Team::Player);
-    art::makeButtonTexture(tUpgrade, myfont, "UPGRADE", art::ButtonState::Normal, sf::Vector2u(128, 44));
-    art::makeButtonTexture(tUpgradeHover, myfont, "UPGRADE", art::ButtonState::Hover, sf::Vector2u(128, 44));
-    art::makeButtonTexture(tUpgradeClick, myfont, "UPGRADE", art::ButtonState::Pressed, sf::Vector2u(128, 44));
-    art::makeButtonTexture(tEconomy, myfont, "ECONOMY", art::ButtonState::Normal, sf::Vector2u(128, 44));
-    art::makeButtonTexture(tEconomyHover, myfont, "ECONOMY", art::ButtonState::Hover, sf::Vector2u(128, 44));
-    art::makeButtonTexture(tEconomyClick, myfont, "ECONOMY", art::ButtonState::Pressed, sf::Vector2u(128, 44));
-    art::makeButtonTexture(tBarracks, myfont, "Barracks", art::ButtonState::Normal, sf::Vector2u(128, 44));
-    art::makeButtonTexture(tBarracksHover, myfont, "Barracks", art::ButtonState::Hover, sf::Vector2u(128, 44));
-    art::makeButtonTexture(tBarracksClick, myfont, "Barracks", art::ButtonState::Pressed, sf::Vector2u(128, 44));
-    art::makeButtonTexture(tHelp, myfont, "HELP", art::ButtonState::Normal, sf::Vector2u(128, 36));
-    art::makeButtonTexture(tHelpHover, myfont, "HELP", art::ButtonState::Hover, sf::Vector2u(128, 36));
-    art::makeButtonTexture(tHelpClick, myfont, "HELP", art::ButtonState::Pressed, sf::Vector2u(128, 36));
-    art::makeButtonTexture(tTower, myfont, "Tower", art::ButtonState::Normal, sf::Vector2u(128, 44));
-    art::makeButtonTexture(tTowerHover, myfont, "Tower", art::ButtonState::Hover, sf::Vector2u(128, 44));
-    art::makeButtonTexture(tTowerClick, myfont, "Tower", art::ButtonState::Pressed, sf::Vector2u(128, 44));
+    art::makeButtonTexture(tUpgrade, myfont, "UPGRADE", art::ButtonState::Normal, sideButtonSize);
+    art::makeButtonTexture(tUpgradeHover, myfont, "UPGRADE", art::ButtonState::Hover, sideButtonSize);
+    art::makeButtonTexture(tUpgradeClick, myfont, "UPGRADE", art::ButtonState::Pressed, sideButtonSize);
+    art::makeButtonTexture(tEconomy, myfont, "ECONOMY", art::ButtonState::Normal, sideButtonSize);
+    art::makeButtonTexture(tEconomyHover, myfont, "ECONOMY", art::ButtonState::Hover, sideButtonSize);
+    art::makeButtonTexture(tEconomyClick, myfont, "ECONOMY", art::ButtonState::Pressed, sideButtonSize);
+    art::makeButtonTexture(tBarracks, myfont, "Barracks", art::ButtonState::Normal, sideButtonSize);
+    art::makeButtonTexture(tBarracksHover, myfont, "Barracks", art::ButtonState::Hover, sideButtonSize);
+    art::makeButtonTexture(tBarracksClick, myfont, "Barracks", art::ButtonState::Pressed, sideButtonSize);
+    art::makeButtonTexture(tHelp, myfont, "HELP", art::ButtonState::Normal, sf::Vector2u(config::SideButtonWidth, 34));
+    art::makeButtonTexture(tHelpHover, myfont, "HELP", art::ButtonState::Hover, sf::Vector2u(config::SideButtonWidth, 34));
+    art::makeButtonTexture(tHelpClick, myfont, "HELP", art::ButtonState::Pressed, sf::Vector2u(config::SideButtonWidth, 34));
+    art::makeButtonTexture(tTower, myfont, "Tower", art::ButtonState::Normal, sideButtonSize);
+    art::makeButtonTexture(tTowerHover, myfont, "Tower", art::ButtonState::Hover, sideButtonSize);
+    art::makeButtonTexture(tTowerClick, myfont, "Tower", art::ButtonState::Pressed, sideButtonSize);
 
     startBtn.setTextures(tStartBtnNormal, tStartBtnHover, tStartBtnClick);
     EndTurnBtn.setTextures(tEndBtnNormal, tEndBtnHover, tEndBtnClick);
@@ -2156,11 +2157,11 @@ void Game::handleLaneInput(Vector2i mousePos, Event event)
         return;
     }
 
-    const float y = 148.f;
-    const float w = 40.f;
+    const float y = 190.f;
+    const float w = 56.f;
     const float h = 24.f;
     for (int i = 0; i < lane::Count; ++i) {
-        const sf::FloatRect rect(config::PanelX + 14.f + static_cast<float>(i) * 47.f, y, w, h);
+        const sf::FloatRect rect(config::PanelX + 17.f + static_cast<float>(i) * 64.f, y, w, h);
         if (rect.contains(static_cast<float>(mousePos.x), static_cast<float>(mousePos.y))) {
             playerSelectedLane = i;
             addFloatingText(sf::Vector2f(config::PanelX + 20.f, 146.f),
@@ -2370,35 +2371,62 @@ void Game::drawResourceNodes()
         const sf::Vector2f center(
             node.point.x * SqureSize + SqureSize / 2.f,
             node.point.y * SqureSize + SqureSize / 2.f);
-        const float pulse = 1.f + std::sin(node.pulseClock.getElapsedTime().asSeconds() * 4.f) * 0.08f;
-        const sf::Color color = sf::Color(226, 180, 63);
-        const sf::Color resourceColor = sf::Color(255, 211, 82);
+        const float t = node.pulseClock.getElapsedTime().asSeconds();
+        const float pulse = 1.f + std::sin(t * 4.f) * 0.08f;
+        const sf::Color brass = sf::Color(226, 180, 63);
+        const sf::Color gold = sf::Color(255, 211, 82);
 
-        sf::CircleShape aura(11.f * pulse, 32);
-        aura.setOrigin(11.f * pulse, 11.f * pulse);
+        sf::CircleShape shadow(11.f, 30);
+        shadow.setOrigin(11.f, 11.f);
+        shadow.setScale(1.35f, 0.42f);
+        shadow.setPosition(center + sf::Vector2f(0.f, 7.f));
+        shadow.setFillColor(sf::Color(22, 18, 10, 95));
+        window.draw(shadow);
+
+        sf::CircleShape aura(13.f * pulse, 40);
+        aura.setOrigin(13.f * pulse, 13.f * pulse);
         aura.setPosition(center);
-        aura.setFillColor(sf::Color(color.r, color.g, color.b, 48));
-        aura.setOutlineColor(sf::Color(color.r, color.g, color.b, 170));
+        aura.setFillColor(sf::Color(brass.r, brass.g, brass.b, 42));
+        aura.setOutlineColor(sf::Color(brass.r, brass.g, brass.b, 178));
         aura.setOutlineThickness(1.2f);
         window.draw(aura);
 
-        sf::ConvexShape crystal(6);
-        crystal.setPoint(0, center + sf::Vector2f(0.f, -9.f));
-        crystal.setPoint(1, center + sf::Vector2f(7.f, -3.f));
-        crystal.setPoint(2, center + sf::Vector2f(5.f, 6.f));
-        crystal.setPoint(3, center + sf::Vector2f(0.f, 10.f));
-        crystal.setPoint(4, center + sf::Vector2f(-5.f, 6.f));
-        crystal.setPoint(5, center + sf::Vector2f(-7.f, -3.f));
-        crystal.setFillColor(resourceColor);
-        crystal.setOutlineColor(sf::Color(color.r, color.g, color.b, 220));
-        crystal.setOutlineThickness(1.2f);
+        sf::RectangleShape beam(sf::Vector2f(4.f, 22.f));
+        beam.setOrigin(2.f, 20.f);
+        beam.setPosition(center + sf::Vector2f(0.f, -5.f));
+        beam.setFillColor(sf::Color(255, 230, 122, 48));
+        window.draw(beam);
+
+        sf::ConvexShape crystal(8);
+        crystal.setPoint(0, center + sf::Vector2f(0.f, -12.f));
+        crystal.setPoint(1, center + sf::Vector2f(8.f, -7.f));
+        crystal.setPoint(2, center + sf::Vector2f(10.f, 1.f));
+        crystal.setPoint(3, center + sf::Vector2f(5.f, 9.f));
+        crystal.setPoint(4, center + sf::Vector2f(0.f, 12.f));
+        crystal.setPoint(5, center + sf::Vector2f(-5.f, 9.f));
+        crystal.setPoint(6, center + sf::Vector2f(-10.f, 1.f));
+        crystal.setPoint(7, center + sf::Vector2f(-8.f, -7.f));
+        crystal.setFillColor(gold);
+        crystal.setOutlineColor(sf::Color(brass.r, brass.g, brass.b, 235));
+        crystal.setOutlineThickness(1.4f);
         window.draw(crystal);
 
-        sf::Text label("CMD", myfont, 11);
-        label.setFillColor(sf::Color(63, 49, 25));
-        label.setOutlineColor(sf::Color(255, 245, 190, 180));
-        label.setOutlineThickness(0.8f);
-        label.setPosition(center.x + 8.f, center.y - 14.f);
+        sf::CircleShape core(3.2f, 18);
+        core.setOrigin(3.2f, 3.2f);
+        core.setPosition(center + sf::Vector2f(0.f, -1.f));
+        core.setFillColor(sf::Color(255, 250, 180, 210));
+        window.draw(core);
+
+        sf::RectangleShape labelBg(sf::Vector2f(29.f, 11.f));
+        labelBg.setPosition(center.x + 9.f, center.y - 17.f);
+        labelBg.setFillColor(sf::Color(40, 32, 19, 185));
+        labelBg.setOutlineColor(sf::Color(255, 225, 128, 170));
+        labelBg.setOutlineThickness(0.7f);
+        window.draw(labelBg);
+
+        sf::Text label("CMD", myfont, 8);
+        label.setFillColor(sf::Color(255, 235, 145));
+        label.setPosition(labelBg.getPosition() + sf::Vector2f(4.f, 0.f));
         window.draw(label);
     }
 }
@@ -2704,39 +2732,65 @@ void Game::DrawSidePanel()
 
     window.draw(sidePanel);
 
-    sf::RectangleShape accentLine(sf::Vector2f(3.f, static_cast<float>(config::WindowHeight)));
+    sf::RectangleShape accentLine(sf::Vector2f(4.f, static_cast<float>(config::WindowHeight)));
     accentLine.setPosition(static_cast<float>(config::PanelX), 0.f);
     accentLine.setFillColor(sf::Color(219, 166, 75));
     window.draw(accentLine);
 
-    const auto drawPanelCard = [this](float y, float h, sf::Color fill, sf::Color outline) {
-        sf::RectangleShape shadow(sf::Vector2f(config::PanelWidth - 20.f, h));
-        shadow.setPosition(config::PanelX + 12.f, y + 4.f);
-        shadow.setFillColor(sf::Color(8, 11, 10, 70));
+    sf::RectangleShape topGlow(sf::Vector2f(static_cast<float>(config::PanelWidth), 120.f));
+    topGlow.setPosition(static_cast<float>(config::PanelX), 0.f);
+    topGlow.setFillColor(sf::Color(255, 222, 138, 14));
+    window.draw(topGlow);
+
+    const float panelLeft = static_cast<float>(config::PanelX + 12);
+    const float cardWidth = static_cast<float>(config::PanelWidth - 24);
+    const auto drawPanelCard = [this, panelLeft, cardWidth](float y, float h, sf::Color fill, sf::Color outline, const std::string& title) {
+        sf::RectangleShape shadow(sf::Vector2f(cardWidth, h));
+        shadow.setPosition(panelLeft + 2.f, y + 4.f);
+        shadow.setFillColor(sf::Color(8, 11, 10, 86));
         window.draw(shadow);
 
-        sf::RectangleShape card(sf::Vector2f(config::PanelWidth - 24.f, h));
-        card.setPosition(config::PanelX + 12.f, y);
+        sf::RectangleShape card(sf::Vector2f(cardWidth, h));
+        card.setPosition(panelLeft, y);
         card.setFillColor(fill);
         card.setOutlineColor(outline);
         card.setOutlineThickness(1.4f);
         window.draw(card);
+
+        if (!title.empty()) {
+            sf::RectangleShape titleBar(sf::Vector2f(cardWidth - 16.f, 1.4f));
+            titleBar.setPosition(panelLeft + 8.f, y + 21.f);
+            titleBar.setFillColor(sf::Color(outline.r, outline.g, outline.b, 120));
+            window.draw(titleBar);
+
+            sf::Text titleText(title, myfont, 10);
+            titleText.setFillColor(sf::Color(255, 232, 156));
+            titleText.setLetterSpacing(1.18f);
+            titleText.setPosition(panelLeft + 10.f, y + 5.f);
+            window.draw(titleText);
+        }
     };
 
-    drawPanelCard(8.f, 72.f, sf::Color(47, 58, 51), sf::Color(93, 103, 81));
-    drawPanelCard(86.f, 116.f, sf::Color(41, 50, 45), sf::Color(77, 92, 74));
-    drawPanelCard(208.f, 68.f, sf::Color(60, 47, 31), sf::Color(197, 150, 67));
-    drawPanelCard(292.f, 392.f, sf::Color(42, 49, 44), sf::Color(81, 91, 73));
+    drawPanelCard(8.f, 70.f, sf::Color(47, 58, 51), sf::Color(107, 118, 91), "COMMAND");
+    drawPanelCard(84.f, 136.f, sf::Color(40, 50, 45), sf::Color(84, 99, 78), "STATUS");
+    drawPanelCard(222.f, 96.f, sf::Color(61, 48, 31), sf::Color(205, 156, 70), "");
+    drawPanelCard(322.f, 340.f, sf::Color(42, 49, 44), sf::Color(86, 98, 75), "");
+    drawPanelCard(668.f, 44.f, sf::Color(37, 45, 41), sf::Color(86, 98, 75), "");
 
+    panelTitle.setCharacterSize(20);
+    panelTitle.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 28.f);
+    Globle_text.setCharacterSize(13);
+    Globle_text.setFillColor(sf::Color(221, 211, 177));
+    Globle_text.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 54.f);
     window.draw(panelTitle);
     window.draw(Globle_text);
+
     if (!realtimeMode) {
         window.draw(UnitText);
         window.draw(UnitAttack);
         window.draw(UnitHP);
     }
-    CommandText.setCharacterSize(realtimeMode ? 10 : 14);
-    CommandText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), realtimeMode ? 94.f : 176.f);
+
     const bool inspectingEnemyBase = MosOnUnit == Base_blue.get();
     const int shownTeam = inspectingEnemyBase ? AI : PLAYER;
     const int shownLevel = shownTeam == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
@@ -2755,43 +2809,49 @@ void Game::DrawSidePanel()
         }
         return text.empty() ? std::string("none") : text;
     };
+    const auto clampText = [](std::string text, std::size_t maxChars) {
+        if (text.size() <= maxChars) {
+            return text;
+        }
+        if (maxChars <= 2) {
+            return text.substr(0, maxChars);
+        }
+        text.resize(maxChars - 2);
+        text += "..";
+        return text;
+    };
+
+    CommandText.setCharacterSize(realtimeMode ? 11 : 14);
+    CommandText.setFillColor(sf::Color(255, 226, 128));
+    CommandText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), realtimeMode ? 106.f : 176.f);
     CommandText.setString("CMD " + std::to_string(playerCommand)
         + "/" + std::to_string(config::MaxCommand)
-        + "  Tick +" + std::to_string(resourceIncome(PLAYER))
-        + "\nLv " + std::to_string(playerUpgradeLevel)
+        + "   +" + std::to_string(resourceIncome(PLAYER)) + "/tick"
+        + "\nTech P " + std::to_string(playerUpgradeLevel)
         + "/" + std::to_string(config::MaxTechLevel)
-        + "  Up " + std::to_string(upgradeCostForNextLevel(PLAYER))
-        + "\nEco " + std::to_string(playerEconomyLevel)
+        + "  AI " + std::to_string(aiUpgradeLevel)
+        + "/" + std::to_string(config::MaxTechLevel)
+        + "\nEco  P " + std::to_string(playerEconomyLevel)
         + "/" + std::to_string(config::MaxEconomyLevel)
-        + "  Next " + std::to_string(economyUpgradeCost(PLAYER))
+        + "  AI " + std::to_string(aiEconomyLevel)
+        + "/" + std::to_string(config::MaxEconomyLevel)
         + "\nDrone " + std::to_string(workerCount(PLAYER))
         + "/" + std::to_string(realtime::MaxWorkers)
-        + " Rax " + std::to_string(completedBuildingCount(PLAYER, building::Barracks))
+        + "  Army " + std::to_string(myunits.size())
+        + "/" + std::to_string(config::MaxUnits)
+        + "\nRax " + std::to_string(completedBuildingCount(PLAYER, building::Barracks))
         + "/" + std::to_string(buildingCap(PLAYER, building::Barracks))
-        + "\nTower " + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower))
-        + "/" + std::to_string(buildingCap(PLAYER, building::DefenseTower))
-        + " Army " + std::to_string(myunits.size())
-        + "/" + std::to_string(config::MaxUnits));
+        + "  Tower " + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower))
+        + "/" + std::to_string(buildingCap(PLAYER, building::DefenseTower)));
     window.draw(CommandText);
 
-    sf::Text perkText(std::string(inspectingEnemyBase ? "Enemy" : "Yours") + " Lv" + std::to_string(shownLevel)
-        + "  " + perkLine(), myfont, 9);
-    perkText.setFillColor(sf::Color(255, 226, 142));
-    perkText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 172.f);
+    sf::Text perkText(std::string(inspectingEnemyBase ? "Enemy" : "Your") + " Lv" + std::to_string(shownLevel)
+        + " buffs: " + clampText(perkLine(), 24), myfont, 10);
+    perkText.setFillColor(inspectingEnemyBase ? sf::Color(149, 203, 255) : sf::Color(255, 226, 142));
+    perkText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 169.f);
     window.draw(perkText);
 
-    if (!realtimeMode) {
-        window.draw(EndTurnBtn);
-    }
-    else {
-        upgradeBtn.setColor(commandForTeam(PLAYER) >= upgradeCostForNextLevel(PLAYER)
-            && playerUpgradeLevel < config::MaxTechLevel
-            ? sf::Color::White
-            : sf::Color(255, 255, 255, 130));
-        window.draw(upgradeBtn);
-    }
-
-    const float laneY = 148.f;
+    const float laneY = 190.f;
     int playerLaneCounts[lane::Count] = {};
     int aiLaneCounts[lane::Count] = {};
     for (const auto& unit : myunits) {
@@ -2805,25 +2865,24 @@ void Game::DrawSidePanel()
         }
     }
     for (int i = 0; i < lane::Count; ++i) {
-        sf::RectangleShape laneButton(sf::Vector2f(40.f, 24.f));
-        laneButton.setPosition(config::PanelX + 14.f + static_cast<float>(i) * 47.f, laneY);
+        sf::RectangleShape laneButton(sf::Vector2f(56.f, 24.f));
+        laneButton.setPosition(config::PanelX + 17.f + static_cast<float>(i) * 64.f, laneY);
         laneButton.setFillColor(playerSelectedLane == i ? sf::Color(217, 166, 75) : sf::Color(48, 60, 52));
-        laneButton.setOutlineColor(sf::Color(231, 221, 168));
-        laneButton.setOutlineThickness(playerSelectedLane == i ? 1.6f : 0.8f);
+        laneButton.setOutlineColor(playerSelectedLane == i ? sf::Color(255, 236, 164) : sf::Color(111, 128, 99));
+        laneButton.setOutlineThickness(playerSelectedLane == i ? 1.8f : 0.9f);
         window.draw(laneButton);
 
-        sf::Text laneText(laneName(i), myfont, 11);
+        sf::Text laneText(laneName(i), myfont, 10);
         laneText.setFillColor(playerSelectedLane == i ? sf::Color(41, 31, 20) : sf::Color(224, 232, 203));
         laneText.setPosition(laneButton.getPosition() + sf::Vector2f(7.f, 1.f));
         window.draw(laneText);
 
         sf::Text laneCount(std::to_string(playerLaneCounts[i]) + "/" + std::to_string(aiLaneCounts[i]), myfont, 8);
         laneCount.setFillColor(playerSelectedLane == i ? sf::Color(64, 45, 23) : sf::Color(205, 214, 188));
-        laneCount.setPosition(laneButton.getPosition() + sf::Vector2f(10.f, 14.f));
+        laneCount.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 14.f));
         window.draw(laneCount);
     }
 
-    panelHint.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 182.f);
     const auto guideText = [this]() {
         if (playerEconomyLevel == 0) {
             return std::string("Next: ECONOMY first");
@@ -2845,14 +2904,41 @@ void Game::DrawSidePanel()
         }
         return std::string("Pick lane, keep queues busy");
     };
-    const int aiThreat = static_cast<int>(enemys.size()) - static_cast<int>(myunits.size());
-    panelHint.setString(guideText() + "\nLane P/AI  Threat " + std::to_string(aiThreat));
+    panelHint.setCharacterSize(10);
+    panelHint.setFillColor(sf::Color(219, 209, 174));
+    panelHint.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 203.f);
+    panelHint.setString(guideText());
+    window.draw(panelHint);
+
+    if (!realtimeMode) {
+        window.draw(EndTurnBtn);
+    }
+    else {
+        upgradeBtn.setColor(commandForTeam(PLAYER) >= upgradeCostForNextLevel(PLAYER)
+            && playerUpgradeLevel < config::MaxTechLevel
+            ? sf::Color::White
+            : sf::Color(255, 255, 255, 130));
+        window.draw(upgradeBtn);
+    }
+
     economyBtn.setColor(commandForTeam(PLAYER) >= economyUpgradeCost(PLAYER)
         && playerEconomyLevel < config::MaxEconomyLevel
         ? sf::Color::White
         : sf::Color(255, 255, 255, 130));
-    economyLabel.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), config::EconomyButtonY - 12.f);
-    economyLabel.setString("Econ: +" + std::to_string(config::EconomyIncomeStep) + "/tick +drone");
+    window.draw(economyBtn);
+
+    economyLabel.setCharacterSize(9);
+    economyLabel.setFillColor(sf::Color(244, 221, 150));
+    economyLabel.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), config::EconomyButtonY + config::SideButtonHeight - 2.f);
+    economyLabel.setString("Cost " + std::to_string(economyUpgradeCost(PLAYER))
+        + " | +" + std::to_string(config::EconomyIncomeStep) + "/tick +drone");
+    window.draw(economyLabel);
+
+    sf::Text upgradeCost("Cost " + std::to_string(upgradeCostForNextLevel(PLAYER)) + " | Level gives 3 cards", myfont, 9);
+    upgradeCost.setFillColor(sf::Color(244, 221, 150));
+    upgradeCost.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), config::EndTurnButtonY + config::SideButtonHeight - 2.f);
+    window.draw(upgradeCost);
+
     const bool canBuildBarracks = commandForTeam(PLAYER) >= config::BarracksCost
         && totalBuildingCount(PLAYER, building::Barracks) < buildingCap(PLAYER, building::Barracks);
     inf.setColor(canQueueUnit(PLAYER, UName::INFANTARY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
@@ -2865,9 +2951,24 @@ void Game::DrawSidePanel()
         && totalBuildingCount(PLAYER, building::DefenseTower) < buildingCap(PLAYER, building::DefenseTower);
     towerBtn.setColor(canQueueTower ? sf::Color::White : sf::Color(255, 255, 255, 130));
 
-    window.draw(panelHint);
-    window.draw(economyBtn);
-    window.draw(economyLabel);
+    const auto setLabel = [this](sf::Text& text, const std::string& value, int buttonY) {
+        text.setCharacterSize(8);
+        text.setFillColor(sf::Color(221, 211, 177));
+        text.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), static_cast<float>(buttonY + config::SideButtonHeight - 1));
+        text.setString(value);
+    };
+    setLabel(barracksLabel, std::to_string(config::BarracksCost) + " | cap "
+        + std::to_string(totalBuildingCount(PLAYER, building::Barracks)) + "/"
+        + std::to_string(buildingCap(PLAYER, building::Barracks)) + " auto near base", config::BuildBarracksY);
+    setLabel(infantryLabel, std::to_string(config::InfantryCost) + " | core frontline", config::BuildInfantryY);
+    setLabel(shooterLabel, std::to_string(config::ShooterCost) + " | Eco1/Lv1 ranged", config::BuildShooterY);
+    setLabel(cavalryLabel, std::to_string(config::CavalryCost) + " | 2 Rax dives shooters", config::BuildCavalryY);
+    setLabel(siegeLabel, std::to_string(config::SiegeCost) + " | Lv5 outranges towers", config::BuildSiegeY);
+    setLabel(guardianLabel, std::to_string(config::GuardianCost) + " | Lv7 heavy tank", config::BuildGuardianY);
+    setLabel(towerLabel, std::to_string(config::TowerCost) + " | cap "
+        + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower)) + "/"
+        + std::to_string(buildingCap(PLAYER, building::DefenseTower)) + " anti-rush", config::BuildTowerY);
+
     window.draw(helpBtn);
     window.draw(barracksBtn);
     window.draw(barracksLabel);
