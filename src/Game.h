@@ -28,17 +28,12 @@ class Game
 {
 public:
     sf::Text Globle_text;
-    sf::Text UnitText;
-    sf::Text UnitAttack;
-    sf::Text UnitHP;
     sf::Text CommandText;
     bool gameWin;
 
     mapgenerator gm;
 
     sf::Font myfont;
-
-    std::vector<MapPos> drawPaths;
 
     sf::Clock clock;
     sf::Clock realtimeFrameClock;
@@ -196,7 +191,6 @@ public:
     void setTileID(int x, int y, tile::ID id);
     bool isBlockingTile(tile::ID id) const;
     bool isMapCell(int x, int y) const;
-    bool isRealtimeMode() const;
     bool isCellWalkableForUnit(int x, int y) const;
     bool isCellReservedForSpawn(int x, int y) const;
     bool isBuildableCell(int x, int y) const;

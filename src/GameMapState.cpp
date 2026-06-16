@@ -36,11 +36,6 @@ bool Game::isMapCell(int x, int y) const
         && x < static_cast<int>(maze[y].size());
 }
 
-bool Game::isRealtimeMode() const
-{
-    return true;
-}
-
 bool Game::isCellWalkableForUnit(int x, int y) const
 {
     if (!isMapCell(x, y)) {

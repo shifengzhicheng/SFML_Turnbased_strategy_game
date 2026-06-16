@@ -19,7 +19,6 @@ void Game::clearSelection()
 {
     // Keep selection exclusive so UI hints, build buttons, and path previews
     // cannot be overwritten by multiple selected actors in one frame.
-    drawPaths.clear();
     if (Base_red) {
         Base_red->setState(UState::UNITNORMAL);
     }

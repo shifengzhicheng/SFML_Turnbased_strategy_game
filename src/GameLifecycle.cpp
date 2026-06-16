@@ -97,9 +97,6 @@ void Game::Initial()
     gameOver = false;
     const float panelTextX = static_cast<float>(config::PanelX + config::PanelPadding);
     setupText(Globle_text, myfont, 17, sf::Color(229, 221, 189), "GameStart", panelTextX, 48.f);
-    setupText(UnitText, myfont, 14, sf::Color(201, 215, 186), "", panelTextX, 96.f);
-    setupText(UnitAttack, myfont, 14, sf::Color(201, 215, 186), "", panelTextX, 118.f);
-    setupText(UnitHP, myfont, 14, sf::Color(201, 215, 186), "", panelTextX, 140.f);
     setupText(CommandText, myfont, 14, sf::Color(255, 218, 112), "", panelTextX, 176.f);
     setupText(panelTitle, myfont, 19, sf::Color(255, 246, 208), "AUTO WAR", panelTextX, 16.f);
     setupText(panelHint, myfont, 12, sf::Color(211, 199, 165), "Pick lane, queue units", panelTextX, 184.f);
@@ -138,7 +135,6 @@ void Game::loadMediaData()
 void Game::clear()
 {
     effects.clear();
-    drawPaths.clear();
     running = false;
     gameWin = false;
     MosOnUnit = nullptr;

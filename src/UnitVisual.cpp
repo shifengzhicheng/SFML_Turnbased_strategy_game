@@ -24,7 +24,6 @@ void Unit::setState(int state)
 		break;
 	case UState::UNITCLICK:
 		UnitState = UState::UNITCLICK;
-		mygame->drawPaths.clear();
 		break;
 	case UState::MOVING:
 		UnitState = UState::MOVING;

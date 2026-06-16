@@ -122,8 +122,6 @@ void Game::Draw()
             window.draw(rect);
         }
 
-        for (const auto& pathTile : drawPaths)
-            window.draw(pathTile);
         drawGridOverlay();
         drawLaneGuides();
         drawResourceNodes();
@@ -198,10 +196,6 @@ void Game::Draw()
         drawBasePerks(Base_red.get(), PLAYER);
         drawBasePerks(Base_blue.get(), AI);
 
-        UnitText.setString("");
-        UnitAttack.setString("");
-        UnitHP.setString("");
-
         for (const auto& u : enemys) {
             drawUnitBase(window, Point(u->x, u->y), sf::Color(61, 128, 206));
             window.draw(*u);
@@ -212,8 +206,6 @@ void Game::Draw()
             if (u->UnitState == UState::UNITCLICK) {
                 MapPos selected(Point(u->x, u->y), tile::Choosen);
                 window.draw(selected);
-                UnitText.setString("Attack: " + to_string(u->myattack()));
-                UnitHP.setString("HP: " + to_string(u->Health));
             }
             window.draw(*u);
             window.draw(u->UnitText);
