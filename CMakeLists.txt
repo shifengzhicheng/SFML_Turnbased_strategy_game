@@ -55,6 +55,7 @@ set(SFML_TBS_GAME_SOURCES
     src/AIController.cpp
     src/Astar.cpp
     src/ArtAssets.cpp
+    src/ArtInternal.cpp
     src/AutoCombat.cpp
     src/Building.cpp
     src/Button.cpp
