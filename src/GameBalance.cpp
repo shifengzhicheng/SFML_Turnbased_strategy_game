@@ -145,23 +145,21 @@ int Game::unitCost(int name) const
 
 bool Game::isUnitUnlocked(int team, int name) const
 {
+    const UnitDefinition* definition = findUnitDefinition(name);
+    if (!definition) {
+        return false;
+    }
+
     const int economy = economyLevelForTeam(team);
     const int barracks = completedBuildingCount(team, building::Barracks);
     const int upgrade = team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
-    switch (name) {
-    case UName::INFANTARY:
-        return barracks >= 1;
-    case UName::SHOOTER:
-        return barracks >= 1 && (economy >= 1 || upgrade >= 1);
-    case UName::CAVALRY:
-        return barracks >= 2 && (economy >= 2 || upgrade >= 3);
-    case UName::SIEGE:
-        return barracks >= 2 && economy >= 3 && upgrade >= 5;
-    case UName::GUARDIAN:
-        return barracks >= 3 && economy >= 4 && upgrade >= 7;
-    default:
+    if (barracks < definition->requiredBarracks) {
         return false;
     }
+    if (definition->unlockByEconomyOrTech) {
+        return economy >= definition->requiredEconomyLevel || upgrade >= definition->requiredTechLevel;
+    }
+    return economy >= definition->requiredEconomyLevel && upgrade >= definition->requiredTechLevel;
 }
 
 int Game::commandForTeam(int team) const

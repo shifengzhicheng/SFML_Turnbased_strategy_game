@@ -37,6 +37,9 @@ int main()
         require(definition.moveStepSeconds > 0.f, "unit move cadence should be positive");
         require(definition.attackCooldownSeconds > 0.f, "unit attack cooldown should be positive");
         require(definition.trainSeconds > 0.f, "unit training time should be positive");
+        require(definition.requiredBarracks >= 1, "trainable units should require at least one barracks");
+        require(definition.requiredEconomyLevel >= 0, "economy unlock requirement should be non-negative");
+        require(definition.requiredTechLevel >= 0, "tech unlock requirement should be non-negative");
         require(definition.artKind != art::UnitKind::None, "unit art kind should be explicit");
     }
 
@@ -45,12 +48,20 @@ int main()
             "infantry cost should stay sourced from Config");
     require(unitDefinition(UName::SHOOTER).trainSeconds == realtime::ShooterTrainSeconds,
             "shooter train time should stay sourced from RealtimeConfig");
+    require(unitDefinition(UName::SHOOTER).unlockByEconomyOrTech,
+            "shooter should unlock through either economy or tech");
     require(unitDefinition(UName::CAVALRY).artKind == art::UnitKind::Cavalry,
             "cavalry should point to cavalry art");
+    require(unitDefinition(UName::CAVALRY).requiredBarracks == 2,
+            "cavalry should require two barracks");
     require(unitDefinition(UName::SIEGE).attackRange == config::SiegeRange,
             "siege range should stay sourced from Config");
+    require(!unitDefinition(UName::SIEGE).unlockByEconomyOrTech,
+            "siege should require both economy and tech pacing gates");
     require(unitDefinition(UName::GUARDIAN).maxHealth == config::GuardianHealth,
             "guardian health should stay sourced from Config");
+    require(unitDefinition(UName::GUARDIAN).requiredTechLevel == 7,
+            "guardian should stay a late-game unlock");
 
     bool threw = false;
     try {

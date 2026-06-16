@@ -15,6 +15,10 @@ struct UnitDefinition
     float moveStepSeconds;
     float attackCooldownSeconds;
     float trainSeconds;
+    int requiredBarracks;
+    int requiredEconomyLevel;
+    int requiredTechLevel;
+    bool unlockByEconomyOrTech;
     art::UnitKind artKind;
 };
 

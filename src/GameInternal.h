@@ -157,19 +157,10 @@ namespace game_internal
 
     inline const char* unitDebugName(int name)
     {
-        switch (name) {
-        case UName::SHOOTER:
-            return "Shooter";
-        case UName::CAVALRY:
-            return "Cavalry";
-        case UName::SIEGE:
-            return "Siege";
-        case UName::GUARDIAN:
-            return "Guardian";
-        case UName::INFANTARY:
-        default:
-            return "Infantry";
+        if (const UnitDefinition* definition = findUnitDefinition(name)) {
+            return definition->debugName;
         }
+        return name == UName::BASE ? "Base" : "Unknown";
     }
 
     inline const char* perkShortName(int type)
