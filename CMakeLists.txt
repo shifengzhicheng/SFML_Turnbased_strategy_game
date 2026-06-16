@@ -37,7 +37,10 @@ set(SFML_TBS_GAME_SOURCES
     src/GameEconomy.cpp
     src/GameInput.cpp
     src/GameOperations.cpp
+    src/GameMapState.cpp
+    src/GamePathing.cpp
     src/GameRewards.cpp
+    src/GameSelection.cpp
     src/GameLifecycle.cpp
     src/GameEffectsFacade.cpp
     src/GameHudRender.cpp
@@ -47,7 +50,7 @@ set(SFML_TBS_GAME_SOURCES
     src/GameWorldRender.cpp
     src/GameUpdate.cpp
     src/GameWorkers.cpp
-    src/GameWorld.cpp
+    src/GameSpatial.cpp
     src/Action.cpp
     src/AIController.cpp
     src/Astar.cpp
