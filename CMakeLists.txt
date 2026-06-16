@@ -39,7 +39,11 @@ set(SFML_TBS_GAME_SOURCES
     src/GameOperations.cpp
     src/GameRewards.cpp
     src/GameLifecycle.cpp
+    src/GameEffectsFacade.cpp
+    src/GameHudRender.cpp
+    src/GameOverlayRender.cpp
     src/GameRender.cpp
+    src/GameWorldRender.cpp
     src/GameUpdate.cpp
     src/GameWorld.cpp
     src/AllUnit.cpp
