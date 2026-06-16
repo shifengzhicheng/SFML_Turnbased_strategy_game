@@ -35,7 +35,7 @@ namespace realtime
     inline constexpr float DefenseTowerBuildSeconds = 8.5f;
     inline constexpr float InfantryTrainSeconds = 8.0f;
     inline constexpr float ShooterTrainSeconds = 9.6f;
-    inline constexpr float CavalryTrainSeconds = 15.8f;
-    inline constexpr float SiegeTrainSeconds = 20.5f;
-    inline constexpr float GuardianTrainSeconds = 24.0f;
+    inline constexpr float CavalryTrainSeconds = 17.5f;
+    inline constexpr float SiegeTrainSeconds = 24.5f;
+    inline constexpr float GuardianTrainSeconds = 28.0f;
 }

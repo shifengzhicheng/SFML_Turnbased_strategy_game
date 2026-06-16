@@ -80,9 +80,9 @@ void Game::drawTutorialOverlay()
         "Unlocks",
         "  Infantry: 15 CMD, needs 1 Barracks.",
         "  Shooter: 22 CMD, needs 1 Barracks and Economy 1 or LEVEL 1.",
-        "  Cavalry: 38 CMD, needs 2 Barracks and Economy 2 or LEVEL 3.",
-        "  Siege: 56 CMD, needs LEVEL 5, 2 Barracks, Economy 3; outranges towers.",
-        "  Guardian: 74 CMD, needs LEVEL 7, 3 Barracks, Economy 4; anchors pushes.",
+        "  Cavalry: 44 CMD, needs 2 Barracks and Economy 2 or LEVEL 3.",
+        "  Siege: 72 CMD, needs LEVEL 5, 2 Barracks, Economy 3; outranges towers.",
+        "  Guardian: 92 CMD, needs LEVEL 7, 3 Barracks, Economy 4; anchors pushes.",
         "",
         "Hotkeys",
         "  H: show / hide this guide.  C: restart map.  Esc: back to menu."

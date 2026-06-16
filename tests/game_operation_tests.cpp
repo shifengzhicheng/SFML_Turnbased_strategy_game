@@ -87,20 +87,20 @@ int main()
     require(game.resourceIncome(PLAYER) - baseIncome >= 3,
             "first economy upgrade should noticeably increase per-tick income");
     game.playerEconomyLevel = 4;
-    require(game.resourceIncome(PLAYER) >= 21,
-            "mid economy income should scale strongly enough to repay in-match");
+    require(game.resourceIncome(PLAYER) >= 19,
+            "mid economy income should scale without running away");
     game.playerEconomyLevel = 8;
-    require(game.resourceIncome(PLAYER) >= 45,
-            "late economy income should feel like a production engine");
+    require(game.resourceIncome(PLAYER) >= 39,
+            "late economy income should still feel like a production engine");
     game.playerEconomyLevel = 11;
-    require(game.economyUpgradeCost(PLAYER) <= 365,
-            "late economy cost should not become a dead sink");
+    require(game.economyUpgradeCost(PLAYER) <= 410,
+            "late economy cost should stay payable but slow runaway tempo");
 
     game.clear();
     game.playerEconomyLevel = 8;
     const int incomeBeforeMining = game.resourceIncome(PLAYER);
     game.applyPerk(PLAYER, perk::Mining);
-    require(game.resourceIncome(PLAYER) >= incomeBeforeMining + 5,
+    require(game.resourceIncome(PLAYER) >= incomeBeforeMining + 4,
             "Mining perk should make economy upgrades visibly stronger");
     const float shooterDamageBefore = game.unitDamageMultiplier(PLAYER, UName::SHOOTER);
     const float shooterCooldownBefore = game.unitAttackCooldownMultiplier(PLAYER, UName::SHOOTER);

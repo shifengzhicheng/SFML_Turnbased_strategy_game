@@ -35,10 +35,10 @@ namespace config
     inline constexpr int MaxCommand = 1600;
     inline constexpr int BaseCommandIncome = 5;
     inline constexpr int EconomyIncomeStep = 3;
-    inline constexpr int EconomyIncomeQuadraticDivisor = 4;
+    inline constexpr int EconomyIncomeQuadraticDivisor = 6;
     inline constexpr int MaxEconomyLevel = 12;
-    inline constexpr int EconomyUpgradeCost = 42;
-    inline constexpr int EconomyUpgradeCostStep = 18;
+    inline constexpr int EconomyUpgradeCost = 46;
+    inline constexpr int EconomyUpgradeCostStep = 21;
     inline constexpr int KillBountyPercent = 45;
     inline constexpr int KillBountyMin = 4;
     inline constexpr int BarracksCost = 56;
@@ -85,9 +85,9 @@ namespace config
     inline constexpr int BuildInfluenceRadius = 13;
     inline constexpr int InfantryCost = 15;
     inline constexpr int ShooterCost = 22;
-    inline constexpr int CavalryCost = 38;
-    inline constexpr int SiegeCost = 56;
-    inline constexpr int GuardianCost = 74;
+    inline constexpr int CavalryCost = 44;
+    inline constexpr int SiegeCost = 72;
+    inline constexpr int GuardianCost = 92;
     inline constexpr int InfantryHealth = 220;
     inline constexpr int ShooterHealth = 100;
     inline constexpr int CavalryHealth = 420;

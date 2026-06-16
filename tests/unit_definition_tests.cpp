@@ -55,12 +55,18 @@ int main()
             "cavalry should point to cavalry art");
     require(unitDefinition(UName::CAVALRY).requiredBarracks == 2,
             "cavalry should require two barracks");
+    require(unitDefinition(UName::CAVALRY).commandCost >= unitDefinition(UName::SHOOTER).commandCost * 2,
+            "cavalry should be a meaningful mid-tier investment");
     require(unitDefinition(UName::SIEGE).attackRange == config::SiegeRange,
             "siege range should stay sourced from Config");
+    require(unitDefinition(UName::SIEGE).commandCost >= unitDefinition(UName::SHOOTER).commandCost * 3,
+            "siege should not be cheap enough to spam behind towers");
     require(!unitDefinition(UName::SIEGE).unlockByEconomyOrTech,
             "siege should require both economy and tech pacing gates");
     require(unitDefinition(UName::GUARDIAN).maxHealth == config::GuardianHealth,
             "guardian health should stay sourced from Config");
+    require(unitDefinition(UName::GUARDIAN).commandCost >= unitDefinition(UName::CAVALRY).commandCost * 2,
+            "guardian should remain a late-game commitment");
     require(unitDefinition(UName::GUARDIAN).requiredTechLevel == 7,
             "guardian should stay a late-game unlock");
 
