@@ -95,7 +95,6 @@ void MoveableUnit::move(Point p)
 	}
 	else {
 		mypath.clear();
-		mygame->running = false;
 	}
 }
 

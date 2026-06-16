@@ -140,8 +140,6 @@ public:
 
     sf::RenderWindow window;
 
-    bool running;
-
     void loadpic();
 
     std::vector<std::vector<int> > maze;

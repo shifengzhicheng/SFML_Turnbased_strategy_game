@@ -135,7 +135,6 @@ void Game::loadMediaData()
 void Game::clear()
 {
     effects.clear();
-    running = false;
     gameWin = false;
     gameOver = false;
     MosOnUnit = nullptr;
