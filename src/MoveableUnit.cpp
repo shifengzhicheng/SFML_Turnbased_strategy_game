@@ -47,13 +47,33 @@ void MoveableUnit::configureFromDefinition(const UnitDefinition& definition)
 
 bool MoveableUnit::isBlocked(Point p)
 {
-	astar.setMaze(Astar::makeEmptyMaze());
-	myattackpath=astar.GetPath(Point(x, y), p,true);
-	if(!myattackpath.empty())
-		myattackpath.pop_front();
-	for (const auto& it : myattackpath) {
-		tile::ID id = mygame->tiles[it.y * mygame->horizontalTiles + it.x].getID();
-		if (id == tile::Mount || id == tile::Tree) {
+	int currentX = x;
+	int currentY = y;
+	const int dx = std::abs(p.x - currentX);
+	const int dy = std::abs(p.y - currentY);
+	const int stepX = currentX < p.x ? 1 : -1;
+	const int stepY = currentY < p.y ? 1 : -1;
+	int error = dx - dy;
+
+	while (currentX != p.x || currentY != p.y) {
+		const int doubledError = error * 2;
+		if (doubledError > -dy) {
+			error -= dy;
+			currentX += stepX;
+		}
+		if (doubledError < dx) {
+			error += dx;
+			currentY += stepY;
+		}
+
+		if (currentX == p.x && currentY == p.y) {
+			break;
+		}
+		if (!mygame->isMapCell(currentX, currentY)) {
+			return true;
+		}
+		const tile::ID id = mygame->tiles[currentY * mygame->horizontalTiles + currentX].getID();
+		if (mygame->isBlockingTile(id)) {
 			return true;
 		}
 	}

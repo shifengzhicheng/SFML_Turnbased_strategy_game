@@ -5,7 +5,6 @@
 #include <memory>
 #include "Action.h"
 #include "Point.h"
-#include "Astar.h"
 
 class Game;
 class Attacker;
@@ -64,14 +63,12 @@ class MoveableUnit : public Unit
 
 protected:
 
-	std::deque<Point> myattackpath;
 	defaultInfo myinfo;
 	std::unique_ptr<Attacker> attackmethod;
 	void configureFromDefinition(const UnitDefinition& definition);
 
 public:
 	bool isBlocked(Point p);
-	Astar astar;
 
 	int laneIndex = 1;
 	float realtimeMoveTimer = 0.f;

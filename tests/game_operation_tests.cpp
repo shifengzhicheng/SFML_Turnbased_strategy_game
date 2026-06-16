@@ -115,6 +115,21 @@ int main()
     require(edgeAttacker->canAutoAttack(game.Base_blue.get()),
             "base range checks should use the whole 2x2 footprint, not only the top-left tile");
 
+    game.clear();
+    for (int x = 10; x <= 14; ++x) {
+        game.setTileID(x, 10, tile::Empty);
+    }
+    require(game.createUnit(PLAYER, UName::SHOOTER, 10, 10, lane::Mid),
+            "test shooter should spawn for line-of-sight checks");
+    require(game.createUnit(AI, UName::INFANTARY, 14, 10, lane::Mid),
+            "test infantry target should spawn for line-of-sight checks");
+    game.setTileID(12, 10, tile::Tree);
+    require(!game.myunits.back()->canAutoAttack(game.enemys.back().get()),
+            "tree obstacles between units should block line-of-sight attacks");
+    game.setTileID(12, 10, tile::Empty);
+    require(game.myunits.back()->canAutoAttack(game.enemys.back().get()),
+            "clearing the obstacle should restore line-of-sight attacks");
+
     game.gameOver = true;
     game.clear();
     require(!game.gameOver,
