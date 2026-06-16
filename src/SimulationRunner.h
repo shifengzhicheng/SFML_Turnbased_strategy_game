@@ -1,11 +1,6 @@
 #pragma once
 
-enum class ScriptedPlan
-{
-    Balanced,
-    Rush,
-    Greedy
-};
+#include "ScriptedPlan.h"
 
 struct CliOptions
 {

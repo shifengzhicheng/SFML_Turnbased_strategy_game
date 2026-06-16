@@ -57,6 +57,8 @@ set(SFML_TBS_GAME_SOURCES
 
 add_executable(sfml_tbs
     src/main.cpp
+    src/PolicyTrainer.cpp
+    src/ScriptedPlan.cpp
     src/SimulationRunner.cpp
     ${SFML_TBS_GAME_SOURCES}
 )
