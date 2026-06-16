@@ -138,6 +138,8 @@ public:
     float aiIncomeTimer = 0.f;
     float playerBaseAttackTimer = 0.f;
     float aiBaseAttackTimer = 0.f;
+    float playerBaseShieldTimer = 0.f;
+    float aiBaseShieldTimer = 0.f;
     float playerEmergencyTrainTimer = 0.f;
     float aiEmergencyTrainTimer = 0.f;
     float gameTimeSeconds = 0.f;
@@ -277,6 +279,7 @@ public:
     void updateProduction(float dt);
     void updateDefenseTowers(float dt);
     void updateBaseDefenses(float dt);
+    void updateComebackTimers(float dt);
     void updateEmergencyBaseTraining(float dt);
     void cleanupDestroyedBuildings();
     void handleRealtimeMapClick(sf::Vector2i mousePos, sf::Event event);
@@ -294,7 +297,8 @@ public:
     float unitDamageMultiplier(int team, int unitName) const;
     float unitHealthMultiplier(int team, int unitName) const;
     float unitAttackCooldownMultiplier(int team, int unitName) const;
-    float baseDamageTakenMultiplier(int attackerUnitName) const;
+    float baseDamageTakenMultiplier(int attackerUnitName, int defenderTeam) const;
+    float baseShieldSecondsForTeam(int team) const;
     float teamTrainTimeMultiplier(int team) const;
     float miningIncomeMultiplier(int team) const;
     int defenseTowerRange(int team) const;
@@ -322,6 +326,7 @@ public:
     Point chooseStrategicRallyPoint(const MoveableUnit& unit) const;
     bool canAttackBuilding(const MoveableUnit& unit, const Building& building) const;
     void autoAttackBuilding(MoveableUnit& unit, Building& building);
+    void applyStructureLossRelief(const Building& destroyed);
     void resetWorkersForBuilding(int buildingId);
     void maybeGrantReward(int team, const std::string& reason);
     void buildRewardChoices();

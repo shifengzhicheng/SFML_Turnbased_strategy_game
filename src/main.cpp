@@ -5,8 +5,6 @@
 #include <deque>
 #include <iostream>
 #include <string>
-#include <thread>
-#include <chrono>
 
 #include "Game.h"
 #include "RealtimeConfig.h"
@@ -397,11 +395,12 @@ int main(int argc, char* argv[])
     bool simulateIgnoreGameOver = false;
     ScriptedPlan scriptedPlan = ScriptedPlan::Balanced;
     float simulateSeconds = 120.f;
+    float simulateDt = 0.10f;
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
         if (arg == "--simulate") {
             simulate = true;
-            if (i + 1 < argc) {
+            if (i + 1 < argc && looksLikeNumber(argv[i + 1])) {
                 simulateSeconds = std::stof(argv[++i]);
             }
         }
@@ -431,9 +430,12 @@ int main(int argc, char* argv[])
         else if (arg == "--simulate-ignore-gameover") {
             simulate = true;
             simulateIgnoreGameOver = true;
-            if (i + 1 < argc) {
+            if (i + 1 < argc && looksLikeNumber(argv[i + 1])) {
                 simulateSeconds = std::stof(argv[++i]);
             }
+        }
+        else if (arg == "--simulate-dt" && i + 1 < argc && looksLikeNumber(argv[i + 1])) {
+            simulateDt = std::clamp(std::stof(argv[++i]), 0.02f, 0.25f);
         }
     }
 
@@ -453,7 +455,7 @@ int main(int argc, char* argv[])
         game.gameSceneState = SCENE_GAME;
         game.clear();
 
-        constexpr float dt = 0.10f;
+        const float dt = simulateDt;
         const int ticks = static_cast<int>(simulateSeconds / dt);
         float playerScriptTimer = 0.f;
         ScriptedOperationQueue playerQueue(scriptedPlan);
@@ -466,7 +468,6 @@ int main(int argc, char* argv[])
                 }
             }
             game.updateRealtime(dt);
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
         game.logDebugSummary();
         if (simulatePlayer) {

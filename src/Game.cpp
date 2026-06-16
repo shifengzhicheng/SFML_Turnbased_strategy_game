@@ -259,6 +259,17 @@ namespace
         }
     }
 
+    int buildingCommandCost(int type)
+    {
+        switch (type) {
+        case building::DefenseTower:
+            return config::TowerCost;
+        case building::Barracks:
+        default:
+            return config::BarracksCost;
+        }
+    }
+
     int distanceSquared(Point a, Point b)
     {
         const int dx = a.x - b.x;
@@ -636,6 +647,7 @@ void Game::updateRealtime(float dt)
     astar.setMaze(maze);
     applyPathResults();
     cleanupDestroyedBuildings();
+    updateComebackTimers(dt);
     updateRealtimeEconomy(dt);
     aiController.update(*this, dt);
     assignWorkers();
@@ -650,6 +662,12 @@ void Game::updateRealtime(float dt)
     }
     cleanupDestroyedBuildings();
     updateDebugSummary(dt);
+}
+
+void Game::updateComebackTimers(float dt)
+{
+    playerBaseShieldTimer = std::max(0.f, playerBaseShieldTimer - dt);
+    aiBaseShieldTimer = std::max(0.f, aiBaseShieldTimer - dt);
 }
 
 void Game::updateTimedRewards()
@@ -693,6 +711,7 @@ void Game::logDebugSummary() const
         << " tower=" << totalBuildingCount(PLAYER, building::DefenseTower)
         << " level=" << playerUpgradeLevel
         << " base=" << (Base_red ? Base_red->Health : 0)
+        << " shield=" << static_cast<int>(std::ceil(playerBaseShieldTimer))
         << " army=" << myunits.size()
         << " | ai cmd=" << aiCommand
         << " eco=" << aiEconomyLevel
@@ -700,6 +719,7 @@ void Game::logDebugSummary() const
         << " tower=" << totalBuildingCount(AI, building::DefenseTower)
         << " level=" << aiUpgradeLevel
         << " base=" << (Base_blue ? Base_blue->Health : 0)
+        << " shield=" << static_cast<int>(std::ceil(aiBaseShieldTimer))
         << " army=" << enemys.size()
         << '\n';
 }
@@ -1011,7 +1031,7 @@ float Game::unitAttackCooldownMultiplier(int team, int unitName) const
     return std::clamp(multiplier, 0.76f, 1.f);
 }
 
-float Game::baseDamageTakenMultiplier(int attackerUnitName) const
+float Game::baseDamageTakenMultiplier(int attackerUnitName, int defenderTeam) const
 {
     float shield = 1.f;
     if (gameTimeSeconds < 480.f) {
@@ -1032,7 +1052,15 @@ float Game::baseDamageTakenMultiplier(int attackerUnitName) const
     else if (attackerUnitName == UName::GUARDIAN) {
         shield += 0.08f;
     }
+    if (baseShieldSecondsForTeam(defenderTeam) > 0.f) {
+        shield *= config::EmergencyShieldDamageMultiplier;
+    }
     return std::clamp(shield, 0.25f, 1.f);
+}
+
+float Game::baseShieldSecondsForTeam(int team) const
+{
+    return team == PLAYER ? playerBaseShieldTimer : aiBaseShieldTimer;
 }
 
 float Game::teamTrainTimeMultiplier(int team) const
@@ -1552,6 +1580,7 @@ void Game::cleanupDestroyedBuildings()
         setTileID(destroyed.point.x, destroyed.point.y, tile::Empty);
         addFloatingText(sf::Vector2f(destroyed.point.x * SqureSize, destroyed.point.y * SqureSize - 8.f),
                         std::string(buildingName(destroyed.type)) + " down", sf::Color(255, 218, 112), 12);
+        applyStructureLossRelief(destroyed);
         const int destroyer = destroyed.team == PLAYER ? AI : PLAYER;
         commandPool(*this, destroyer) = std::min(config::MaxCommand, commandPool(*this, destroyer) + 12);
         if (destroyer == PLAYER) {
@@ -1562,6 +1591,54 @@ void Game::cleanupDestroyedBuildings()
             + buildingName(destroyed.type) + " destroyed id=" + std::to_string(destroyed.id));
         it = buildings.erase(it);
     }
+}
+
+void Game::applyStructureLossRelief(const Building& destroyed)
+{
+    const int team = destroyed.team;
+    const int baseCost = buildingCommandCost(destroyed.type);
+    if (baseCost <= 0) {
+        return;
+    }
+
+    int salvage = std::max(8, baseCost * config::StructureSalvagePercent / 100);
+    const bool losingLastBarracks = destroyed.type == building::Barracks
+        && totalBuildingCount(team, building::Barracks) <= 1;
+    if (losingLastBarracks) {
+        salvage += config::LastBarracksReliefBonus;
+    }
+    commandPool(*this, team) = std::min(config::MaxCommand, commandPool(*this, team) + salvage);
+
+    DisMoveableUnit* base = team == PLAYER ? Base_red.get() : Base_blue.get();
+    const int repair = destroyed.type == building::Barracks
+        ? config::EmergencyBarracksRepair
+        : config::EmergencyTowerRepair;
+    int appliedRepair = 0;
+    if (base != nullptr && base->Health > 0) {
+        const int before = base->Health;
+        base->Health = std::min(4000, base->Health + repair);
+        appliedRepair = base->Health - before;
+        float& shieldTimer = team == PLAYER ? playerBaseShieldTimer : aiBaseShieldTimer;
+        shieldTimer = std::max(shieldTimer, config::EmergencyShieldSeconds);
+        base->playFlash(team == PLAYER ? sf::Color(255, 232, 132, 255) : sf::Color(142, 196, 255, 255), 0.35f);
+    }
+
+    if (team == PLAYER) {
+        const sf::Vector2f textPos(destroyed.point.x * SqureSize, destroyed.point.y * SqureSize - 26.f);
+        addFloatingText(textPos, "Rebuild +" + std::to_string(salvage) + " CMD",
+                        sf::Color(255, 232, 132), 12);
+        if (appliedRepair > 0) {
+            addFloatingText(sf::Vector2f(Red_baseP.x * SqureSize, Red_baseP.y * SqureSize - 36.f),
+                            "HQ Shield +" + std::to_string(appliedRepair),
+                            sf::Color(255, 244, 178), 13);
+        }
+    }
+
+    logEvent(std::string(team == PLAYER ? "player" : "ai")
+        + " comeback salvage=+" + std::to_string(salvage)
+        + " repair=+" + std::to_string(appliedRepair)
+        + " shield=" + std::to_string(static_cast<int>(std::ceil(baseShieldSecondsForTeam(team))))
+        + " after " + buildingName(destroyed.type) + " loss");
 }
 
 Building* Game::chooseBuildingTarget(MoveableUnit& unit)
@@ -2249,6 +2326,25 @@ void Game::Draw()
         drawBuildings();
         drawWorkers();
 
+        const auto drawBaseShield = [this](const DisMoveableUnit* base, int team) {
+            const float seconds = baseShieldSecondsForTeam(team);
+            if (base == nullptr || seconds <= 0.f) {
+                return;
+            }
+            const float pulse = 0.5f + 0.5f * std::sin(gameTimeSeconds * 8.f);
+            const sf::Color color = team == PLAYER ? sf::Color(255, 224, 112) : sf::Color(116, 184, 255);
+            sf::CircleShape shield(31.f, 56);
+            shield.setOrigin(31.f, 31.f);
+            shield.setScale(1.12f + pulse * 0.05f, 0.88f + pulse * 0.04f);
+            shield.setPosition(base->x * SqureSize + SqureSize, base->y * SqureSize + SqureSize);
+            shield.setFillColor(sf::Color(color.r, color.g, color.b, 28));
+            shield.setOutlineColor(sf::Color(color.r, color.g, color.b, static_cast<sf::Uint8>(150 + pulse * 75.f)));
+            shield.setOutlineThickness(2.2f);
+            window.draw(shield);
+        };
+        drawBaseShield(Base_red.get(), PLAYER);
+        drawBaseShield(Base_blue.get(), AI);
+
         if (Base_red) {
             window.draw(*Base_red);
             window.draw(Base_red->UnitText);
@@ -2280,6 +2376,12 @@ void Game::Draw()
             }
             if (perks.empty()) {
                 perks = "no perks";
+            }
+            const int shieldSeconds = static_cast<int>(std::ceil(baseShieldSecondsForTeam(team)));
+            if (shieldSeconds > 0) {
+                perks += " Shield";
+                perks += std::to_string(shieldSeconds);
+                perks += "s";
             }
             const int level = team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
             sf::Text status("Lv" + std::to_string(level) + " " + perks, myfont, 10);
@@ -2589,6 +2691,7 @@ void Game::drawTutorialOverlay()
         "  Towers beat basic attacks, but Siege outranges towers and forces a response.",
         "  Main bases have a timed shield; siege pushes are the clean finisher.",
         "  If all Barracks fall, the base slowly drafts emergency troops.",
+        "  Lost structures refund CMD and trigger a short HQ shield so you can rebuild.",
         "",
         "Tactics and counters",
         "  Every tech upgrade gives 3 tactic cards. Max tech is LEVEL 15.",
@@ -3037,6 +3140,8 @@ void Game::clear()
     aiIncomeTimer = 0.f;
     playerBaseAttackTimer = 0.f;
     aiBaseAttackTimer = 0.f;
+    playerBaseShieldTimer = 0.f;
+    aiBaseShieldTimer = 0.f;
     playerEmergencyTrainTimer = 0.f;
     aiEmergencyTrainTimer = 0.f;
     gameTimeSeconds = 0.f;

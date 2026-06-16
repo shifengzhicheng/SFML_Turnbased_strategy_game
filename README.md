@@ -61,12 +61,14 @@ ctest --test-dir build --output-on-failure
 ./build/sfml_tbs --simulate-plan balanced 800
 ./build/sfml_tbs --simulate-plan rush 800
 ./build/sfml_tbs --simulate-plan greedy 800
+./build/sfml_tbs --simulate-plan balanced 900 --simulate-dt 0.25
 ./build/sfml_tbs --simulate-ignore-gameover 900
 ```
 
 `--simulate-player` 默认使用 `balanced` 操作队列。脚本和 AI 都通过同一个
 `GameOperation` 入口执行“选线、升经济、升科技、造兵营/塔、排兵”等操作，
-便于比较不同策略是否真的容易上手、节奏是否合理。
+便于比较不同策略是否真的容易上手、节奏是否合理。模拟不会 sleep 等真实时间；
+`--simulate-dt` 可以把每 tick 推进到最多 `0.25`，用来快速跑长局且避免跳过移动节奏。
 如果需要复现实验地图，可以设置 `TBS_MAP_SEED=123` 后再运行模拟。
 
 ## 当前玩法
@@ -75,6 +77,7 @@ ctest --test-dir build --output-on-failure
 - `ECONOMY` 按钮会提高自然 CMD 增长，并增加基地附近可见工蜂数量；地图上的 CMD 标记只是读图锚点，不再需要占矿或抢矿。
 - `UPGRADE` 提升科技等级，并触发三选一 rogue 战术强化；双方基地状态会显示已选强化。
 - 兵营和防御塔由按钮自动放在基地/兵线附近，玩家只需要选 Top/Mid/Bot 后造兵。
+- 生产建筑被拆会触发补救：返还部分 CMD、临时 HQ 护盾和少量基地修复，降低一波崩盘的挫败感。
 - 攻城车射程略远于防御塔，防御塔成群时需要用攻城车逼塔、再用部队保护攻城车。
 - AI 使用开局、宏运营、防守和反塔攻城几套内部策略，会根据玩家兵种、塔/兵营数量和基地压力切换。
 

@@ -41,6 +41,12 @@ namespace config
     inline constexpr int KillBountyMin = 4;
     inline constexpr int BarracksCost = 56;
     inline constexpr int TowerCost = 48;
+    inline constexpr int StructureSalvagePercent = 42;
+    inline constexpr int LastBarracksReliefBonus = 18;
+    inline constexpr float EmergencyShieldSeconds = 18.0f;
+    inline constexpr float EmergencyShieldDamageMultiplier = 0.58f;
+    inline constexpr int EmergencyBarracksRepair = 260;
+    inline constexpr int EmergencyTowerRepair = 170;
     inline constexpr int BarracksBaseCap = 1;
     inline constexpr int BarracksCap = 7;
     inline constexpr int TowerBaseCap = 1;
