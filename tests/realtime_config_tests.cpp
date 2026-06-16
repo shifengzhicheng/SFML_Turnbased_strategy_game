@@ -10,8 +10,10 @@ int main()
     assert(realtime::InfantryStepSeconds < realtime::ShooterStepSeconds);
     assert(realtime::ShooterStepSeconds < realtime::GuardianStepSeconds);
     assert(realtime::GuardianStepSeconds < realtime::SiegeStepSeconds);
-    assert(realtime::SiegeStepSeconds >= realtime::CavalryStepSeconds * 2.5f);
-    assert(realtime::SiegeStepSeconds >= realtime::InfantryStepSeconds * 1.8f);
+    assert(realtime::CavalryStepSeconds <= realtime::InfantryStepSeconds * 0.60f);
+    assert(realtime::GuardianStepSeconds >= realtime::InfantryStepSeconds * 1.55f);
+    assert(realtime::SiegeStepSeconds >= realtime::CavalryStepSeconds * 4.0f);
+    assert(realtime::SiegeStepSeconds >= realtime::InfantryStepSeconds * 2.2f);
 
     return 0;
 }

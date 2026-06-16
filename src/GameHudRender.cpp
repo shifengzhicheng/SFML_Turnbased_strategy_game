@@ -217,8 +217,19 @@ void Game::DrawSidePanel()
     economyLabel.setCharacterSize(9);
     economyLabel.setFillColor(sf::Color(244, 221, 150));
     economyLabel.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), config::EconomyButtonY + config::SideButtonHeight - 2.f);
-    economyLabel.setString("Cost " + std::to_string(economyUpgradeCost(PLAYER))
-        + " | +" + std::to_string(config::EconomyIncomeStep) + "/tick +drone");
+    const auto projectedIncome = [this](int level) {
+        const int bonus = level * config::EconomyIncomeStep
+            + (level * level) / config::EconomyIncomeQuadraticDivisor;
+        return config::BaseCommandIncome
+            + static_cast<int>(std::round(static_cast<float>(bonus) * miningIncomeMultiplier(PLAYER)));
+    };
+    const int nextEconomyGain = playerEconomyLevel < config::MaxEconomyLevel
+        ? projectedIncome(playerEconomyLevel + 1) - projectedIncome(playerEconomyLevel)
+        : 0;
+    economyLabel.setString(playerEconomyLevel < config::MaxEconomyLevel
+        ? ("Cost " + std::to_string(economyUpgradeCost(PLAYER))
+            + " | +" + std::to_string(nextEconomyGain) + "/tick +drone")
+        : ("Max | " + std::to_string(resourceIncome(PLAYER)) + "/tick"));
     window.draw(economyLabel);
 
     sf::Text upgradeCost("Cost " + std::to_string(upgradeCostForNextLevel(PLAYER)) + " | Level gives 3 cards", myfont, 9);

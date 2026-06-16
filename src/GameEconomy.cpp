@@ -15,6 +15,16 @@ using namespace sf;
 using namespace std;
 using namespace game_internal;
 
+namespace
+{
+    int economyIncomeBonusForLevel(int level)
+    {
+        const int safeLevel = std::max(0, level);
+        return safeLevel * config::EconomyIncomeStep
+            + (safeLevel * safeLevel) / config::EconomyIncomeQuadraticDivisor;
+    }
+}
+
 int Game::upgradeCostForNextLevel(int team) const
 {
     const int level = team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
@@ -48,7 +58,7 @@ int Game::resourceIncome(int team) const
     const int level = economyLevelForTeam(team);
     const float multiplier = miningIncomeMultiplier(team);
     int income = config::BaseCommandIncome
-        + static_cast<int>(std::round(static_cast<float>(level * config::EconomyIncomeStep) * multiplier));
+        + static_cast<int>(std::round(static_cast<float>(economyIncomeBonusForLevel(level)) * multiplier));
     if (team == AI) {
         // A mild difficulty stipend keeps heuristic AI competitive without
         // adding hidden resource types for the player to understand.
@@ -68,9 +78,11 @@ int Game::economyUpgradeCost(int team) const
     if (level >= config::MaxEconomyLevel) {
         return 0;
     }
+    // Keep payback near the length of one or two pushes: late economy should
+    // accelerate the army, not feel like a dead sink before the match ends.
     int cost = config::EconomyUpgradeCost
         + level * config::EconomyUpgradeCostStep
-        + level * level * 3;
+        + level * level;
     if (team == AI && gameTimeSeconds > 840.f) {
         cost = static_cast<int>(std::round(static_cast<float>(cost) * 0.52f));
     }
@@ -123,6 +135,7 @@ bool Game::upgradeEconomy(int team)
 {
     int& level = team == PLAYER ? playerEconomyLevel : aiEconomyLevel;
     const int cost = economyUpgradeCost(team);
+    const int previousIncome = resourceIncome(team);
     if (level >= config::MaxEconomyLevel || commandPool(*this, team) < cost) {
         if (team == PLAYER) {
             addFloatingText(sf::Vector2f(config::PanelX + 18.f, static_cast<float>(config::EconomyButtonY) - 18.f),
@@ -135,10 +148,11 @@ bool Game::upgradeEconomy(int team)
     commandPool(*this, team) -= cost;
     ++level;
     syncWorkersForEconomy(team);
+    const int incomeGain = resourceIncome(team) - previousIncome;
     Unit* base = team == PLAYER ? static_cast<Unit*>(Base_red.get()) : static_cast<Unit*>(Base_blue.get());
     if (base != nullptr) {
         addFloatingText(sf::Vector2f(base->x * SqureSize + SqureSize, base->y * SqureSize - 42.f),
-                        "Economy Lv" + std::to_string(level),
+                        "Eco Lv" + std::to_string(level) + " +" + std::to_string(incomeGain) + "/tick",
                         team == PLAYER ? sf::Color(218, 255, 134) : sf::Color(149, 203, 255), 13);
     }
     logEvent(std::string(team == PLAYER ? "player" : "ai") + " economy level " + std::to_string(level));

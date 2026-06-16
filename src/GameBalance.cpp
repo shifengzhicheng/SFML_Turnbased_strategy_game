@@ -40,19 +40,19 @@ float Game::unitDamageMultiplier(int team, int unitName) const
     float multiplier = damageMultiplier(team);
     switch (unitName) {
     case UName::INFANTARY:
-        multiplier += static_cast<float>(perkLevel(team, perk::Drill)) * 0.08f;
+        multiplier += static_cast<float>(perkLevel(team, perk::Drill)) * config::DrillInfantryDamageBonus;
         break;
     case UName::GUARDIAN:
-        multiplier += static_cast<float>(perkLevel(team, perk::Drill)) * 0.06f;
+        multiplier += static_cast<float>(perkLevel(team, perk::Drill)) * config::DrillGuardianDamageBonus;
         break;
     case UName::SHOOTER:
-        multiplier += static_cast<float>(perkLevel(team, perk::Volley)) * 0.08f;
+        multiplier += static_cast<float>(perkLevel(team, perk::Volley)) * config::VolleyDamageBonus;
         break;
     case UName::CAVALRY:
-        multiplier += static_cast<float>(perkLevel(team, perk::Charge)) * 0.08f;
+        multiplier += static_cast<float>(perkLevel(team, perk::Charge)) * config::ChargeDamageBonus;
         break;
     case UName::SIEGE:
-        multiplier += static_cast<float>(perkLevel(team, perk::SiegeCraft)) * 0.08f;
+        multiplier += static_cast<float>(perkLevel(team, perk::SiegeCraft)) * config::SiegeDamageBonus;
         break;
     default:
         break;
@@ -64,13 +64,13 @@ float Game::unitHealthMultiplier(int team, int unitName) const
 {
     float multiplier = 1.f + static_cast<float>(team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel) * config::TechHealthBonus;
     if (unitName == UName::INFANTARY || unitName == UName::GUARDIAN) {
-        multiplier += static_cast<float>(perkLevel(team, perk::Fortitude)) * 0.09f;
+        multiplier += static_cast<float>(perkLevel(team, perk::Fortitude)) * config::FortitudeHealthBonus;
     }
     if (unitName == UName::CAVALRY) {
-        multiplier += static_cast<float>(perkLevel(team, perk::Charge)) * 0.04f;
+        multiplier += static_cast<float>(perkLevel(team, perk::Charge)) * config::ChargeHealthBonus;
     }
     if (unitName == UName::SIEGE) {
-        multiplier += static_cast<float>(perkLevel(team, perk::SiegeCraft)) * 0.04f;
+        multiplier += static_cast<float>(perkLevel(team, perk::SiegeCraft)) * config::SiegeHealthBonus;
     }
     return multiplier;
 }
@@ -79,12 +79,12 @@ float Game::unitAttackCooldownMultiplier(int team, int unitName) const
 {
     float multiplier = 1.f;
     if (unitName == UName::SHOOTER) {
-        multiplier -= static_cast<float>(perkLevel(team, perk::Volley)) * 0.035f;
+        multiplier -= static_cast<float>(perkLevel(team, perk::Volley)) * config::VolleyCooldownReduction;
     }
     if (unitName == UName::CAVALRY) {
-        multiplier -= static_cast<float>(perkLevel(team, perk::Charge)) * 0.018f;
+        multiplier -= static_cast<float>(perkLevel(team, perk::Charge)) * config::ChargeCooldownReduction;
     }
-    return std::clamp(multiplier, 0.76f, 1.f);
+    return std::clamp(multiplier, config::AttackCooldownFloor, 1.f);
 }
 
 float Game::baseDamageTakenMultiplier(int attackerUnitName, int defenderTeam) const
@@ -121,13 +121,13 @@ float Game::baseShieldSecondsForTeam(int team) const
 
 float Game::teamTrainTimeMultiplier(int team) const
 {
-    const float logistics = static_cast<float>(perkLevel(team, perk::Logistics)) * 0.06f;
-    return std::clamp(1.f - logistics, 0.74f, 1.f);
+    const float logistics = static_cast<float>(perkLevel(team, perk::Logistics)) * config::LogisticsTrainTimeReduction;
+    return std::clamp(1.f - logistics, config::LogisticsTrainTimeFloor, 1.f);
 }
 
 float Game::miningIncomeMultiplier(int team) const
 {
-    return 1.f + static_cast<float>(perkLevel(team, perk::Mining)) * 0.07f;
+    return 1.f + static_cast<float>(perkLevel(team, perk::Mining)) * config::MiningIncomeBonus;
 }
 
 int Game::defenseTowerRange(int team) const

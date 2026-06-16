@@ -64,7 +64,7 @@ void Game::updateDefenseTowers(float dt)
 
         building.attackTimer = 0.f;
         const float towerMultiplier = damageMultiplier(building.team)
-            + static_cast<float>(perkLevel(building.team, perk::TowerCraft)) * 0.09f;
+            + static_cast<float>(perkLevel(building.team, perk::TowerCraft)) * config::TowerDamageBonus;
         const int damage = std::max(1, static_cast<int>(std::round(static_cast<float>(config::DefenseTowerDamage) * towerMultiplier)));
         target->Health -= damage;
 
@@ -215,7 +215,7 @@ void Game::autoAttackBuilding(MoveableUnit& unit, Building& building)
         typeFactor = 0.82f;
     }
     else if (unit.unitName == UName::SIEGE) {
-        typeFactor = 2.18f + static_cast<float>(perkLevel(unit.myteam, perk::SiegeCraft)) * 0.10f;
+        typeFactor = 2.18f + static_cast<float>(perkLevel(unit.myteam, perk::SiegeCraft)) * config::SiegeBuildingDamageBonus;
     }
     else if (unit.unitName == UName::GUARDIAN) {
         typeFactor = 1.24f;

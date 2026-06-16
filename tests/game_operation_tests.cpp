@@ -73,6 +73,7 @@ int main()
 
     game.clear();
     game.playerCommand = 1000;
+    const int baseIncome = game.resourceIncome(PLAYER);
     const int economyCost = game.economyUpgradeCost(PLAYER);
     const int workersBefore = game.workerCount(PLAYER);
     require(game.executeOperation(PLAYER, GameOperation(gameop::UpgradeEconomy)),
@@ -83,6 +84,40 @@ int main()
             "economy upgrade should spend its current cost");
     require(game.workerCount(PLAYER) > workersBefore,
             "economy upgrade should materialize additional drones");
+    require(game.resourceIncome(PLAYER) - baseIncome >= 3,
+            "first economy upgrade should noticeably increase per-tick income");
+    game.playerEconomyLevel = 4;
+    require(game.resourceIncome(PLAYER) >= 21,
+            "mid economy income should scale strongly enough to repay in-match");
+    game.playerEconomyLevel = 8;
+    require(game.resourceIncome(PLAYER) >= 45,
+            "late economy income should feel like a production engine");
+    game.playerEconomyLevel = 11;
+    require(game.economyUpgradeCost(PLAYER) <= 365,
+            "late economy cost should not become a dead sink");
+
+    game.clear();
+    game.playerEconomyLevel = 8;
+    const int incomeBeforeMining = game.resourceIncome(PLAYER);
+    game.applyPerk(PLAYER, perk::Mining);
+    require(game.resourceIncome(PLAYER) >= incomeBeforeMining + 5,
+            "Mining perk should make economy upgrades visibly stronger");
+    const float shooterDamageBefore = game.unitDamageMultiplier(PLAYER, UName::SHOOTER);
+    const float shooterCooldownBefore = game.unitAttackCooldownMultiplier(PLAYER, UName::SHOOTER);
+    game.applyPerk(PLAYER, perk::Volley);
+    require(game.unitDamageMultiplier(PLAYER, UName::SHOOTER) >= shooterDamageBefore + 0.12f,
+            "Volley should be a chunky shooter damage upgrade");
+    require(game.unitAttackCooldownMultiplier(PLAYER, UName::SHOOTER) <= shooterCooldownBefore - 0.05f,
+            "Volley should noticeably speed up shooter attacks");
+    const float trainBefore = game.teamTrainTimeMultiplier(PLAYER);
+    game.applyPerk(PLAYER, perk::Logistics);
+    require(game.teamTrainTimeMultiplier(PLAYER) <= trainBefore - 0.08f,
+            "Logistics should convert upgrades into production tempo");
+    game.playerCommand = 0;
+    game.playerUpgradeLevel = 5;
+    game.applyPerk(PLAYER, perk::WarChest);
+    require(game.playerCommand >= config::WarChestBaseBonus + config::WarChestTechBonus * 5,
+            "War Chest should be large enough to create an immediate play");
 
     game.clear();
     game.playerCommand = 1000;

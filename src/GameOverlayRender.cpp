@@ -56,7 +56,7 @@ void Game::drawTutorialOverlay()
         "  Build an economy, pick a lane, draft rogue tactics, then auto-push the enemy base.",
         "",
         "Core controls",
-        "  Click ECONOMY: improve natural CMD income and add one visible drone.",
+        "  Click ECONOMY: improve accelerating CMD income and add one visible drone.",
         "  Click Top / Mid / Bot, then click unit buttons to send new troops to that lane.",
         "  Barracks and Tower buttons auto-place buildings near your base or lane defense.",
         "  Click Upgrade: spend CMD to gain a LEVEL and choose one rogue tactic card.",
@@ -72,9 +72,9 @@ void Game::drawTutorialOverlay()
         "",
         "Tactics and counters",
         "  Every tech upgrade gives 3 tactic cards. Max tech is LEVEL 15.",
-        "  Perks stack, so late builds can bend the soft counter rules.",
+        "  Perks are chunky and stack, so late builds can bend the soft counter rules.",
         "  Shooter > Infantry, Infantry > Cavalry, Cavalry > Shooter/Siege.",
-        "  Cavalry rotates fastest; Siege is very slow and needs escorts.",
+        "  Cavalry rotates almost twice as fast as infantry; Siege crawls and needs escorts.",
         "  Siege cracks Guardians and buildings; Guardians anchor against Cavalry dives.",
         "",
         "Unlocks",
@@ -179,4 +179,3 @@ void Game::drawRewardOverlay()
         window.draw(meta);
     }
 }
-
