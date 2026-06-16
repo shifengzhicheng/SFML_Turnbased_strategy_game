@@ -48,7 +48,6 @@ bool Game::isBlockingTile(tile::ID id) const
     return id == tile::Mount
         || id == tile::River
         || id == tile::Tree
-        || (!realtimeMode && id == tile::Unit)
         || id == tile::Red_Base
         || id == tile::Blue_Base
         || id == tile::Player_Barracks
@@ -67,7 +66,7 @@ bool Game::isMapCell(int x, int y) const
 
 bool Game::isRealtimeMode() const
 {
-    return realtimeMode;
+    return true;
 }
 
 bool Game::isCellWalkableForUnit(int x, int y) const

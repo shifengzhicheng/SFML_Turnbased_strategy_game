@@ -19,54 +19,6 @@ void Game::logicBeforeInput()
 {
     syncMazeFromTiles();
     astar.setMaze(maze);
-    if (!realtimeMode && playerturn == false) {
-        AIlogic();
-    }
-}
-
-void Game::AIUnitreset()
-{
-    Unitsreset(enemys);
-    if (Base_blue) {
-        Base_blue->reset();
-    }
-}
-
-void Game::AIlogic() {
-    bool timepass = clock2.getElapsedTime().asMilliseconds() > 30.f;
-    if (!aiProductionDone) {
-        runAIProduction();
-        aiProductionDone = true;
-    }
-    if (enemys.empty()) {
-        playerturn = true;
-        Globle_text.setString("YourTurn");
-        running = false;
-        AIUnitreset();
-        addTurnIncome(PLAYER);
-        aiProductionDone = false;
-        return;
-    }
-    if (timepass) {
-        for (auto& u : enemys) {
-            u->decide();
-        }
-        clock2.restart();
-    }
-    std::size_t n = 0;
-    for (auto& u : enemys) { 
-        if (u->myActionPoint <= 0) {
-            n++;
-            if (n == enemys.size()) {
-                playerturn = true;
-                Globle_text.setString("YourTurn");
-                running = false;
-                AIUnitreset();
-                addTurnIncome(PLAYER);
-                aiProductionDone = false;
-            }
-        }
-    }
 }
 
 void Game::updateRealtime(float dt)
@@ -169,35 +121,13 @@ void Game::updateDebugSummary(float dt)
 
 void Game::logicBeforeDraw()
 {
-
-    // Update all units before drawing.
-
-    if (realtimeMode && !perkOverlayVisible) {
+    if (!perkOverlayVisible) {
         updateRealtime(std::min(realtimeFrameClock.restart().asSeconds(), 0.05f));
     }
-    else if (realtimeMode) {
+    else {
         realtimeFrameClock.restart();
     }
 
-    bool timepassed = !realtimeMode && clock.getElapsedTime().asMilliseconds() > 30.f;
-    if (timepassed) {
-        for (auto& test : myunits) {
-            if (test->UnitState == UState::MOVING)
-            {
-
-                if (!test->mypath.empty()) {
-                    test->move(test->mypath.front());
-                        if(!test->mypath.empty())
-                    test->mypath.pop_front();
-                }
-                else {
-                    test->setState(UState::UNITNORMAL);
-                    running = false;
-                }
-            }
-        }
-        clock.restart();
-    }
     if (Base_blue) {
         Base_blue->updatemystate();
     }
@@ -260,12 +190,5 @@ void Game::run()
         window.display();
 
 
-    }
-}
-
-void Game::Unitsreset(list<unique_ptr<MoveableUnit>>& us) {
-    for (auto& u:us)
-    {
-        u->setdefalut();
     }
 }

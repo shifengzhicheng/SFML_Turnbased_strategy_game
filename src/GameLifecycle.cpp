@@ -38,9 +38,6 @@ void Game::loadpic()
     art::makeButtonTexture(tStartHelpHover, myfont, "HELP", art::ButtonState::Hover, sf::Vector2u(170, 72));
     art::makeButtonTexture(tStartHelpClick, myfont, "HELP", art::ButtonState::Pressed, sf::Vector2u(170, 72));
     const sf::Vector2u sideButtonSize(config::SideButtonWidth, config::SideButtonHeight);
-    art::makeButtonTexture(tEndBtnNormal, myfont, "END TURN", art::ButtonState::Normal, sideButtonSize);
-    art::makeButtonTexture(tEndBtnHover, myfont, "END TURN", art::ButtonState::Hover, sideButtonSize);
-    art::makeButtonTexture(tEndBtnClick, myfont, "END TURN", art::ButtonState::Pressed, sideButtonSize);
     art::makeButtonTexture(tOverBtnNormal, myfont, "PLAY AGAIN", art::ButtonState::Normal, sf::Vector2u(240, 84));
     art::makeButtonTexture(tOverBtnHover, myfont, "PLAY AGAIN", art::ButtonState::Hover, sf::Vector2u(240, 84));
     art::makeButtonTexture(tOverBtnClick, myfont, "PLAY AGAIN", art::ButtonState::Pressed, sf::Vector2u(240, 84));
@@ -78,7 +75,6 @@ void Game::loadpic()
 
     startBtn.setTextures(tStartBtnNormal, tStartBtnHover, tStartBtnClick);
     startHelpBtn.setTextures(tStartHelpNormal, tStartHelpHover, tStartHelpClick);
-    EndTurnBtn.setTextures(tEndBtnNormal, tEndBtnHover, tEndBtnClick);
     endGame.setTextures(tOverBtnNormal, tOverBtnHover, tOverBtnClick);
     inf.setTextures(tinf, tinfHover, tinfClick);
     cav.setTextures(tcav, tcavHover, tcavClick);
@@ -122,7 +118,6 @@ void Game::Initial()
     sidePanel.setOutlineColor(sf::Color(19, 24, 22));
     sidePanel.setOutlineThickness(2.f);
 
-    EndTurnBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
     helpBtn.setPosition(config::ButtonX, config::HelpButtonY);
     upgradeBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
     economyBtn.setPosition(config::ButtonX, config::EconomyButtonY);
@@ -145,12 +140,10 @@ void Game::clear()
     effects.clear();
     drawPaths.clear();
     running = false;
-    playerturn = true;
     gameWin = false;
     MosOnUnit = nullptr;
     playerCommand = config::StartingCommand;
     aiCommand = config::StartingCommand;
-    aiProductionDone = false;
     playerIncomeTimer = 0.f;
     aiIncomeTimer = 0.f;
     playerBaseAttackTimer = 0.f;
@@ -180,7 +173,7 @@ void Game::clear()
     resources.clear();
     workers.clear();
     buildings.clear();
-    Globle_text.setString(realtimeMode ? "RealTime" : "YourTurn");
+    Globle_text.setString("RealTime");
     Base_red.reset();
     Base_blue.reset();
     myunits.clear();

@@ -22,7 +22,6 @@ Game::Game() :
     MosOnUnit(nullptr),
     horizontalTiles(width / SqureSize),
     debugLogging(std::getenv("TBS_LOG") != nullptr),
-    playerturn(true),
     running(false)
 {
     window.create(sf::VideoMode{ config::WindowWidth, config::WindowHeight }, "Project_War");

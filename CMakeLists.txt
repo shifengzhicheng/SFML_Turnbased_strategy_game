@@ -36,7 +36,6 @@ set(SFML_TBS_GAME_SOURCES
     src/GameConstruction.cpp
     src/GameEconomy.cpp
     src/GameInput.cpp
-    src/GameLegacyAI.cpp
     src/GameOperations.cpp
     src/GameRewards.cpp
     src/GameLifecycle.cpp

@@ -41,7 +41,6 @@ public:
     std::vector<MapPos> drawPaths;
 
     sf::Clock clock;
-    sf::Clock clock2;
     sf::Clock realtimeFrameClock;
 
     Point MousePoint;
@@ -73,8 +72,6 @@ public:
     std::vector<ResourceNode> resources;
     int playerCommand = config::StartingCommand;
     int aiCommand = config::StartingCommand;
-    bool aiProductionDone = false;
-    bool realtimeMode = true;
     bool tutorialVisible = false;
     bool towerPlacementMode = false;
     bool debugLogging = false;
@@ -107,16 +104,10 @@ public:
     std::array<int, perk::Count> aiPerkLevels{};
     std::array<PerkChoice, 3> perkChoices{};
 
-    std::size_t turn;
-
-    bool playerturn;
-
-
     sf::Texture tStartBtnNormal, tStartBtnHover, tStartBtnClick;
     sf::Texture tStartHelpNormal, tStartHelpHover, tStartHelpClick;
-    sf::Texture tEndBtnNormal, tEndBtnHover, tEndBtnClick;
     sf::Texture tOverBtnNormal, tOverBtnHover, tOverBtnClick;
-    Button startBtn, startHelpBtn, EndTurnBtn;
+    Button startBtn, startHelpBtn;
     Button inf, cav, sho, siegeBtn, guardianBtn;
     Button upgradeBtn;
     Button economyBtn;
@@ -170,8 +161,6 @@ public:
 
     void loadMediaData();
 
-    void AIlogic();
-    
     void logicBeforeDraw();
     void logicAfterDraw();
     void logicBeforeInput();
@@ -181,8 +170,6 @@ public:
     void updateTimedRewards();
 
     void run();
-    void Unitsreset(std::list<std::unique_ptr<MoveableUnit>>& us);
-    void AIUnitreset();
     void startInput(sf::Vector2i mousePosition, sf::Event event);
 
     void GameInput(sf::Vector2i mousePos, sf::Event event);
@@ -303,7 +290,6 @@ public:
     bool canSpawnUnit(int team, int name) const;
     bool spendCommand(int team, int name);
     void addTurnIncome(int team);
-    void runAIProduction();
     MoveableUnit* findMoveableUnitById(int id);
     void requestPathForUnit(MoveableUnit& unit, Point goal);
     void requestPathForWorker(Worker& worker, Point goal);

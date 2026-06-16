@@ -91,90 +91,35 @@ void Game::GameInput(Vector2i mousePos, Event event) {
     if (tutorialVisible) {
         return;
     }
-    if (realtimeMode) {
-        handleBuildButtons(mousePos, event);
-        if (tutorialVisible) {
-            return;
-        }
-        handleRealtimeMapClick(mousePos, event);
-        if (Base_red) {
-            Base_red->checkMouse(mousePos, event);
-        }
-        if (Base_blue) {
-            Base_blue->checkHover(mousePos, event);
-        }
-        for (auto& u : enemys) {
-            u->checkHover(mousePos, event);
-        }
-        if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::T))
-        {
-            setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::Tree);
-        }
-        if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::M))
-        {
-            setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::Mount);
-        }
-        if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
-        {
-            setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::River);
-        }
-        if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E))
-        {
-            setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::Empty);
-        }
+    handleBuildButtons(mousePos, event);
+    if (tutorialVisible) {
         return;
     }
-    if (!running && playerturn) {
-        EndTurnBtn.checkMouse(mousePos, event);
-        if (EndTurnBtn.btnState == RELEASE) {
-            playerturn = false;
-            Globle_text.setString("EnemyTurn");
-            clearSelection();
-            addTurnIncome(AI);
-            aiProductionDone = false;
-            Unitsreset(myunits);
-            if (Base_red) {
-                Base_red->reset();
-            }
-            EndTurnBtn.setState(NORMAL);
-        }
-        else {
-            handleBuildButtons(mousePos, event);
-            if (tutorialVisible) {
-                return;
-            }
-            if (Base_red) {
-                Base_red->checkMouse(mousePos, event);
-            }
-            if (Base_blue) {
-                Base_blue->checkHover(mousePos,event);
-            }
-            for (auto& u : enemys) {
-                u->checkHover(mousePos, event);
-            }
-            if (!myunits.empty()) {
-                for (auto &u:myunits)
-                {
-                   u->checkMouse(mousePos, event);
-                }
-            }
-            if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::T))
-            {
-                setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::Tree);
-            }
-            if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::M))
-            {
-                setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::Mount);
-            }
-            if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
-            {
-                setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::River);
-            }
-            if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E))
-            {
-                setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::Empty);
-            }
-        }
+    handleRealtimeMapClick(mousePos, event);
+    if (Base_red) {
+        Base_red->checkMouse(mousePos, event);
+    }
+    if (Base_blue) {
+        Base_blue->checkHover(mousePos, event);
+    }
+    for (auto& u : enemys) {
+        u->checkHover(mousePos, event);
+    }
+    if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::T))
+    {
+        setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::Tree);
+    }
+    if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::M))
+    {
+        setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::Mount);
+    }
+    if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
+    {
+        setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::River);
+    }
+    if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E))
+    {
+        setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::Empty);
     }
 }
 

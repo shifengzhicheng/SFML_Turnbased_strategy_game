@@ -667,7 +667,6 @@ sf::Vector2f Game::currentShakeOffset() const
 void Game::DrawSidePanel()
 {
     helpBtn.setPosition(config::ButtonX, config::HelpButtonY);
-    EndTurnBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
     upgradeBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
     economyBtn.setPosition(config::ButtonX, config::EconomyButtonY);
     barracksBtn.setPosition(config::ButtonX, config::BuildBarracksY);
@@ -733,12 +732,6 @@ void Game::DrawSidePanel()
     window.draw(panelTitle);
     window.draw(Globle_text);
 
-    if (!realtimeMode) {
-        window.draw(UnitText);
-        window.draw(UnitAttack);
-        window.draw(UnitHP);
-    }
-
     const bool inspectingEnemyBase = MosOnUnit == Base_blue.get();
     const int shownTeam = inspectingEnemyBase ? AI : PLAYER;
     const int shownLevel = shownTeam == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
@@ -769,9 +762,9 @@ void Game::DrawSidePanel()
         return text;
     };
 
-    CommandText.setCharacterSize(realtimeMode ? 11 : 14);
+    CommandText.setCharacterSize(11);
     CommandText.setFillColor(sf::Color(255, 226, 128));
-    CommandText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), realtimeMode ? 106.f : 176.f);
+    CommandText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 106.f);
     CommandText.setString("CMD " + std::to_string(playerCommand)
         + "/" + std::to_string(config::MaxCommand)
         + "   +" + std::to_string(resourceIncome(PLAYER)) + "/tick"
@@ -858,16 +851,11 @@ void Game::DrawSidePanel()
     panelHint.setString(guideText());
     window.draw(panelHint);
 
-    if (!realtimeMode) {
-        window.draw(EndTurnBtn);
-    }
-    else {
-        upgradeBtn.setColor(commandForTeam(PLAYER) >= upgradeCostForNextLevel(PLAYER)
-            && playerUpgradeLevel < config::MaxTechLevel
-            ? sf::Color::White
-            : sf::Color(255, 255, 255, 130));
-        window.draw(upgradeBtn);
-    }
+    upgradeBtn.setColor(commandForTeam(PLAYER) >= upgradeCostForNextLevel(PLAYER)
+        && playerUpgradeLevel < config::MaxTechLevel
+        ? sf::Color::White
+        : sf::Color(255, 255, 255, 130));
+    window.draw(upgradeBtn);
 
     economyBtn.setColor(commandForTeam(PLAYER) >= economyUpgradeCost(PLAYER)
         && playerEconomyLevel < config::MaxEconomyLevel
