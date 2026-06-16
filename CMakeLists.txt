@@ -68,6 +68,7 @@ set(SFML_TBS_GAME_SOURCES
     src/PathfindingService.cpp
     src/PolicyModel.cpp
     src/Tile.cpp
+    src/UnitDefinition.cpp
     src/UnitTypes.cpp
     src/UnitVisual.cpp
     src/Worker.cpp

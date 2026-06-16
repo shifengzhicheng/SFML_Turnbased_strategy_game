@@ -4,6 +4,7 @@
 #include "ArtAssets.h"
 #include "AutoCombat.h"
 #include "RealtimeConfig.h"
+#include "UnitDefinition.h"
 
 #include <algorithm>
 #include <cmath>
@@ -136,20 +137,10 @@ int Game::defenseTowerRange(int team) const
 
 int Game::unitCost(int name) const
 {
-    switch (name) {
-    case UName::INFANTARY:
-        return config::InfantryCost;
-    case UName::SHOOTER:
-        return config::ShooterCost;
-    case UName::CAVALRY:
-        return config::CavalryCost;
-    case UName::SIEGE:
-        return config::SiegeCost;
-    case UName::GUARDIAN:
-        return config::GuardianCost;
-    default:
-        return 0;
+    if (const UnitDefinition* definition = findUnitDefinition(name)) {
+        return definition->commandCost;
     }
+    return 0;
 }
 
 bool Game::isUnitUnlocked(int team, int name) const

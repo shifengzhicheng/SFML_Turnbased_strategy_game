@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Game.h"
+#include "UnitDefinition.h"
 
 #include <algorithm>
 #include <cmath>
@@ -283,19 +284,10 @@ namespace game_internal
 
     inline float unitTrainSeconds(int name)
     {
-        switch (name) {
-        case UName::SHOOTER:
-            return realtime::ShooterTrainSeconds;
-        case UName::CAVALRY:
-            return realtime::CavalryTrainSeconds;
-        case UName::SIEGE:
-            return realtime::SiegeTrainSeconds;
-        case UName::GUARDIAN:
-            return realtime::GuardianTrainSeconds;
-        case UName::INFANTARY:
-        default:
-            return realtime::InfantryTrainSeconds;
+        if (const UnitDefinition* definition = findUnitDefinition(name)) {
+            return definition->trainSeconds;
         }
+        return realtime::InfantryTrainSeconds;
     }
 
     inline bool isResourceClick(const ResourceNode& node, int tileX, int tileY)
@@ -303,4 +295,3 @@ namespace game_internal
         return node.point.x == tileX && node.point.y == tileY;
     }
 }
-

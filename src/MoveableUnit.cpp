@@ -5,6 +5,7 @@
 #include "Game.h"
 #include "ArtAssets.h"
 #include "RealtimeConfig.h"
+#include "UnitDefinition.h"
 #include "UnitVisualHelpers.h"
 
 #include <algorithm>
@@ -28,6 +29,20 @@ MoveableUnit::MoveableUnit(int _team, int _x, int _y, Game* _mygame)
 	UnitText.setOutlineColor(sf::Color(255, 246, 205, 210));
 	UnitText.setOutlineThickness(1.f);
 	placeHealthLabel(UnitText, x, y);
+}
+
+void MoveableUnit::configureFromDefinition(const UnitDefinition& definition)
+{
+	UnitState = UState::UNITNORMAL;
+	unitName = definition.unitName;
+	myinfo.Health = definition.maxHealth;
+	Health = definition.maxHealth;
+	art::makeUnitTexture(mytexture, definition.artKind, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
+	setTexture(mytexture);
+	UnitText.setString(std::to_string(definition.maxHealth) + "/" + std::to_string(definition.maxHealth));
+	placeUnitSprite(*this, x, y, config::UnitSpriteScale);
+	placeHealthLabel(UnitText, x, y);
+	attackmethod = make_unique<Attacker>(mygame, definition.attackDamage, definition.attackRange);
 }
 
 bool MoveableUnit::isBlocked(Point p)
@@ -102,41 +117,17 @@ void MoveableUnit::scaleMaxHealth(float multiplier)
 
 float MoveableUnit::realtimeMoveStepSeconds() const
 {
-	switch (unitName) {
-	case UName::SHOOTER:
-		return realtime::ShooterStepSeconds;
-	case UName::CAVALRY:
-		return realtime::CavalryStepSeconds;
-	case UName::SIEGE:
-		return realtime::SiegeStepSeconds;
-	case UName::GUARDIAN:
-		return realtime::GuardianStepSeconds;
-	case UName::INFANTARY:
-	default:
-		return realtime::InfantryStepSeconds;
+	if (const UnitDefinition* definition = findUnitDefinition(unitName)) {
+		return definition->moveStepSeconds;
 	}
+	return realtime::InfantryStepSeconds;
 }
 
 float MoveableUnit::realtimeAttackCooldownSeconds() const
 {
 	float baseSeconds = realtime::InfantryAttackCooldown;
-	switch (unitName) {
-	case UName::SHOOTER:
-		baseSeconds = realtime::ShooterAttackCooldown;
-		break;
-	case UName::CAVALRY:
-		baseSeconds = realtime::CavalryAttackCooldown;
-		break;
-	case UName::SIEGE:
-		baseSeconds = realtime::SiegeAttackCooldown;
-		break;
-	case UName::GUARDIAN:
-		baseSeconds = realtime::GuardianAttackCooldown;
-		break;
-	case UName::INFANTARY:
-	default:
-		baseSeconds = realtime::InfantryAttackCooldown;
-		break;
+	if (const UnitDefinition* definition = findUnitDefinition(unitName)) {
+		baseSeconds = definition->attackCooldownSeconds;
 	}
 	return baseSeconds * mygame->unitAttackCooldownMultiplier(myteam, unitName);
 }

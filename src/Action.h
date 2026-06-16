@@ -12,48 +12,14 @@ protected:
 	Game* mygame;
 
 public:
-	int damage;
-	int range;
-	Attacker(Game* _game) {
-		mygame = _game;
+	int damage = 0;
+	int range = 0;
+	Attacker(Game* _game, int baseDamage, int attackRange)
+		: mygame(_game), damage(baseDamage), range(attackRange)
+	{
 	}
 	virtual ~Attacker() = default;
 	virtual void Attack(MoveableUnit* me, Unit* u);
 	virtual bool isInMyAttackRange(MoveableUnit*, Unit*);
 	virtual void drawAttackline(MoveableUnit*, Unit*, sf::Color);
-};
-class shot :public Attacker {
-public:
-	shot(Game* _game): Attacker(_game) {
-		damage = 28;
-		range = 5;
-	}
-};
-class fight :public Attacker {
-public:
-	fight(Game* _game) : Attacker(_game) {
-		damage = 48;
-		range = 2;
-	}
-};
-class roll : public Attacker {
-public:
-	roll(Game* _game) : Attacker(_game) {
-		damage = 68;
-		range = 2;
-	}
-};
-class bombard : public Attacker {
-public:
-	bombard(Game* _game) : Attacker(_game) {
-		damage = 56;
-		range = 9;
-	}
-};
-class crush : public Attacker {
-public:
-	crush(Game* _game) : Attacker(_game) {
-		damage = 88;
-		range = 2;
-	}
 };

@@ -3,12 +3,9 @@
 #include "Config.h"
 #include "Tile.h"
 #include "Game.h"
-#include "ArtAssets.h"
-#include "RealtimeConfig.h"
+#include "UnitDefinition.h"
 #include "UnitVisualHelpers.h"
 
-#include <algorithm>
-#include <cmath>
 #include <string>
 
 using namespace sf;
@@ -17,72 +14,27 @@ using namespace unit_visual;
 
 Shooter::Shooter(int _team, int _x, int _y, Game* _mygame):MoveableUnit(_team, _x, _y, _mygame)
 {
-	UnitState = 0;
-	unitName = UName::SHOOTER;
-	myinfo.Health = 100;
-	Health = 100;
-	art::makeUnitTexture(mytexture, art::UnitKind::Shooter, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
-	setTexture(mytexture);
-	UnitText.setString("100/100");
-	placeUnitSprite(*this, _x, _y, config::UnitSpriteScale);
-	placeHealthLabel(UnitText, _x, _y);
-	attackmethod = make_unique<shot>(mygame);
+	configureFromDefinition(unitDefinition(UName::SHOOTER));
 }
 
 Infantry::Infantry(int _team, int _x, int _y, Game* _mygame) :MoveableUnit(_team, _x, _y, _mygame)
 {
-	UnitState = 0;
-	unitName = UName::INFANTARY;
-	Health = 220;
-	art::makeUnitTexture(mytexture, art::UnitKind::Infantry, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
-	setTexture(mytexture);
-	UnitText.setString("220/220");
-	placeUnitSprite(*this, _x, _y, config::UnitSpriteScale);
-	placeHealthLabel(UnitText, _x, _y);
-	myinfo.Health = 220;
-	attackmethod = make_unique<fight>(mygame);
+	configureFromDefinition(unitDefinition(UName::INFANTARY));
 }
 
 Cavalry::Cavalry(int _team, int _x, int _y, Game* _mygame) : MoveableUnit(_team, _x, _y, _mygame)
 {
-	UnitState = 0;
-	unitName = UName::CAVALRY;
-	Health = 420;
-	art::makeUnitTexture(mytexture, art::UnitKind::Cavalry, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
-	setTexture(mytexture);
-	UnitText.setString("420/420");
-	placeUnitSprite(*this, _x, _y, config::UnitSpriteScale);
-	placeHealthLabel(UnitText, _x, _y);
-	myinfo.Health = 420;
-	attackmethod = make_unique<roll>(mygame);
+	configureFromDefinition(unitDefinition(UName::CAVALRY));
 }
 
 Siege::Siege(int _team, int _x, int _y, Game* _mygame) : MoveableUnit(_team, _x, _y, _mygame)
 {
-	UnitState = 0;
-	unitName = UName::SIEGE;
-	Health = 270;
-	art::makeUnitTexture(mytexture, art::UnitKind::Siege, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
-	setTexture(mytexture);
-	UnitText.setString("270/270");
-	placeUnitSprite(*this, _x, _y, config::UnitSpriteScale);
-	placeHealthLabel(UnitText, _x, _y);
-	myinfo.Health = 270;
-	attackmethod = make_unique<bombard>(mygame);
+	configureFromDefinition(unitDefinition(UName::SIEGE));
 }
 
 Guardian::Guardian(int _team, int _x, int _y, Game* _mygame) : MoveableUnit(_team, _x, _y, _mygame)
 {
-	UnitState = 0;
-	unitName = UName::GUARDIAN;
-	Health = 720;
-	art::makeUnitTexture(mytexture, art::UnitKind::Guardian, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
-	setTexture(mytexture);
-	UnitText.setString("720/720");
-	placeUnitSprite(*this, _x, _y, config::UnitSpriteScale);
-	placeHealthLabel(UnitText, _x, _y);
-	myinfo.Health = 720;
-	attackmethod = make_unique<crush>(mygame);
+	configureFromDefinition(unitDefinition(UName::GUARDIAN));
 }
 
 DisMoveableUnit::DisMoveableUnit(int _x, int _y, int _team, Game* _game)

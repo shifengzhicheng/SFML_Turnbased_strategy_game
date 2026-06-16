@@ -9,6 +9,7 @@
 
 class Game;
 class Attacker;
+struct UnitDefinition;
 namespace UState {
 	enum UnitState {
 		UNITNORMAL, UNITCLICK, MOVING, FIGHTBACK, ATTACKING
@@ -66,6 +67,7 @@ protected:
 	std::deque<Point> myattackpath;
 	defaultInfo myinfo;
 	std::unique_ptr<Attacker> attackmethod;
+	void configureFromDefinition(const UnitDefinition& definition);
 
 public:
 	bool isBlocked(Point p);

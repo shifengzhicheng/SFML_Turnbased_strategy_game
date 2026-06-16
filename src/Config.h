@@ -67,6 +67,21 @@ namespace config
     inline constexpr int CavalryCost = 38;
     inline constexpr int SiegeCost = 56;
     inline constexpr int GuardianCost = 74;
+    inline constexpr int InfantryHealth = 220;
+    inline constexpr int ShooterHealth = 100;
+    inline constexpr int CavalryHealth = 420;
+    inline constexpr int SiegeHealth = 270;
+    inline constexpr int GuardianHealth = 720;
+    inline constexpr int InfantryDamage = 48;
+    inline constexpr int ShooterDamage = 28;
+    inline constexpr int CavalryDamage = 68;
+    inline constexpr int SiegeDamage = 56;
+    inline constexpr int GuardianDamage = 88;
+    inline constexpr int InfantryRange = 2;
+    inline constexpr int ShooterRange = 5;
+    inline constexpr int CavalryRange = 2;
+    inline constexpr int SiegeRange = 9;
+    inline constexpr int GuardianRange = 2;
     inline constexpr double Pi = 3.14159265358979323846;
 }
 
