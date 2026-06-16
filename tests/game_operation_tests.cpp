@@ -106,5 +106,14 @@ int main()
     require(game.myunits.size() == 1,
             "rejected duplicate direct creation should not add another player unit");
 
+    game.clear();
+    const Point rightEdgeAttackCell(game.Blue_baseP.x + config::BaseFootprintSize - 1 + config::InfantryRange,
+                                    game.Blue_baseP.y + 1);
+    require(game.createUnit(PLAYER, UName::INFANTARY, rightEdgeAttackCell.x, rightEdgeAttackCell.y, lane::Mid),
+            "test infantry should fit beside the blue base right edge");
+    MoveableUnit* edgeAttacker = game.myunits.back().get();
+    require(edgeAttacker->canAutoAttack(game.Base_blue.get()),
+            "base range checks should use the whole 2x2 footprint, not only the top-left tile");
+
     return 0;
 }

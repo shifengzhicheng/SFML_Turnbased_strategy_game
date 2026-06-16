@@ -2,6 +2,7 @@
 #include "Action.h"
 #include "Config.h"
 #include "Game.h"
+#include "UnitGeometry.h"
 
 #include <algorithm>
 #include <cmath>
@@ -73,13 +74,10 @@ bool Attacker::isInMyAttackRange(MoveableUnit* me, Unit* u) {
 	if (me == nullptr || u == nullptr) {
 		return false;
 	}
-	int l = sqrt((me->x - u->x) * (me->x - u->x) + (me->y - u->y) * (me->y - u->y));
-	if (l > range) return false;
-	else {
-		if(me->isBlocked(Point(u->x,u->y)))
-			return false;
-		else return true;
+	if (!unit_geometry::isInAttackRange(Point(me->x, me->y), *u, range)) {
+		return false;
 	}
+	return !me->isBlocked(unit_geometry::closestFootprintCell(Point(me->x, me->y), *u));
 }
 
 void Attacker::drawAttackline(MoveableUnit* me, Unit* u, sf::Color color) {

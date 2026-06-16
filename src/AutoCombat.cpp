@@ -3,6 +3,7 @@
 #include "AllUnit.h"
 #include "Game.h"
 #include "RealtimeConfig.h"
+#include "UnitGeometry.h"
 
 #include <algorithm>
 #include <cmath>
@@ -66,22 +67,26 @@ namespace
     Point chooseApproachPoint(Game& game, MoveableUnit& unit, Unit* target)
     {
         const Point targetPoint = target != nullptr ? Point(target->x, target->y) : fallbackEnemyBase(game, unit);
-        if (!game.isCellOccupiedByUnit(targetPoint.x, targetPoint.y, unit.entityId)
+        if (target != nullptr
+            && !game.isCellOccupiedByUnit(targetPoint.x, targetPoint.y, unit.entityId)
             && game.isCellWalkableForUnit(targetPoint.x, targetPoint.y)) {
             return targetPoint;
         }
 
         Point best = Point(unit.x, unit.y);
         int bestScore = std::numeric_limits<int>::max();
-        const int searchRadius = std::max(2, std::min(unit.myAttackRange(), 6));
+        const int footprintPadding = target != nullptr ? unit_geometry::footprintSize(*target) - 1 : 0;
+        const int searchRadius = std::max(2, std::min(unit.myAttackRange() + footprintPadding, 12));
         for (int radius = 1; radius <= searchRadius; ++radius) {
             for (int y = targetPoint.y - radius; y <= targetPoint.y + radius; ++y) {
                 for (int x = targetPoint.x - radius; x <= targetPoint.x + radius; ++x) {
                     if (!game.isCellWalkableForUnit(x, y) || game.isCellOccupiedByUnit(x, y, unit.entityId)) {
                         continue;
                     }
-                    const int toTarget = distanceSquared(Point(x, y), targetPoint);
-                    if (toTarget > unit.myAttackRange() * unit.myAttackRange()) {
+                    if (target != nullptr && !unit_geometry::isInAttackRange(Point(x, y), *target, unit.myAttackRange())) {
+                        continue;
+                    }
+                    if (target == nullptr && distanceSquared(Point(x, y), targetPoint) > unit.myAttackRange() * unit.myAttackRange()) {
                         continue;
                     }
                     const int score = distanceSquared(Point(unit.x, unit.y), Point(x, y));

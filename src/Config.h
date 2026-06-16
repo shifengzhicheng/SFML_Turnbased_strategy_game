@@ -27,6 +27,7 @@ namespace config
     inline constexpr int SideButtonHeight = 38;
     inline constexpr int UnitTextureSize = 44;
     inline constexpr float UnitSpriteScale = 0.66f;
+    inline constexpr int BaseFootprintSize = 2;
 
     inline constexpr int PathStraightCost = 10;
     inline constexpr int PathDiagonalCost = 14;
