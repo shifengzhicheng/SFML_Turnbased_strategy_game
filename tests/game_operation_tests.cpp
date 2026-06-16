@@ -167,6 +167,31 @@ int main()
             "clearing the obstacle should restore line-of-sight attacks");
 
     game.clear();
+    for (int x = 10; x <= 14; ++x) {
+        game.setTileID(x, 10, tile::Empty);
+    }
+    require(game.createUnit(PLAYER, UName::INFANTARY, 11, 10, lane::Mid),
+            "test decoy should spawn for aggro checks");
+    MoveableUnit* decoyTarget = game.myunits.back().get();
+    require(game.createUnit(AI, UName::INFANTARY, 12, 10, lane::Mid),
+            "test defender should spawn for aggro checks");
+    MoveableUnit* defender = game.enemys.back().get();
+    require(game.createUnit(PLAYER, UName::SHOOTER, 14, 10, lane::Mid),
+            "test attacker should spawn for aggro checks");
+    MoveableUnit* provokingShooter = game.myunits.back().get();
+    provokingShooter->autoAttack(defender);
+    require(defender->aggroTargetId == provokingShooter->entityId && defender->aggroSeconds > 0.f,
+            "damaged units should remember the unit that attacked them");
+    const int shooterHealthBeforeAggro = provokingShooter->Health;
+    const int decoyHealthBeforeAggro = decoyTarget->Health;
+    defender->realtimeAttackTimer = defender->realtimeAttackCooldownSeconds();
+    realtime::updateAutoCombat(game, 0.25f);
+    require(provokingShooter->Health < shooterHealthBeforeAggro,
+            "aggro should make the defender retaliate against its attacker");
+    require(decoyTarget->Health == decoyHealthBeforeAggro,
+            "aggro should outrank an even closer unrelated target");
+
+    game.clear();
     for (int y = 9; y <= 11; ++y) {
         for (int x = 9; x <= 12; ++x) {
             game.setTileID(x, y, tile::Empty);
@@ -180,10 +205,10 @@ int main()
     crowdedMover->mypath.clear();
     crowdedMover->mypath.push_back(Point(11, 10));
     realtime::updateAutoCombat(game, 1.0f);
-    require(!(crowdedMover->x == 10 && crowdedMover->y == 10),
-            "crowded movement should side-step instead of waiting in place");
-    require(!(crowdedMover->x == 11 && crowdedMover->y == 10),
-            "crowded movement should not step into an occupied reserved cell");
+    require(crowdedMover->x == 11 && crowdedMover->y == 10,
+            "combat movement should ignore other unit bodies and allow stacking");
+    require(game.myunits.back()->x == 11 && game.myunits.back()->y == 10,
+            "the blocking unit should remain stacked on the same cell");
 
     game.gameOver = true;
     game.clear();

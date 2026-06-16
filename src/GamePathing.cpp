@@ -49,18 +49,9 @@ void Game::requestPathForUnit(MoveableUnit& unit, Point goal)
     request.goal = goal;
     request.allowDiagonal = false;
     request.maze = maze;
-    const auto blockUnits = [&request, this, &unit](const std::list<std::unique_ptr<MoveableUnit>>& units) {
-        for (const auto& other : units) {
-            if (other->entityId == unit.entityId || other->Health <= 0 || !isMapCell(other->x, other->y)) {
-                continue;
-            }
-            request.maze[other->y][other->x] = 1;
-        }
-    };
-    // Realtime units do not write to tile IDs, so the path snapshot must mark
-    // occupied cells explicitly to prevent same-cell stacking.
-    blockUnits(myunits);
-    blockUnits(enemys);
+    // Unit bodies are deliberately not copied into the maze. The path worker
+    // should solve only stable terrain/building blockers; other soldiers move
+    // concurrently and may share cells for smoother large-army flow.
     request.maze[request.start.y][request.start.x] = 0;
     request.maze[goal.y][goal.x] = 0;
     unit.pendingPathRequest = request.requestId;

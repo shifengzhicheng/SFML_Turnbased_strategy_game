@@ -193,7 +193,6 @@ public:
     bool isCellReservedForSpawn(int x, int y) const;
     bool isBuildableCell(int x, int y) const;
     bool isBuildSiteInInfluence(int team, Point point, int type) const;
-    bool isCellOccupiedByUnit(int x, int y, int ignoredEntityId = 0) const;
     bool canUnitStepInto(const MoveableUnit& unit, Point point) const;
     
     void clear();

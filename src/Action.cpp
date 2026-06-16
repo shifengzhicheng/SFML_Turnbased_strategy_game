@@ -96,6 +96,9 @@ void Attacker::Attack(MoveableUnit* me, Unit* u)
 			finalDamage = std::max(1, static_cast<int>(std::round(static_cast<float>(finalDamage) * mygame->baseDamageTakenMultiplier(me->unitName, u->myteam))));
 		}
 		u->Health -= finalDamage;
+		if (auto* defender = dynamic_cast<MoveableUnit*>(u); defender != nullptr && defender->Health > 0) {
+			defender->rememberAttacker(*me);
+		}
 
 		const sf::Vector2f targetCenter = unitCenter(u);
 		const sf::Color beamColor = damageResult.counter

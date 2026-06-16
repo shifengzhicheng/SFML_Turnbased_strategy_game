@@ -9,7 +9,6 @@
 #include <array>
 #include <cmath>
 #include <limits>
-#include <set>
 
 namespace
 {
@@ -24,21 +23,6 @@ namespace
     {
         return distanceSquared(Point(a.x, a.y), Point(b.x, b.y));
     }
-
-    struct MovementReservations
-    {
-        std::set<std::pair<int, int>> cells;
-
-        bool isReserved(Point point) const
-        {
-            return cells.count({point.x, point.y}) > 0;
-        }
-
-        void reserve(Point point)
-        {
-            cells.insert({point.x, point.y});
-        }
-    };
 
     Unit* betterTarget(MoveableUnit& unit, Unit* current, Unit* candidate)
     {
@@ -60,6 +44,14 @@ namespace
 
     Unit* chooseTarget(Game& game, MoveableUnit& unit)
     {
+        if (unit.aggroSeconds > 0.f && unit.aggroTargetId != 0) {
+            MoveableUnit* attacker = game.findMoveableUnitById(unit.aggroTargetId);
+            if (attacker != nullptr && attacker->Health > 0 && attacker->myteam != unit.myteam) {
+                return attacker;
+            }
+            unit.clearAggro();
+        }
+
         Unit* best = nullptr;
         if (unit.myteam == PLAYER) {
             for (auto& enemy : game.enemys) {
@@ -84,9 +76,7 @@ namespace
     Point chooseApproachPoint(Game& game, MoveableUnit& unit, Unit* target)
     {
         const Point targetPoint = target != nullptr ? Point(target->x, target->y) : fallbackEnemyBase(game, unit);
-        if (target != nullptr
-            && !game.isCellOccupiedByUnit(targetPoint.x, targetPoint.y, unit.entityId)
-            && game.isCellWalkableForUnit(targetPoint.x, targetPoint.y)) {
+        if (target != nullptr && game.isCellWalkableForUnit(targetPoint.x, targetPoint.y)) {
             return targetPoint;
         }
 
@@ -97,7 +87,7 @@ namespace
         for (int radius = 1; radius <= searchRadius; ++radius) {
             for (int y = targetPoint.y - radius; y <= targetPoint.y + radius; ++y) {
                 for (int x = targetPoint.x - radius; x <= targetPoint.x + radius; ++x) {
-                    if (!game.isCellWalkableForUnit(x, y) || game.isCellOccupiedByUnit(x, y, unit.entityId)) {
+                    if (!game.isCellWalkableForUnit(x, y)) {
                         continue;
                     }
                     if (target != nullptr && !unit_geometry::isInAttackRange(Point(x, y), *target, unit.myAttackRange())) {
@@ -140,19 +130,18 @@ namespace
         game.requestPathForUnit(unit, goal);
     }
 
-    bool tryReservedMove(Game& game, MoveableUnit& unit, Point next, MovementReservations& reservations)
+    bool tryMove(Game& game, MoveableUnit& unit, Point next)
     {
-        if (reservations.isReserved(next) || !game.canUnitStepInto(unit, next)) {
+        if (!game.canUnitStepInto(unit, next)) {
             return false;
         }
 
-        reservations.reserve(next);
         unit.UnitState = UState::MOVING;
         unit.move(next);
         return true;
     }
 
-    Point chooseAlternateStep(Game& game, MoveableUnit& unit, Point goal, MovementReservations& reservations)
+    Point chooseAlternateStep(Game& game, MoveableUnit& unit, Point goal)
     {
         const Point current(unit.x, unit.y);
         const int currentScore = distanceSquared(current, goal);
@@ -166,7 +155,7 @@ namespace
         Point best(-1, -1);
         int bestScore = std::numeric_limits<int>::max();
         for (const Point candidate : candidates) {
-            if (reservations.isReserved(candidate) || !game.canUnitStepInto(unit, candidate)) {
+            if (!game.canUnitStepInto(unit, candidate)) {
                 continue;
             }
 
@@ -182,7 +171,7 @@ namespace
         return best;
     }
 
-    void updateUnit(Game& game, MoveableUnit& unit, float dt, MovementReservations& reservations)
+    void updateUnit(Game& game, MoveableUnit& unit, float dt)
     {
         if (unit.Health <= 0) {
             return;
@@ -191,6 +180,12 @@ namespace
         unit.realtimeAttackTimer += dt;
         unit.realtimeMoveTimer += dt;
         unit.realtimePathTimer += dt;
+        if (unit.aggroSeconds > 0.f) {
+            unit.aggroSeconds = std::max(0.f, unit.aggroSeconds - dt);
+            if (unit.aggroSeconds == 0.f) {
+                unit.clearAggro();
+            }
+        }
 
         Unit* target = chooseTarget(game, unit);
         if (target != nullptr && unit.canAutoAttack(target)) {
@@ -237,14 +232,14 @@ namespace
 
         const Point next = unit.mypath.front();
         unit.mypath.pop_front();
-        if (tryReservedMove(game, unit, next, reservations)) {
+        if (tryMove(game, unit, next)) {
             return;
         }
 
-        const Point alternate = chooseAlternateStep(game, unit, goal, reservations);
-        if (alternate.x >= 0 && tryReservedMove(game, unit, alternate, reservations)) {
-            // The previous path was blocked by a transient crowd. Step aside
-            // once, then force a fresh path next movement tick.
+        const Point alternate = chooseAlternateStep(game, unit, goal);
+        if (alternate.x >= 0 && tryMove(game, unit, alternate)) {
+            // The previous path became invalid because terrain/buildings
+            // changed. Step aside once, then force a fresh path next tick.
             unit.mypath.clear();
             unit.realtimePathTimer = realtime::PathRefreshSeconds;
         }
@@ -259,12 +254,11 @@ namespace realtime
 {
     void updateAutoCombat(Game& game, float dt)
     {
-        MovementReservations reservations;
         for (auto& unit : game.myunits) {
-            updateUnit(game, *unit, dt, reservations);
+            updateUnit(game, *unit, dt);
         }
         for (auto& unit : game.enemys) {
-            updateUnit(game, *unit, dt, reservations);
+            updateUnit(game, *unit, dt);
         }
     }
 }

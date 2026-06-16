@@ -151,6 +151,21 @@ float MoveableUnit::realtimeAttackCooldownSeconds() const
 	return baseSeconds * mygame->unitAttackCooldownMultiplier(myteam, unitName);
 }
 
+void MoveableUnit::rememberAttacker(const MoveableUnit& attacker)
+{
+	if (attacker.myteam == myteam || attacker.Health <= 0 || attacker.entityId == 0) {
+		return;
+	}
+	aggroTargetId = attacker.entityId;
+	aggroSeconds = config::AggroMemorySeconds;
+}
+
+void MoveableUnit::clearAggro()
+{
+	aggroTargetId = 0;
+	aggroSeconds = 0.f;
+}
+
 bool MoveableUnit::canAutoAttack(Unit* target)
 {
 	return attackmethod && target != nullptr && attackmethod->isInMyAttackRange(this, target);

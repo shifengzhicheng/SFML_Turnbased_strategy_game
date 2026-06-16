@@ -99,7 +99,7 @@ Point Game::findAttackStandPoint(const MoveableUnit& unit, const Building& build
     for (int y = building.point.y - range; y <= building.point.y + range; ++y) {
         for (int x = building.point.x - range; x <= building.point.x + range; ++x) {
             const Point candidate(x, y);
-            if (!isCellWalkableForUnit(x, y) || isCellOccupiedByUnit(x, y, unit.entityId)) {
+            if (!isCellWalkableForUnit(x, y)) {
                 continue;
             }
             const int toTarget = distanceSquared(candidate, building.point);

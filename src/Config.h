@@ -72,6 +72,7 @@ namespace config
     inline constexpr float LogisticsTrainTimeFloor = 0.60f;
     inline constexpr float MiningIncomeBonus = 0.12f;
     inline constexpr float AttackCooldownFloor = 0.66f;
+    inline constexpr float AggroMemorySeconds = 5.0f;
     inline constexpr int WarChestBaseBonus = 60;
     inline constexpr int WarChestTechBonus = 8;
     inline constexpr float BuildingDamageFactor = 0.62f;

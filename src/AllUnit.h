@@ -76,6 +76,8 @@ public:
 	float realtimePathTimer = 0.f;
 	int pendingPathRequest = 0;
 	Point pendingPathGoal;
+	int aggroTargetId = 0;
+	float aggroSeconds = 0.f;
 
 	std::deque<Point> mypath;
 
@@ -88,6 +90,8 @@ public:
 	void scaleMaxHealth(float multiplier);
 	float realtimeMoveStepSeconds() const;
 	float realtimeAttackCooldownSeconds() const;
+	void rememberAttacker(const MoveableUnit& attacker);
+	void clearAggro();
 	bool canAutoAttack(Unit* target);
 	void autoAttack(Unit* target);
 };
