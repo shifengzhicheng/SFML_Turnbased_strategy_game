@@ -31,10 +31,14 @@ endif()
 
 set(SFML_TBS_GAME_SOURCES
     src/Game.cpp
+    src/GameBalance.cpp
     src/GameCombat.cpp
     src/GameConstruction.cpp
     src/GameEconomy.cpp
     src/GameInput.cpp
+    src/GameLegacyAI.cpp
+    src/GameOperations.cpp
+    src/GameRewards.cpp
     src/GameLifecycle.cpp
     src/GameRender.cpp
     src/GameUpdate.cpp
