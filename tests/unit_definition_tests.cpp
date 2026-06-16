@@ -55,6 +55,8 @@ int main()
             "cavalry should point to cavalry art");
     require(unitDefinition(UName::CAVALRY).requiredBarracks == 2,
             "cavalry should require two barracks");
+    require(unitDefinition(UName::CAVALRY).maxHealth >= 450,
+            "cavalry should have enough health to survive diving ahead");
     require(unitDefinition(UName::CAVALRY).commandCost >= unitDefinition(UName::SHOOTER).commandCost * 2,
             "cavalry should be a meaningful mid-tier investment");
     require(unitDefinition(UName::SIEGE).attackRange == config::SiegeRange,
@@ -69,6 +71,16 @@ int main()
             "guardian should remain a late-game commitment");
     require(unitDefinition(UName::GUARDIAN).requiredTechLevel == 7,
             "guardian should stay a late-game unlock");
+    require(config::InfantrySeekRange > config::InfantryRange
+            && config::ShooterSeekRange > config::ShooterRange
+            && config::CavalrySeekRange > config::CavalryRange
+            && config::SiegeSeekRange > config::SiegeRange
+            && config::GuardianSeekRange > config::GuardianRange,
+            "seek ranges should always be wider than attack ranges");
+    require(config::CavalrySeekRange >= config::InfantrySeekRange + 2,
+            "cavalry should peel toward nearby fights before over-diving alone");
+    require(config::SiegeSeekRange >= config::SiegeRange + 3,
+            "siege should look far enough ahead to escort itself near towers");
 
     bool threw = false;
     try {

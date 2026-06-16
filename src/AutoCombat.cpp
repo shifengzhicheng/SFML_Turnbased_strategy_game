@@ -12,6 +12,12 @@
 
 namespace
 {
+    enum class TargetScope
+    {
+        Nearby,
+        Global
+    };
+
     int distanceSquared(Point a, Point b)
     {
         const int dx = a.x - b.x;
@@ -24,9 +30,38 @@ namespace
         return distanceSquared(Point(a.x, a.y), Point(b.x, b.y));
     }
 
-    Unit* betterTarget(MoveableUnit& unit, Unit* current, Unit* candidate)
+    int seekRangeForUnit(const MoveableUnit& unit)
+    {
+        switch (unit.unitName) {
+        case UName::SHOOTER:
+            return config::ShooterSeekRange;
+        case UName::CAVALRY:
+            return config::CavalrySeekRange;
+        case UName::SIEGE:
+            return config::SiegeSeekRange;
+        case UName::GUARDIAN:
+            return config::GuardianSeekRange;
+        case UName::INFANTARY:
+        default:
+            return config::InfantrySeekRange;
+        }
+    }
+
+    bool isWithinSeekRange(MoveableUnit& unit, Unit* candidate)
+    {
+        if (candidate == nullptr) {
+            return false;
+        }
+        const int seekRange = seekRangeForUnit(unit);
+        return distanceSquared(unit, *candidate) <= seekRange * seekRange;
+    }
+
+    Unit* betterTarget(MoveableUnit& unit, Unit* current, Unit* candidate, TargetScope scope)
     {
         if (candidate == nullptr || candidate->Health <= 0 || candidate->myteam == unit.myteam) {
+            return current;
+        }
+        if (scope == TargetScope::Nearby && !isWithinSeekRange(unit, candidate)) {
             return current;
         }
         if (current == nullptr) {
@@ -42,7 +77,7 @@ namespace
         return distanceSquared(unit, *candidate) < distanceSquared(unit, *current) ? candidate : current;
     }
 
-    Unit* chooseTarget(Game& game, MoveableUnit& unit)
+    Unit* chooseTarget(Game& game, MoveableUnit& unit, TargetScope scope)
     {
         if (unit.aggroSeconds > 0.f && unit.aggroTargetId != 0) {
             MoveableUnit* attacker = game.findMoveableUnitById(unit.aggroTargetId);
@@ -55,15 +90,15 @@ namespace
         Unit* best = nullptr;
         if (unit.myteam == PLAYER) {
             for (auto& enemy : game.enemys) {
-                best = betterTarget(unit, best, enemy.get());
+                best = betterTarget(unit, best, enemy.get(), scope);
             }
-            best = betterTarget(unit, best, game.Base_blue.get());
+            best = betterTarget(unit, best, game.Base_blue.get(), scope);
         }
         else {
             for (auto& playerUnit : game.myunits) {
-                best = betterTarget(unit, best, playerUnit.get());
+                best = betterTarget(unit, best, playerUnit.get(), scope);
             }
-            best = betterTarget(unit, best, game.Base_red.get());
+            best = betterTarget(unit, best, game.Base_red.get(), scope);
         }
         return best;
     }
@@ -187,7 +222,7 @@ namespace
             }
         }
 
-        Unit* target = chooseTarget(game, unit);
+        Unit* target = chooseTarget(game, unit, TargetScope::Nearby);
         if (target != nullptr && unit.canAutoAttack(target)) {
             unit.UnitState = UState::UNITNORMAL;
             unit.mypath.clear();
@@ -221,8 +256,11 @@ namespace
         unit.realtimeMoveTimer -= unit.realtimeMoveStepSeconds();
 
         const Point rallyPoint = game.chooseStrategicRallyPoint(unit);
+        if (target == nullptr && rallyPoint.x < 0) {
+            target = chooseTarget(game, unit, TargetScope::Global);
+        }
         const Point goal = rallyPoint.x >= 0
-            ? rallyPoint
+            ? (target != nullptr ? chooseApproachPoint(game, unit, target) : rallyPoint)
             : (buildingTarget != nullptr ? game.findAttackStandPoint(unit, *buildingTarget) : chooseApproachPoint(game, unit, target));
         refreshPathIfNeeded(game, unit, goal);
         if (unit.mypath.empty()) {

@@ -73,6 +73,13 @@ namespace config
     inline constexpr float MiningIncomeBonus = 0.12f;
     inline constexpr float AttackCooldownFloor = 0.66f;
     inline constexpr float AggroMemorySeconds = 5.0f;
+    // Tiles scanned for nearby enemies while units are still following lane
+    // rally points. Keep these above attack range so armies peel before melee.
+    inline constexpr int InfantrySeekRange = 7;
+    inline constexpr int ShooterSeekRange = 9;
+    inline constexpr int CavalrySeekRange = 10;
+    inline constexpr int SiegeSeekRange = 12;
+    inline constexpr int GuardianSeekRange = 8;
     inline constexpr int WarChestBaseBonus = 60;
     inline constexpr int WarChestTechBonus = 8;
     inline constexpr float BuildingDamageFactor = 0.62f;
@@ -90,7 +97,7 @@ namespace config
     inline constexpr int GuardianCost = 92;
     inline constexpr int InfantryHealth = 220;
     inline constexpr int ShooterHealth = 100;
-    inline constexpr int CavalryHealth = 420;
+    inline constexpr int CavalryHealth = 460;
     inline constexpr int SiegeHealth = 270;
     inline constexpr int GuardianHealth = 720;
     inline constexpr int InfantryDamage = 48;
