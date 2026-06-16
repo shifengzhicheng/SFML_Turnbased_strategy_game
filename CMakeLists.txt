@@ -29,6 +29,11 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     endforeach()
 endif()
 
+set(SFML_TBS_ART_SOURCES
+    src/ArtAssets.cpp
+    src/ArtInternal.cpp
+)
+
 set(SFML_TBS_GAME_SOURCES
     src/Game.cpp
     src/GameBalance.cpp
@@ -54,8 +59,6 @@ set(SFML_TBS_GAME_SOURCES
     src/Action.cpp
     src/AIController.cpp
     src/Astar.cpp
-    src/ArtAssets.cpp
-    src/ArtInternal.cpp
     src/AutoCombat.cpp
     src/Building.cpp
     src/Button.cpp
@@ -70,30 +73,40 @@ set(SFML_TBS_GAME_SOURCES
     src/Worker.cpp
 )
 
+add_library(sfml_tbs_art STATIC
+    ${SFML_TBS_ART_SOURCES}
+)
+target_include_directories(sfml_tbs_art PUBLIC src)
+target_link_libraries(sfml_tbs_art PUBLIC sfml-graphics sfml-window sfml-system)
+
+add_library(sfml_tbs_game STATIC
+    ${SFML_TBS_GAME_SOURCES}
+)
+target_include_directories(sfml_tbs_game PUBLIC src)
+target_link_libraries(sfml_tbs_game PUBLIC sfml_tbs_art sfml-graphics sfml-window sfml-system)
+
+if(APPLE)
+    target_compile_definitions(sfml_tbs_art PUBLIC GL_SILENCE_DEPRECATION)
+    target_compile_definitions(sfml_tbs_game PUBLIC GL_SILENCE_DEPRECATION)
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(sfml_tbs_art PRIVATE -Wno-deprecated-declarations)
+    target_compile_options(sfml_tbs_game PRIVATE -Wno-deprecated-declarations)
+endif()
+
 add_executable(sfml_tbs
     src/main.cpp
     src/PolicyTrainer.cpp
     src/ScriptedPlan.cpp
     src/SimulationRunner.cpp
-    ${SFML_TBS_GAME_SOURCES}
 )
-
-target_include_directories(sfml_tbs PRIVATE src)
-target_link_libraries(sfml_tbs PRIVATE sfml-graphics sfml-window sfml-system)
-
-if(APPLE)
-    target_compile_definitions(sfml_tbs PRIVATE GL_SILENCE_DEPRECATION)
-endif()
+target_link_libraries(sfml_tbs PRIVATE sfml_tbs_game)
 
 add_executable(sfml_tbs_art_preview EXCLUDE_FROM_ALL
     tools/art_preview.cpp
-    src/ArtAssets.cpp
 )
-target_include_directories(sfml_tbs_art_preview PRIVATE src)
-target_link_libraries(sfml_tbs_art_preview PRIVATE sfml-graphics sfml-window sfml-system)
-if(APPLE)
-    target_compile_definitions(sfml_tbs_art_preview PRIVATE GL_SILENCE_DEPRECATION)
-endif()
+target_link_libraries(sfml_tbs_art_preview PRIVATE sfml_tbs_art)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(sfml_tbs PRIVATE -Wno-deprecated-declarations)
@@ -135,13 +148,8 @@ if(BUILD_TESTING)
 
     add_executable(sfml_tbs_game_operation_tests
         tests/game_operation_tests.cpp
-        ${SFML_TBS_GAME_SOURCES}
     )
-    target_include_directories(sfml_tbs_game_operation_tests PRIVATE src)
-    target_link_libraries(sfml_tbs_game_operation_tests PRIVATE sfml-graphics sfml-window sfml-system)
-    if(APPLE)
-        target_compile_definitions(sfml_tbs_game_operation_tests PRIVATE GL_SILENCE_DEPRECATION)
-    endif()
+    target_link_libraries(sfml_tbs_game_operation_tests PRIVATE sfml_tbs_game)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         target_compile_options(sfml_tbs_game_operation_tests PRIVATE -Wno-deprecated-declarations)
     endif()
