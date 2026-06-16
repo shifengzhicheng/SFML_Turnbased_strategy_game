@@ -82,5 +82,28 @@ int main()
     require(game.workerCount(PLAYER) > workersBefore,
             "economy upgrade should materialize additional drones");
 
+    game.clear();
+    game.playerCommand = 1000;
+    require(!game.createUnit(PLAYER, UName::INFANTARY, game.Red_baseP.x, game.Red_baseP.y, lane::Mid),
+            "direct unit creation should reject the blocked base tile");
+    require(game.myunits.empty(),
+            "rejected direct unit creation should not mutate the player roster");
+    require(!game.spawnUnit(PLAYER, UName::INFANTARY, game.Red_baseP.x, game.Red_baseP.y),
+            "paid unit spawning should reject the blocked base tile");
+    require(game.playerCommand == 1000,
+            "rejected paid unit spawning should not spend CMD");
+
+    const Point validSpawn = game.findSpawnPointAround(game.Red_baseP);
+    require(validSpawn.x >= 0,
+            "base should have at least one valid spawn tile after map setup");
+    require(game.createUnit(PLAYER, UName::INFANTARY, validSpawn.x, validSpawn.y, lane::Top),
+            "direct unit creation should accept a free walkable spawn tile");
+    require(game.myunits.size() == 1,
+            "successful direct unit creation should add exactly one player unit");
+    require(!game.createUnit(PLAYER, UName::INFANTARY, validSpawn.x, validSpawn.y, lane::Top),
+            "direct unit creation should reject an already reserved unit tile");
+    require(game.myunits.size() == 1,
+            "rejected duplicate direct creation should not add another player unit");
+
     return 0;
 }

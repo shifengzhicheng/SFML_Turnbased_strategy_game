@@ -4,6 +4,7 @@
 #include "ArtAssets.h"
 #include "AutoCombat.h"
 #include "RealtimeConfig.h"
+#include "UnitFactory.h"
 
 #include <algorithm>
 #include <cmath>
@@ -172,36 +173,32 @@ void Game::applyStructureLossRelief(const Building& destroyed)
 
 bool Game::spawnUnit(int team, int name, int x, int y)
 {
-    if (!spendCommand(team, name)) {
+    if (!canSpawnUnit(team, name) || !canCreateUnitAt(team, name, x, y)) {
         return false;
     }
+    commandPool(*this, team) -= unitCost(name);
     return createUnit(team, name, x, y, selectedLaneForTeam(team));
+}
+
+bool Game::canCreateUnitAt(int team, int name, int x, int y) const
+{
+    if (unitCost(name) <= 0 || !hasUnitCapacity(team)) {
+        return false;
+    }
+    if (!isCellWalkableForUnit(x, y) || isCellReservedForSpawn(x, y)) {
+        return false;
+    }
+    return true;
 }
 
 bool Game::createUnit(int team, int name, int x, int y, int laneIndex)
 {
-    if (!hasUnitCapacity(team)) {
+    if (!canCreateUnitAt(team, name, x, y)) {
         return false;
     }
-    std::unique_ptr<MoveableUnit> unit;
-    switch (name)
-    {
-    case UName::SHOOTER:
-        unit = make_unique<Shooter>(team, x, y, this);
-        break;
-    case UName::INFANTARY:
-        unit = make_unique<Infantry>(team, x, y, this);
-        break;
-    case UName::CAVALRY:
-        unit = make_unique<Cavalry>(team, x, y, this);
-        break;
-    case UName::SIEGE:
-        unit = make_unique<Siege>(team, x, y, this);
-        break;
-    case UName::GUARDIAN:
-        unit = make_unique<Guardian>(team, x, y, this);
-        break;
-    default:
+
+    std::unique_ptr<MoveableUnit> unit = createMoveableUnit(team, name, x, y, this);
+    if (!unit) {
         return false;
     }
 

@@ -69,6 +69,7 @@ set(SFML_TBS_GAME_SOURCES
     src/PolicyModel.cpp
     src/Tile.cpp
     src/UnitDefinition.cpp
+    src/UnitFactory.cpp
     src/UnitTypes.cpp
     src/UnitVisual.cpp
     src/Worker.cpp
@@ -155,4 +156,13 @@ if(BUILD_TESTING)
         target_compile_options(sfml_tbs_game_operation_tests PRIVATE -Wno-deprecated-declarations)
     endif()
     add_test(NAME game_operation_tests COMMAND sfml_tbs_game_operation_tests)
+
+    add_executable(sfml_tbs_unit_definition_tests
+        tests/unit_definition_tests.cpp
+    )
+    target_link_libraries(sfml_tbs_unit_definition_tests PRIVATE sfml_tbs_game)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_compile_options(sfml_tbs_unit_definition_tests PRIVATE -Wno-deprecated-declarations)
+    endif()
+    add_test(NAME unit_definition_tests COMMAND sfml_tbs_unit_definition_tests)
 endif()

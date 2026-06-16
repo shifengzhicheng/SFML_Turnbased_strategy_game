@@ -280,6 +280,7 @@ public:
     void createStartingWorkers();
     void createWorker(int team, Point point);
     bool createUnit(int team, int name, int x, int y, int laneIndex = lane::Mid);
+    bool canCreateUnitAt(int team, int name, int x, int y) const;
     std::string spawnBlockReason(int team, int name) const;
     bool canSpawnUnit(int team, int name) const;
     bool spendCommand(int team, int name);
