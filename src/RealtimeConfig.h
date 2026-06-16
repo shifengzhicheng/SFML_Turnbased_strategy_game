@@ -11,11 +11,18 @@ namespace realtime
     inline constexpr float PathRefreshSeconds = 0.90f;
     inline constexpr float WorkerPathRefreshSeconds = 0.60f;
     inline constexpr float WorkerStepSeconds = 0.34f;
-    inline constexpr float InfantryStepSeconds = 0.72f;
-    inline constexpr float ShooterStepSeconds = 0.82f;
-    inline constexpr float CavalryStepSeconds = 0.56f;
-    inline constexpr float SiegeStepSeconds = 0.96f;
-    inline constexpr float GuardianStepSeconds = 0.88f;
+    // Movement is measured as seconds per tile; larger values are slower.
+    // Siege must need escorts, while cavalry should visibly rotate faster.
+    inline constexpr float InfantryStepSeconds = 0.68f;
+    inline constexpr float ShooterStepSeconds = 0.78f;
+    inline constexpr float CavalryStepSeconds = 0.46f;
+    inline constexpr float SiegeStepSeconds = 1.35f;
+    inline constexpr float GuardianStepSeconds = 0.98f;
+
+    static_assert(CavalryStepSeconds < InfantryStepSeconds);
+    static_assert(InfantryStepSeconds < ShooterStepSeconds);
+    static_assert(ShooterStepSeconds < GuardianStepSeconds);
+    static_assert(GuardianStepSeconds < SiegeStepSeconds);
 
     inline constexpr float InfantryAttackCooldown = 1.50f;
     inline constexpr float ShooterAttackCooldown = 1.78f;

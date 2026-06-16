@@ -95,4 +95,10 @@ if(BUILD_TESTING)
     )
     target_include_directories(sfml_tbs_map_tests PRIVATE src)
     add_test(NAME map_tests COMMAND sfml_tbs_map_tests)
+
+    add_executable(sfml_tbs_realtime_config_tests
+        tests/realtime_config_tests.cpp
+    )
+    target_include_directories(sfml_tbs_realtime_config_tests PRIVATE src)
+    add_test(NAME realtime_config_tests COMMAND sfml_tbs_realtime_config_tests)
 endif()

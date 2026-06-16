@@ -418,11 +418,11 @@ void Game::Initial()
     setupText(panelHint, myfont, 12, sf::Color(211, 199, 165), "Pick lane, queue units", panelTextX, 184.f);
     setupText(economyLabel, myfont, 10, sf::Color(228, 218, 185), "natural CMD", panelTextX, config::EconomyButtonY - 12.f);
     setupText(barracksLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::BarracksCost) + " auto near base", panelTextX, config::BuildBarracksY + 43.f);
-    setupText(infantryLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::InfantryCost) + " core", panelTextX, config::BuildInfantryY + 43.f);
-    setupText(shooterLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::ShooterCost) + " eco1/Lv1", panelTextX, config::BuildShooterY + 43.f);
-    setupText(cavalryLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::CavalryCost) + " 2 rax", panelTextX, config::BuildCavalryY + 43.f);
-    setupText(siegeLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::SiegeCost) + " Lv2 siege", panelTextX, config::BuildSiegeY + 43.f);
-    setupText(guardianLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::GuardianCost) + " Lv3 tank", panelTextX, config::BuildGuardianY + 43.f);
+    setupText(infantryLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::InfantryCost) + " core / steady", panelTextX, config::BuildInfantryY + 43.f);
+    setupText(shooterLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::ShooterCost) + " ranged / slow", panelTextX, config::BuildShooterY + 43.f);
+    setupText(cavalryLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::CavalryCost) + " fast dive", panelTextX, config::BuildCavalryY + 43.f);
+    setupText(siegeLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::SiegeCost) + " slow anti-tower", panelTextX, config::BuildSiegeY + 43.f);
+    setupText(guardianLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::GuardianCost) + " heavy / slow", panelTextX, config::BuildGuardianY + 43.f);
     setupText(towerLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::TowerCost) + " auto lane fort", panelTextX, config::BuildTowerY + 43.f);
 
     sidePanel.setSize(sf::Vector2f(config::PanelWidth, config::WindowHeight));
@@ -2798,6 +2798,7 @@ void Game::drawTutorialOverlay()
         "  Every tech upgrade gives 3 tactic cards. Max tech is LEVEL 15.",
         "  Perks stack, so late builds can bend the soft counter rules.",
         "  Shooter > Infantry, Infantry > Cavalry, Cavalry > Shooter/Siege.",
+        "  Cavalry rotates fastest; Siege is very slow and needs escorts.",
         "  Siege cracks Guardians and buildings; Guardians anchor against Cavalry dives.",
         "",
         "Unlocks",
@@ -3200,11 +3201,11 @@ void Game::DrawSidePanel()
     setLabel(barracksLabel, std::to_string(config::BarracksCost) + " | cap "
         + std::to_string(totalBuildingCount(PLAYER, building::Barracks)) + "/"
         + std::to_string(buildingCap(PLAYER, building::Barracks)) + " auto near base", config::BuildBarracksY);
-    setLabel(infantryLabel, std::to_string(config::InfantryCost) + " | core frontline", config::BuildInfantryY);
-    setLabel(shooterLabel, std::to_string(config::ShooterCost) + " | Eco1/Lv1 ranged", config::BuildShooterY);
-    setLabel(cavalryLabel, std::to_string(config::CavalryCost) + " | 2 Rax dives shooters", config::BuildCavalryY);
-    setLabel(siegeLabel, std::to_string(config::SiegeCost) + " | Lv5 outranges towers", config::BuildSiegeY);
-    setLabel(guardianLabel, std::to_string(config::GuardianCost) + " | Lv7 heavy tank", config::BuildGuardianY);
+    setLabel(infantryLabel, std::to_string(config::InfantryCost) + " | steady frontline", config::BuildInfantryY);
+    setLabel(shooterLabel, std::to_string(config::ShooterCost) + " | ranged, slower", config::BuildShooterY);
+    setLabel(cavalryLabel, std::to_string(config::CavalryCost) + " | fastest dive", config::BuildCavalryY);
+    setLabel(siegeLabel, std::to_string(config::SiegeCost) + " | very slow tower-breaker", config::BuildSiegeY);
+    setLabel(guardianLabel, std::to_string(config::GuardianCost) + " | slow heavy tank", config::BuildGuardianY);
     setLabel(towerLabel, std::to_string(config::TowerCost) + " | cap "
         + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower)) + "/"
         + std::to_string(buildingCap(PLAYER, building::DefenseTower)) + " anti-rush", config::BuildTowerY);
