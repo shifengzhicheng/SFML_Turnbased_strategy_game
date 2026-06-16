@@ -125,7 +125,7 @@ void Game::drawRewardOverlay()
     title.setPosition(236.f, 210.f);
     window.draw(title);
 
-    sf::Text hint("Rewards are small and capped, so every unit keeps a role. Press 1/2/3 or click a card.", myfont, 14);
+    sf::Text hint("Each tactic is a chunky power spike, but unit roles still matter. Press 1/2/3 or click a card.", myfont, 14);
     hint.setFillColor(sf::Color(222, 230, 204));
     hint.setPosition(236.f, 250.f);
     window.draw(hint);

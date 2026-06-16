@@ -37,24 +37,24 @@ namespace game_internal
     {
         switch (type) {
         case perk::Fortitude:
-            return "Infantry and Guard +14% HP.\nFront line clearly lasts longer.";
+            return "Infantry and Guard +20% HP.\nA real front-line power spike.";
         case perk::Volley:
-            return "Shooters +13% damage.\nAlso shoot 5.5% faster.";
+            return "Shooters +20% damage.\nAlso shoot 7.5% faster.";
         case perk::Charge:
-            return "Cavalry +14% damage, +8% HP.\nFaster attack cycle too.";
+            return "Cavalry +19% damage, +12% HP.\nAttack cycle is 5.5% faster.";
         case perk::SiegeCraft:
-            return "Siege +15% damage, +8% HP.\nBuildings take much more.";
+            return "Siege +22% damage, +12% HP.\nBuildings take a brutal hit.";
         case perk::TowerCraft:
-            return "Towers +12% damage.\n+1 range at high level.";
+            return "Towers +16% damage.\n+1 range at high level.";
         case perk::Logistics:
-            return "Barracks train 9% faster.\nTurns economy into tempo.";
+            return "Barracks train 12% faster.\nTurns economy into tempo.";
         case perk::Mining:
-            return "Natural CMD +12%.\nEconomy upgrades compound.";
+            return "Natural CMD +18%.\nEconomy upgrades compound hard.";
         case perk::WarChest:
-            return "Instant 60+8/LEVEL CMD.\nBuild or queue now.";
+            return "Instant 80+12/LEVEL CMD.\nBuild or queue now.";
         case perk::Drill:
         default:
-            return "Infantry +14%, Guard +10% damage.\nFrontline stays useful.";
+            return "Infantry +20%, Guard +16% damage.\nFrontline stays scary.";
         }
     }
 

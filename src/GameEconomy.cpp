@@ -23,6 +23,21 @@ namespace
         return safeLevel * config::EconomyIncomeStep
             + (safeLevel * safeLevel) / config::EconomyIncomeQuadraticDivisor;
     }
+
+    float perkHealthBonusForUnit(const Game& game, int team, int unitName)
+    {
+        float bonus = 0.f;
+        if (unitName == UName::INFANTARY || unitName == UName::GUARDIAN) {
+            bonus += static_cast<float>(game.perkLevel(team, perk::Fortitude)) * config::FortitudeHealthBonus;
+        }
+        if (unitName == UName::CAVALRY) {
+            bonus += static_cast<float>(game.perkLevel(team, perk::Charge)) * config::ChargeHealthBonus;
+        }
+        if (unitName == UName::SIEGE) {
+            bonus += static_cast<float>(game.perkLevel(team, perk::SiegeCraft)) * config::SiegeHealthBonus;
+        }
+        return bonus;
+    }
 }
 
 int Game::upgradeCostForNextLevel(int team) const
@@ -109,10 +124,16 @@ bool Game::upgradeTeam(int team)
     }
 
     commandPool(*this, team) -= cost;
+    const int previousLevel = level;
     ++level;
     auto& units = team == PLAYER ? myunits : enemys;
     for (auto& unit : units) {
-        unit->scaleMaxHealth(1.f + config::TechHealthBonus);
+        const float perkBonus = perkHealthBonusForUnit(*this, team, unit->unitName);
+        const float oldMultiplier = 1.f + static_cast<float>(previousLevel) * config::TechHealthBonus + perkBonus;
+        const float newMultiplier = 1.f + static_cast<float>(level) * config::TechHealthBonus + perkBonus;
+        // Use the same additive tech formula as freshly spawned units, so old
+        // and new soldiers share identical max health at a given LEVEL.
+        unit->scaleMaxHealth(newMultiplier / oldMultiplier);
     }
     if (team == PLAYER) {
         addFloatingText(sf::Vector2f(config::PanelX + 18.f, static_cast<float>(config::EndTurnButtonY) - 18.f),

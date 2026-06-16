@@ -1,7 +1,9 @@
 #include "Game.h"
 #include "AutoCombat.h"
 #include "BuildingDefinition.h"
+#include "UnitDefinition.h"
 
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -100,24 +102,43 @@ int main()
     game.playerEconomyLevel = 8;
     const int incomeBeforeMining = game.resourceIncome(PLAYER);
     game.applyPerk(PLAYER, perk::Mining);
-    require(game.resourceIncome(PLAYER) >= incomeBeforeMining + 4,
+    require(game.resourceIncome(PLAYER) >= incomeBeforeMining + 6,
             "Mining perk should make economy upgrades visibly stronger");
     const float shooterDamageBefore = game.unitDamageMultiplier(PLAYER, UName::SHOOTER);
     const float shooterCooldownBefore = game.unitAttackCooldownMultiplier(PLAYER, UName::SHOOTER);
     game.applyPerk(PLAYER, perk::Volley);
-    require(game.unitDamageMultiplier(PLAYER, UName::SHOOTER) >= shooterDamageBefore + 0.12f,
+    require(game.unitDamageMultiplier(PLAYER, UName::SHOOTER) >= shooterDamageBefore + 0.19f,
             "Volley should be a chunky shooter damage upgrade");
-    require(game.unitAttackCooldownMultiplier(PLAYER, UName::SHOOTER) <= shooterCooldownBefore - 0.05f,
+    require(game.unitAttackCooldownMultiplier(PLAYER, UName::SHOOTER) <= shooterCooldownBefore - 0.07f,
             "Volley should noticeably speed up shooter attacks");
     const float trainBefore = game.teamTrainTimeMultiplier(PLAYER);
     game.applyPerk(PLAYER, perk::Logistics);
-    require(game.teamTrainTimeMultiplier(PLAYER) <= trainBefore - 0.08f,
+    require(game.teamTrainTimeMultiplier(PLAYER) <= trainBefore - 0.11f,
             "Logistics should convert upgrades into production tempo");
     game.playerCommand = 0;
     game.playerUpgradeLevel = 5;
     game.applyPerk(PLAYER, perk::WarChest);
     require(game.playerCommand >= config::WarChestBaseBonus + config::WarChestTechBonus * 5,
             "War Chest should be large enough to create an immediate play");
+
+    game.clear();
+    game.playerCommand = 1000;
+    const Point veteranSpawn = game.findSpawnPointAround(game.Red_baseP);
+    require(game.createUnit(PLAYER, UName::INFANTARY, veteranSpawn.x, veteranSpawn.y, lane::Mid),
+            "test veteran should spawn before a tech upgrade");
+    MoveableUnit* veteran = game.myunits.back().get();
+    require(game.upgradeTeam(PLAYER),
+            "tech upgrade should succeed for existing-unit health consistency");
+    const int expectedTechHealth = static_cast<int>(std::round(
+        static_cast<float>(unitDefinition(UName::INFANTARY).maxHealth) * game.unitHealthMultiplier(PLAYER, UName::INFANTARY)));
+    require(std::abs(veteran->Health - expectedTechHealth) <= 1,
+            "existing unit health should match the additive tech multiplier");
+    const Point recruitSpawn = game.findSpawnPointAround(game.Red_baseP);
+    require(game.createUnit(PLAYER, UName::INFANTARY, recruitSpawn.x, recruitSpawn.y, lane::Mid),
+            "test recruit should spawn after a tech upgrade");
+    MoveableUnit* recruit = game.myunits.back().get();
+    require(std::abs(recruit->Health - veteran->Health) <= 1,
+            "fresh and existing infantry should have the same health after tech upgrades");
 
     game.clear();
     game.playerCommand = 1000;
