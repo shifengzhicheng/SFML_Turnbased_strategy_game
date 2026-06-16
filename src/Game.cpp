@@ -141,6 +141,42 @@ namespace
         }
     }
 
+    const char* operationTypeName(int type)
+    {
+        switch (type) {
+        case gameop::UpgradeEconomy:
+            return "UpgradeEconomy";
+        case gameop::UpgradeTech:
+            return "UpgradeTech";
+        case gameop::BuildBarracks:
+            return "BuildBarracks";
+        case gameop::BuildTower:
+            return "BuildTower";
+        case gameop::QueueUnit:
+            return "QueueUnit";
+        case gameop::SelectLane:
+        default:
+            return "SelectLane";
+        }
+    }
+
+    const char* unitDebugName(int name)
+    {
+        switch (name) {
+        case UName::SHOOTER:
+            return "Shooter";
+        case UName::CAVALRY:
+            return "Cavalry";
+        case UName::SIEGE:
+            return "Siege";
+        case UName::GUARDIAN:
+            return "Guardian";
+        case UName::INFANTARY:
+        default:
+            return "Infantry";
+        }
+    }
+
     const char* perkShortName(int type)
     {
         switch (type) {
@@ -2107,46 +2143,46 @@ void Game::handleBuildButtons(Vector2i mousePos, Event event)
     }
 
     if (upgradeBtn.checkMouse(mousePos, event) == RELEASE) {
-        upgradeTeam(PLAYER);
+        executeOperation(PLAYER, GameOperation(gameop::UpgradeTech));
         upgradeBtn.setState(NORMAL);
     }
 
     if (economyBtn.checkMouse(mousePos, event) == RELEASE) {
-        upgradeEconomy(PLAYER);
+        executeOperation(PLAYER, GameOperation(gameop::UpgradeEconomy));
         economyBtn.setState(NORMAL);
         return;
     }
 
     if (barracksBtn.checkMouse(mousePos, event) == RELEASE) {
-        requestAutoBuildBarracks(PLAYER);
+        executeOperation(PLAYER, GameOperation(gameop::BuildBarracks, playerSelectedLane));
         barracksBtn.setState(NORMAL);
         return;
     }
 
     if (towerBtn.checkMouse(mousePos, event) == RELEASE) {
-        requestAutoBuildTower(PLAYER);
+        executeOperation(PLAYER, GameOperation(gameop::BuildTower, playerSelectedLane));
         towerBtn.setState(NORMAL);
         return;
     }
 
     if (inf.checkMouse(mousePos, event) == RELEASE) {
-        enqueueUnit(PLAYER, UName::INFANTARY);
+        executeOperation(PLAYER, GameOperation(gameop::QueueUnit, playerSelectedLane, UName::INFANTARY));
         inf.setState(NORMAL);
     }
     if (sho.checkMouse(mousePos, event) == RELEASE) {
-        enqueueUnit(PLAYER, UName::SHOOTER);
+        executeOperation(PLAYER, GameOperation(gameop::QueueUnit, playerSelectedLane, UName::SHOOTER));
         sho.setState(NORMAL);
     }
     if (cav.checkMouse(mousePos, event) == RELEASE) {
-        enqueueUnit(PLAYER, UName::CAVALRY);
+        executeOperation(PLAYER, GameOperation(gameop::QueueUnit, playerSelectedLane, UName::CAVALRY));
         cav.setState(NORMAL);
     }
     if (siegeBtn.checkMouse(mousePos, event) == RELEASE) {
-        enqueueUnit(PLAYER, UName::SIEGE);
+        executeOperation(PLAYER, GameOperation(gameop::QueueUnit, playerSelectedLane, UName::SIEGE));
         siegeBtn.setState(NORMAL);
     }
     if (guardianBtn.checkMouse(mousePos, event) == RELEASE) {
-        enqueueUnit(PLAYER, UName::GUARDIAN);
+        executeOperation(PLAYER, GameOperation(gameop::QueueUnit, playerSelectedLane, UName::GUARDIAN));
         guardianBtn.setState(NORMAL);
     }
 }
@@ -3450,6 +3486,68 @@ bool Game::enqueueUnit(int team, int name)
     return true;
 }
 
+bool Game::executeOperation(int team, const GameOperation& operation)
+{
+    // Central command dispatcher: UI clicks, scripted playtests, and AI plans
+    // all go through this path so command validation stays identical.
+    int& selectedLane = team == PLAYER ? playerSelectedLane : aiSelectedLane;
+    const int safeLane = std::clamp(operation.laneIndex, 0, lane::Count - 1);
+
+    switch (operation.type) {
+    case gameop::SelectLane:
+        selectedLane = safeLane;
+        return true;
+    case gameop::UpgradeEconomy:
+        return upgradeEconomy(team);
+    case gameop::UpgradeTech:
+        return upgradeTeam(team);
+    case gameop::BuildBarracks:
+        selectedLane = safeLane;
+        return requestAutoBuildBarracks(team);
+    case gameop::BuildTower:
+        selectedLane = safeLane;
+        return requestAutoBuildTower(team);
+    case gameop::QueueUnit:
+        selectedLane = safeLane;
+        return enqueueUnit(team, operation.unitName);
+    default:
+        return false;
+    }
+}
+
+std::size_t Game::executeOperations(int team, const std::vector<GameOperation>& operations)
+{
+    std::size_t successes = 0;
+    for (const auto& operation : operations) {
+        const bool ok = executeOperation(team, operation);
+        if (ok) {
+            ++successes;
+        }
+        logEvent(std::string(team == PLAYER ? "player" : "ai")
+            + " op " + describeOperation(operation) + (ok ? " ok" : " blocked"));
+    }
+    return successes;
+}
+
+std::string Game::describeOperation(const GameOperation& operation) const
+{
+    std::string label(operationTypeName(operation.type));
+    const int safeLane = std::clamp(operation.laneIndex, 0, lane::Count - 1);
+    if (operation.type == gameop::BuildBarracks
+        || operation.type == gameop::BuildTower
+        || operation.type == gameop::QueueUnit
+        || operation.type == gameop::SelectLane) {
+        label += "[";
+        label += laneName(safeLane);
+        label += "]";
+    }
+    if (operation.type == gameop::QueueUnit) {
+        label += ":";
+        label += unitDebugName(operation.unitName);
+    }
+    return label;
+}
+
 bool Game::upgradeTeam(int team)
 {
     int& level = team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
@@ -3707,9 +3805,8 @@ void Game::runAIProduction()
     desiredTowers = std::min(desiredTowers, buildingCap(AI, building::DefenseTower));
 
     if (totalBuildingCount(AI, building::Barracks) < 1) {
-        aiSelectedLane = lane::Mid;
         if (commandForTeam(AI) >= config::BarracksCost) {
-            requestAutoBuildBarracks(AI);
+            executeOperations(AI, {GameOperation(gameop::BuildBarracks, lane::Mid)});
         }
         return;
     }
@@ -3718,44 +3815,37 @@ void Game::runAIProduction()
     }
 
     bool majorActionTaken = false;
-    const auto tryMajorAction = [&](bool condition, const auto& action) {
+    const auto tryMajorAction = [&](bool condition, const GameOperation& operation) {
         if (majorActionTaken || !condition) {
             return;
         }
-        if (action()) {
+        if (executeOperations(AI, {operation}) > 0) {
             majorActionTaken = true;
         }
     };
 
     const bool openingNeedsUnits = enemys.size() < 8 && gameTimeSeconds < 185.f && playerPressure < 4;
     if (!openingNeedsUnits) {
-        tryMajorAction(aiEconomyLevel < desiredEconomy && commandForTeam(AI) >= economyUpgradeCost(AI), [&]() {
-            return upgradeEconomy(AI);
-        });
-        tryMajorAction(aiUpgradeLevel < allowedTech && commandForTeam(AI) >= upgradeCostForNextLevel(AI), [&]() {
-            return upgradeTeam(AI);
-        });
+        tryMajorAction(aiEconomyLevel < desiredEconomy && commandForTeam(AI) >= economyUpgradeCost(AI),
+                       GameOperation(gameop::UpgradeEconomy));
+        tryMajorAction(aiUpgradeLevel < allowedTech && commandForTeam(AI) >= upgradeCostForNextLevel(AI),
+                       GameOperation(gameop::UpgradeTech));
     }
 
     tryMajorAction(totalBuildingCount(AI, building::Barracks) < desiredBarracks
-        && commandForTeam(AI) >= config::BarracksCost + (defenseMode ? 0 : config::InfantryCost), [&]() {
-        aiSelectedLane = chooseLane(0);
-        return requestAutoBuildBarracks(AI);
-    });
+        && commandForTeam(AI) >= config::BarracksCost + (defenseMode ? 0 : config::InfantryCost),
+        GameOperation(gameop::BuildBarracks, chooseLane(0)));
 
     tryMajorAction(defenseMode
         && totalBuildingCount(AI, building::DefenseTower) < desiredTowers
-        && commandForTeam(AI) >= config::TowerCost + config::InfantryCost, [&]() {
-        aiSelectedLane = laneWithMostPlayerUnits();
-        return requestAutoBuildTower(AI);
-    });
+        && commandForTeam(AI) >= config::TowerCost + config::InfantryCost,
+        GameOperation(gameop::BuildTower, laneWithMostPlayerUnits()));
 
     if (openingNeedsUnits && !majorActionTaken) {
         tryMajorAction(aiEconomyLevel < std::min(3, desiredEconomy)
             && enemys.size() >= 5
-            && commandForTeam(AI) >= economyUpgradeCost(AI), [&]() {
-            return upgradeEconomy(AI);
-        });
+            && commandForTeam(AI) >= economyUpgradeCost(AI),
+            GameOperation(gameop::UpgradeEconomy));
     }
 
     int reserve = 0;
@@ -3773,6 +3863,16 @@ void Game::runAIProduction()
     }
     if (majorActionTaken) {
         reserve = std::min(reserve, 55);
+    }
+    if (!hasUnitCapacity(AI)) {
+        if (majorActionTaken) {
+            logEvent(std::string("ai plan=")
+                + (defenseMode ? "defense" : (siegeMode ? "siege" : (macroMode ? "macro" : "tempo")))
+                + " ecoTarget=" + std::to_string(desiredEconomy)
+                + " techTarget=" + std::to_string(allowedTech)
+                + " raxTarget=" + std::to_string(desiredBarracks));
+        }
+        return;
     }
 
     const int playerInfantry = countUnitsNamed(myunits, UName::INFANTARY);
@@ -3828,23 +3928,22 @@ void Game::runAIProduction()
             break;
         }
 
-        aiSelectedLane = chooseLane(i);
         bool queued = false;
         for (int code : priorities) {
             const int cost = unitCost(code);
-            if (cost <= 0 || !isUnitUnlocked(AI, code)) {
+            if (cost <= 0 || !canQueueUnit(AI, code)) {
                 continue;
             }
             if (!armyEmergency && commandForTeam(AI) < cost + reserve) {
                 continue;
             }
-            if (enqueueUnit(AI, code)) {
+            if (executeOperations(AI, {GameOperation(gameop::QueueUnit, chooseLane(i), code)}) > 0) {
                 queued = true;
                 break;
             }
         }
         if (!queued && armyEmergency && commandForTeam(AI) >= config::InfantryCost) {
-            queued = enqueueUnit(AI, UName::INFANTARY);
+            queued = executeOperations(AI, {GameOperation(gameop::QueueUnit, chooseLane(i), UName::INFANTARY)}) > 0;
         }
         if (!queued) {
             break;

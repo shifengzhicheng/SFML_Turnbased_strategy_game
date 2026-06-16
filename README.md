@@ -58,8 +58,16 @@ ctest --test-dir build --output-on-failure
 
 ```bash
 ./build/sfml_tbs --simulate-player 800
+./build/sfml_tbs --simulate-plan balanced 800
+./build/sfml_tbs --simulate-plan rush 800
+./build/sfml_tbs --simulate-plan greedy 800
 ./build/sfml_tbs --simulate-ignore-gameover 900
 ```
+
+`--simulate-player` 默认使用 `balanced` 操作队列。脚本和 AI 都通过同一个
+`GameOperation` 入口执行“选线、升经济、升科技、造兵营/塔、排兵”等操作，
+便于比较不同策略是否真的容易上手、节奏是否合理。
+如果需要复现实验地图，可以设置 `TBS_MAP_SEED=123` 后再运行模拟。
 
 ## 当前玩法
 

@@ -47,6 +47,32 @@ namespace perk
     };
 }
 
+namespace gameop
+{
+    enum Type
+    {
+        SelectLane,
+        UpgradeEconomy,
+        UpgradeTech,
+        BuildBarracks,
+        BuildTower,
+        QueueUnit,
+        Count
+    };
+}
+
+struct GameOperation
+{
+    int type = gameop::SelectLane;
+    int laneIndex = lane::Mid;
+    int unitName = UName::INFANTARY;
+
+    GameOperation(int operationType = gameop::SelectLane, int lane = lane::Mid, int unit = UName::INFANTARY)
+        : type(operationType), laneIndex(lane), unitName(unit)
+    {
+    }
+};
+
 struct PerkChoice
 {
     int type = perk::Drill;
@@ -280,6 +306,9 @@ public:
     bool isUnitUnlocked(int team, int name) const;
     bool canQueueUnit(int team, int name) const;
     bool enqueueUnit(int team, int name);
+    bool executeOperation(int team, const GameOperation& operation);
+    std::size_t executeOperations(int team, const std::vector<GameOperation>& operations);
+    std::string describeOperation(const GameOperation& operation) const;
     bool upgradeTeam(int team);
     bool upgradeEconomy(int team);
     void syncWorkersForEconomy(int team);

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <cstdint>
 #include <ctime>
 #include <random>
@@ -303,7 +304,15 @@ void mapgenerator::gmap(std::vector<std::vector<int>>& initMap, int cols, int li
 
     const auto seed = static_cast<unsigned int>(std::time(nullptr))
         ^ static_cast<unsigned int>(reinterpret_cast<std::uintptr_t>(&initMap));
-    std::mt19937 rng(seed);
+    unsigned int mapSeed = seed;
+    if (const char* seedValue = std::getenv("TBS_MAP_SEED")) {
+        char* end = nullptr;
+        const unsigned long parsed = std::strtoul(seedValue, &end, 10);
+        if (end != seedValue && *end == '\0') {
+            mapSeed = static_cast<unsigned int>(parsed);
+        }
+    }
+    std::mt19937 rng(mapSeed);
     std::uniform_int_distribution<int> xDist(2, std::max(2, cols - 3));
     std::uniform_int_distribution<int> yDist(2, std::max(2, lines - 3));
     std::uniform_int_distribution<int> mountainRadius(2, 4);
