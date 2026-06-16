@@ -21,10 +21,7 @@ namespace UName {
 }
 struct defaultInfo
 {
-	int UnitState;
-	int actionPoint;
-	int Health;
-	int attackconsume;
+	int Health = 0;
 };
 class Unit :public sf::Sprite
 {
@@ -71,15 +68,9 @@ protected:
 	std::unique_ptr<Attacker> attackmethod;
 
 public:
-	
-	void setdefalut();
-
-	bool InmyRange();
 	bool isBlocked(Point p);
-	bool actionPointCanAttack();
 	Astar astar;
 
-	int myActionPoint;
 	int laneIndex = 1;
 	float realtimeMoveTimer = 0.f;
 	float realtimeAttackTimer = 0.f;
@@ -89,19 +80,9 @@ public:
 
 	std::deque<Point> mypath;
 
-	void checkMouse(sf::Vector2i, sf::Event);
-
 	MoveableUnit(int _team, int _x, int _y, Game* _mygame);
-	void generatepath(Point from, Point to);
-	
-	void Showpath(sf::Vector2f mousePos);
-	void gainActionPoint(int amount);
-	bool isOktoAttackAndAttackconsume();
 	bool isdead();
 	virtual void move(Point p);
-	virtual bool guard();
-	void generateLongestpath(Point p);
-	virtual void decide();
 	virtual void updatemystate();
 	int myattack();
 	int myAttackRange() const;
@@ -119,10 +100,6 @@ public:
 	DisMoveableUnit(int _x, int _y, int _team, Game* _game);
 
 	void checkMouse(sf::Vector2i mousePos, sf::Event event);
-
-	bool generateUnit(int code);
-
-	void reset();
 
 	void updatemystate();
 };

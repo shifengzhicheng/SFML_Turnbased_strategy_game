@@ -212,12 +212,8 @@ void Game::Draw()
             if (u->UnitState == UState::UNITCLICK) {
                 MapPos selected(Point(u->x, u->y), tile::Choosen);
                 window.draw(selected);
-                string temp = "Action: "+to_string(u->myActionPoint);
-                UnitText.setString(temp);
-                temp = "Attack: " + to_string(u->myattack());
-                UnitAttack.setString(temp);
-                temp = "HP: " + to_string(u->Health);
-                UnitHP.setString(temp);
+                UnitText.setString("Attack: " + to_string(u->myattack()));
+                UnitHP.setString("HP: " + to_string(u->Health));
             }
             window.draw(*u);
             window.draw(u->UnitText);

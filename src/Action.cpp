@@ -91,7 +91,7 @@ void Attacker::Attack(MoveableUnit* me, Unit* u)
 	if (me == nullptr || u == nullptr) {
 		return;
 	}
-	if (isInMyAttackRange(me, u) && me->isOktoAttackAndAttackconsume()) {
+	if (isInMyAttackRange(me, u)) {
 		const DamageResult damageResult = calculateDamage(me, u, damage);
 		int finalDamage = std::max(1, static_cast<int>(std::round(static_cast<float>(damageResult.amount) * mygame->unitDamageMultiplier(me->myteam, me->unitName))));
 		if (u->unitName == UName::BASE) {
@@ -113,14 +113,11 @@ void Attacker::Attack(MoveableUnit* me, Unit* u)
 
 		mygame->addFloatingText(targetCenter + sf::Vector2f(0.f, -16.f), "-" + std::to_string(finalDamage),
 			damageResult.counter ? sf::Color(255, 222, 90) : sf::Color(255, 106, 82), damageResult.counter ? 18 : 15);
-		const bool useActionPoints = !mygame->isRealtimeMode();
-		if (damageResult.counter && useActionPoints) {
-			me->gainActionPoint(1);
-			mygame->addFloatingText(targetCenter + sf::Vector2f(0.f, -34.f), "COUNTER!", sf::Color(255, 238, 126), 13);
-			mygame->addFloatingText(unitCenter(me) + sf::Vector2f(0.f, -20.f), "AP+1", sf::Color(214, 255, 142), 12);
-		}
-		else if (damageResult.resisted) {
-			mygame->addFloatingText(targetCenter + sf::Vector2f(0.f, -32.f), "RESIST", sf::Color(156, 205, 255), 12);
+			if (damageResult.counter) {
+				mygame->addFloatingText(targetCenter + sf::Vector2f(0.f, -34.f), "COUNTER!", sf::Color(255, 238, 126), 13);
+			}
+			else if (damageResult.resisted) {
+				mygame->addFloatingText(targetCenter + sf::Vector2f(0.f, -32.f), "RESIST", sf::Color(156, 205, 255), 12);
 		}
 		if (u->Health <= 0) {
 			if (auto* defeated = dynamic_cast<MoveableUnit*>(u)) {
@@ -130,10 +127,6 @@ void Attacker::Attack(MoveableUnit* me, Unit* u)
 				defeated->UnitState = UState::UNITNORMAL;
 			}
 			mygame->addFloatingText(targetCenter + sf::Vector2f(0.f, -48.f), "KO!", sf::Color(255, 245, 206), 17);
-			if (useActionPoints) {
-				me->gainActionPoint(3);
-				mygame->addFloatingText(unitCenter(me) + sf::Vector2f(0.f, -36.f), "FINISH AP+3", sf::Color(214, 255, 142), 12);
-			}
 		}
 
 		mygame->startScreenShake(damageResult.counter ? 0.20f : 0.13f, damageResult.counter ? 5.2f : 3.2f);

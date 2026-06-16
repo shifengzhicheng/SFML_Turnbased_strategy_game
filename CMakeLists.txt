@@ -46,7 +46,6 @@ set(SFML_TBS_GAME_SOURCES
     src/GameWorldRender.cpp
     src/GameUpdate.cpp
     src/GameWorld.cpp
-    src/AllUnit.cpp
     src/Action.cpp
     src/AIController.cpp
     src/Astar.cpp
@@ -56,9 +55,12 @@ set(SFML_TBS_GAME_SOURCES
     src/Button.cpp
     src/Effects.cpp
     src/Map.cpp
+    src/MoveableUnit.cpp
     src/PathfindingService.cpp
     src/PolicyModel.cpp
     src/Tile.cpp
+    src/UnitTypes.cpp
+    src/UnitVisual.cpp
     src/Worker.cpp
 )
 
