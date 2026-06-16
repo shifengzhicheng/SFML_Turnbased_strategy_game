@@ -7,7 +7,6 @@ namespace building
 {
     enum Type
     {
-        Extractor,
         Barracks,
         DefenseTower
     };
@@ -17,9 +16,8 @@ struct Building
 {
     int id = 0;
     int team = 0;
-    int type = building::Extractor;
+    int type = building::Barracks;
     Point point;
-    int resourceIndex = -1;
     bool complete = false;
     int health = 1;
     int maxHealth = 1;

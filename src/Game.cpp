@@ -67,51 +67,6 @@ namespace
         return sf::Color(226, 180, 63);
     }
 
-    const char* resourceKindName(int kind)
-    {
-        switch (kind) {
-        case resource::Crystal:
-            return "Crystal";
-        case resource::Foundry:
-            return "Foundry";
-        case resource::Shrine:
-            return "Shrine";
-        case resource::Gold:
-        default:
-            return "Gold";
-        }
-    }
-
-    const char* resourceKindShortName(int kind)
-    {
-        switch (kind) {
-        case resource::Crystal:
-            return "C";
-        case resource::Foundry:
-            return "F";
-        case resource::Shrine:
-            return "S";
-        case resource::Gold:
-        default:
-            return "G";
-        }
-    }
-
-    sf::Color resourceKindColor(int kind)
-    {
-        switch (kind) {
-        case resource::Crystal:
-            return sf::Color(112, 214, 255);
-        case resource::Foundry:
-            return sf::Color(255, 131, 83);
-        case resource::Shrine:
-            return sf::Color(181, 136, 255);
-        case resource::Gold:
-        default:
-            return sf::Color(255, 211, 82);
-        }
-    }
-
     const char* perkTitle(int type)
     {
         switch (type) {
@@ -128,7 +83,7 @@ namespace
         case perk::Logistics:
             return "Logistics";
         case perk::Mining:
-            return "Mining Crew";
+            return "Supply Crew";
         case perk::WarChest:
             return "War Chest";
         case perk::Drill:
@@ -151,9 +106,9 @@ namespace
         case perk::TowerCraft:
             return "Towers +9% damage.\nRange scales carefully.";
         case perk::Logistics:
-            return "Barracks train 6% faster.\nFoundries stack with it.";
+            return "Barracks train 6% faster.\nTurns economy into tempo.";
         case perk::Mining:
-            return "Mines pay +7% CMD.\nGreat for late tech.";
+            return "Natural CMD +7%.\nSimple scaling.";
         case perk::WarChest:
             return "Instant CMD burst.\nBuild or queue now.";
         case perk::Drill:
@@ -202,7 +157,7 @@ namespace
         case perk::Logistics:
             return "Logi";
         case perk::Mining:
-            return "Mine";
+            return "Eco";
         case perk::WarChest:
             return "Chest";
         case perk::Drill:
@@ -232,9 +187,6 @@ namespace
 
     tile::ID buildingTileId(int team, int type)
     {
-        if (type == building::Extractor) {
-            return team == PLAYER ? tile::Player_Extractor : tile::Enemy_Extractor;
-        }
         if (type == building::DefenseTower) {
             return team == PLAYER ? tile::Player_Tower : tile::Enemy_Tower;
         }
@@ -243,9 +195,6 @@ namespace
 
     float buildingSeconds(int type)
     {
-        if (type == building::Extractor) {
-            return realtime::ExtractorBuildSeconds;
-        }
         if (type == building::DefenseTower) {
             return realtime::DefenseTowerBuildSeconds;
         }
@@ -255,8 +204,6 @@ namespace
     const char* buildingName(int type)
     {
         switch (type) {
-        case building::Extractor:
-            return "Mine";
         case building::DefenseTower:
             return "Tower";
         case building::Barracks:
@@ -268,8 +215,6 @@ namespace
     int buildingMaxHealth(int type)
     {
         switch (type) {
-        case building::Extractor:
-            return config::ExtractorHealth;
         case building::DefenseTower:
             return config::DefenseTowerHealth;
         case building::Barracks:
@@ -377,6 +322,9 @@ void Game::loadpic()
     art::makeButtonTexture(tUpgrade, myfont, "UPGRADE", art::ButtonState::Normal, sf::Vector2u(128, 44));
     art::makeButtonTexture(tUpgradeHover, myfont, "UPGRADE", art::ButtonState::Hover, sf::Vector2u(128, 44));
     art::makeButtonTexture(tUpgradeClick, myfont, "UPGRADE", art::ButtonState::Pressed, sf::Vector2u(128, 44));
+    art::makeButtonTexture(tEconomy, myfont, "ECONOMY", art::ButtonState::Normal, sf::Vector2u(128, 44));
+    art::makeButtonTexture(tEconomyHover, myfont, "ECONOMY", art::ButtonState::Hover, sf::Vector2u(128, 44));
+    art::makeButtonTexture(tEconomyClick, myfont, "ECONOMY", art::ButtonState::Pressed, sf::Vector2u(128, 44));
     art::makeButtonTexture(tBarracks, myfont, "Barracks", art::ButtonState::Normal, sf::Vector2u(128, 44));
     art::makeButtonTexture(tBarracksHover, myfont, "Barracks", art::ButtonState::Hover, sf::Vector2u(128, 44));
     art::makeButtonTexture(tBarracksClick, myfont, "Barracks", art::ButtonState::Pressed, sf::Vector2u(128, 44));
@@ -396,6 +344,7 @@ void Game::loadpic()
     siegeBtn.setTextures(tSiege, tSiegeHover, tSiegeClick);
     guardianBtn.setTextures(tGuardian, tGuardianHover, tGuardianClick);
     upgradeBtn.setTextures(tUpgrade, tUpgradeHover, tUpgradeClick);
+    economyBtn.setTextures(tEconomy, tEconomyHover, tEconomyClick);
     barracksBtn.setTextures(tBarracks, tBarracksHover, tBarracksClick);
     helpBtn.setTextures(tHelp, tHelpHover, tHelpClick);
     towerBtn.setTextures(tTower, tTowerHover, tTowerClick);
@@ -415,9 +364,10 @@ void Game::Initial()
     setupText(CommandText, myfont, 14, sf::Color(255, 218, 112), "", panelTextX, 176.f);
     setupText(panelTitle, myfont, 19, sf::Color(255, 246, 208), "AUTO WAR", panelTextX, 16.f);
     setupText(panelHint, myfont, 12, sf::Color(211, 199, 165), "Pick lane, queue units", panelTextX, 184.f);
+    setupText(economyLabel, myfont, 10, sf::Color(228, 218, 185), "natural CMD", panelTextX, config::EconomyButtonY - 12.f);
     setupText(barracksLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::BarracksCost) + " auto near base", panelTextX, config::BuildBarracksY + 43.f);
     setupText(infantryLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::InfantryCost) + " core", panelTextX, config::BuildInfantryY + 43.f);
-    setupText(shooterLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::ShooterCost) + " mine/Lv1", panelTextX, config::BuildShooterY + 43.f);
+    setupText(shooterLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::ShooterCost) + " eco1/Lv1", panelTextX, config::BuildShooterY + 43.f);
     setupText(cavalryLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::CavalryCost) + " 2 rax", panelTextX, config::BuildCavalryY + 43.f);
     setupText(siegeLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::SiegeCost) + " Lv2 siege", panelTextX, config::BuildSiegeY + 43.f);
     setupText(guardianLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::GuardianCost) + " Lv3 tank", panelTextX, config::BuildGuardianY + 43.f);
@@ -432,6 +382,7 @@ void Game::Initial()
     EndTurnBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
     helpBtn.setPosition(config::ButtonX, config::HelpButtonY);
     upgradeBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
+    economyBtn.setPosition(config::ButtonX, config::EconomyButtonY);
     barracksBtn.setPosition(config::ButtonX, config::BuildBarracksY);
     inf.setPosition(config::ButtonX, config::BuildInfantryY);
     sho.setPosition(config::ButtonX, config::BuildShooterY);
@@ -499,8 +450,6 @@ bool Game::isBlockingTile(tile::ID id) const
         || (!realtimeMode && id == tile::Unit)
         || id == tile::Red_Base
         || id == tile::Blue_Base
-        || id == tile::Player_Extractor
-        || id == tile::Enemy_Extractor
         || id == tile::Player_Barracks
         || id == tile::Enemy_Barracks
         || id == tile::Player_Tower
@@ -566,10 +515,6 @@ bool Game::isBuildableCell(int x, int y) const
 
 bool Game::isBuildSiteInInfluence(int team, Point point, int type) const
 {
-    if (type == building::Extractor) {
-        return true;
-    }
-
     const Point base = team == PLAYER ? Red_baseP : Blue_baseP;
     const int radiusSquared = config::BuildInfluenceRadius * config::BuildInfluenceRadius;
     if (distanceSquared(point, base) <= radiusSquared) {
@@ -654,12 +599,8 @@ void Game::updateRealtime(float dt)
     astar.setMaze(maze);
     applyPathResults();
     cleanupDestroyedBuildings();
-    updateResourceCaptures(dt);
-    updateResourceControl();
     updateRealtimeEconomy(dt);
     aiController.update(*this, dt);
-    playerWorkerTimer = std::min(playerWorkerTimer + dt, realtime::WorkerTrainSeconds);
-    aiWorkerTimer = std::min(aiWorkerTimer + dt, realtime::WorkerTrainSeconds);
     assignWorkers();
     updateWorkers(dt);
     updateProduction(dt);
@@ -710,14 +651,14 @@ void Game::logDebugSummary() const
     }
     std::clog << "[tbs " << static_cast<int>(std::round(gameTimeSeconds)) << "s] "
         << "player cmd=" << playerCommand
-        << " mines=" << completedBuildingCount(PLAYER, building::Extractor)
+        << " eco=" << playerEconomyLevel
         << " rax=" << completedBuildingCount(PLAYER, building::Barracks) << "/" << buildingCap(PLAYER, building::Barracks)
         << " tower=" << totalBuildingCount(PLAYER, building::DefenseTower)
         << " level=" << playerUpgradeLevel
         << " base=" << (Base_red ? Base_red->Health : 0)
         << " army=" << myunits.size()
         << " | ai cmd=" << aiCommand
-        << " mines=" << completedBuildingCount(AI, building::Extractor)
+        << " eco=" << aiEconomyLevel
         << " rax=" << completedBuildingCount(AI, building::Barracks) << "/" << buildingCap(AI, building::Barracks)
         << " tower=" << totalBuildingCount(AI, building::DefenseTower)
         << " level=" << aiUpgradeLevel
@@ -762,22 +703,6 @@ Worker* Game::findWorkerById(int id)
     return it == workers.end() ? nullptr : &(*it);
 }
 
-Building* Game::findResourceExtractor(int resourceIndex)
-{
-    const auto it = std::find_if(buildings.begin(), buildings.end(), [resourceIndex](const Building& building) {
-        return building.type == building::Extractor && building.resourceIndex == resourceIndex;
-    });
-    return it == buildings.end() ? nullptr : &(*it);
-}
-
-const Building* Game::findResourceExtractor(int resourceIndex) const
-{
-    const auto it = std::find_if(buildings.begin(), buildings.end(), [resourceIndex](const Building& building) {
-        return building.type == building::Extractor && building.resourceIndex == resourceIndex;
-    });
-    return it == buildings.end() ? nullptr : &(*it);
-}
-
 void Game::resetWorkersForBuilding(int buildingId)
 {
     for (auto& worker : workers) {
@@ -798,50 +723,11 @@ int Game::workerCount(int team) const
     }));
 }
 
-bool Game::tryAutoRecruitWorker(int team)
-{
-    if (workerCount(team) >= realtime::MaxWorkers || commandPool(*this, team) < config::WorkerCost) {
-        return false;
-    }
-
-    float& timer = team == PLAYER ? playerWorkerTimer : aiWorkerTimer;
-    if (timer < realtime::WorkerTrainSeconds) {
-        return false;
-    }
-
-    const Point spawn = workerSpawnPoint(team);
-    if (!isCellWalkableForUnit(spawn.x, spawn.y) || isCellReservedForSpawn(spawn.x, spawn.y)) {
-        return false;
-    }
-
-    commandPool(*this, team) -= config::WorkerCost;
-    timer = 0.f;
-    createWorker(team, spawn);
-    if (team == PLAYER) {
-        addFloatingText(sf::Vector2f(spawn.x * SqureSize, spawn.y * SqureSize - 8.f),
-                        "Drone -" + std::to_string(config::WorkerCost), sf::Color(218, 255, 134), 12);
-    }
-    logEvent(std::string(team == PLAYER ? "player" : "ai") + " recruited drone id=" + std::to_string(workers.back().id));
-    return true;
-}
-
 int Game::assignedWorkerCount(int buildingId) const
 {
     return static_cast<int>(std::count_if(workers.begin(), workers.end(), [buildingId](const Worker& worker) {
         return worker.buildingId == buildingId && worker.state != worker::Idle;
     }));
-}
-
-bool Game::hasActiveHarvester(const Building& building) const
-{
-    if (!building.complete || building.type != building::Extractor) {
-        return false;
-    }
-    return std::any_of(workers.begin(), workers.end(), [&building](const Worker& worker) {
-        return worker.buildingId == building.id
-            && worker.state == worker::Harvesting
-            && nearPoint(worker.point, building.point, 1);
-    });
 }
 
 Worker* Game::findIdleWorker(int team)
@@ -852,21 +738,12 @@ Worker* Game::findIdleWorker(int team)
     return it == workers.end() ? nullptr : &(*it);
 }
 
-Worker* Game::findAvailableWorker(int team, bool allowHarvesting)
+Worker* Game::findAvailableWorker(int team)
 {
     if (Worker* worker = findIdleWorker(team)) {
         return worker;
     }
-    if (!allowHarvesting) {
-        return nullptr;
-    }
-
-    // Construction has priority over mining: temporarily pull a drone from a
-    // finished extractor when no idle worker is available.
-    const auto it = std::find_if(workers.begin(), workers.end(), [team](const Worker& worker) {
-        return worker.team == team && worker.state == worker::Harvesting;
-    });
-    return it == workers.end() ? nullptr : &(*it);
+    return nullptr;
 }
 
 void Game::assignWorkerToBuilding(Worker& worker, Building& building)
@@ -878,17 +755,6 @@ void Game::assignWorkerToBuilding(Worker& worker, Building& building)
     worker.pendingPathRequest = 0;
     worker.pathTimer = realtime::WorkerPathRefreshSeconds;
     worker.moveTimer = 0.f;
-}
-
-void Game::assignWorkerToHarvest(Worker& worker, Building& building)
-{
-    worker.buildingId = building.id;
-    worker.target = findBuildStandPoint(building);
-    worker.path.clear();
-    worker.pendingPathRequest = 0;
-    worker.pathTimer = realtime::WorkerPathRefreshSeconds;
-    worker.moveTimer = 0.f;
-    worker.state = nearPoint(worker.point, building.point, 1) ? worker::Harvesting : worker::MovingToHarvest;
 }
 
 Point Game::workerSpawnPoint(int team) const
@@ -958,6 +824,43 @@ Point Game::findBuildStandPoint(const Building& building) const
     return building.point;
 }
 
+Point Game::findAttackStandPoint(const MoveableUnit& unit, const Building& building) const
+{
+    const int range = std::max(1, unit.myAttackRange());
+    const int rangeSquared = range * range;
+    const Point current(unit.x, unit.y);
+    Point best(-1, -1);
+    int bestScore = std::numeric_limits<int>::max();
+
+    for (int y = building.point.y - range; y <= building.point.y + range; ++y) {
+        for (int x = building.point.x - range; x <= building.point.x + range; ++x) {
+            const Point candidate(x, y);
+            if (!isCellWalkableForUnit(x, y) || isCellOccupiedByUnit(x, y, unit.entityId)) {
+                continue;
+            }
+            const int toTarget = distanceSquared(candidate, building.point);
+            if (toTarget > rangeSquared) {
+                continue;
+            }
+
+            int score = distanceSquared(current, candidate);
+            if (building.type == building::DefenseTower && unit.unitName == UName::SIEGE) {
+                const int towerRange = defenseTowerRange(building.team);
+                const int towerRangeSquared = towerRange * towerRange;
+                // Siege engines should naturally set up just outside tower
+                // range, forcing the defender to send units instead of turtling.
+                score += toTarget > towerRangeSquared ? -1200 - toTarget : 1800;
+            }
+            if (score < bestScore) {
+                bestScore = score;
+                best = candidate;
+            }
+        }
+    }
+
+    return best.x >= 0 ? best : findBuildStandPoint(building);
+}
+
 Point Game::findBuildableNear(Point anchor, int radius) const
 {
     for (int r = 1; r <= radius; ++r) {
@@ -1003,32 +906,14 @@ int Game::totalBuildingCount(int team, int type) const
 int Game::buildingCap(int team, int type) const
 {
     const int tech = team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
+    const int economy = economyLevelForTeam(team);
     if (type == building::Barracks) {
-        return std::min(config::BarracksCap, config::BarracksBaseCap + tech / 3 + completedBuildingCount(team, building::Extractor) / 2);
+        return std::min(config::BarracksCap, config::BarracksBaseCap + tech / 4 + economy / 2);
     }
     if (type == building::DefenseTower) {
-        return std::min(config::TowerCap, config::TowerBaseCap + tech / 4 + completedBuildingCount(team, building::Extractor) / 3);
+        return std::min(config::TowerCap, config::TowerBaseCap + tech / 5 + perkLevel(team, perk::TowerCraft) / 3);
     }
     return static_cast<int>(resources.size());
-}
-
-int Game::pendingOrCompleteExtractorForResource(int resourceIndex) const
-{
-    const auto it = std::find_if(buildings.begin(), buildings.end(), [resourceIndex](const Building& building) {
-        return building.type == building::Extractor && building.resourceIndex == resourceIndex;
-    });
-    return it == buildings.end() ? 0 : it->id;
-}
-
-int Game::buildingCost(int type) const
-{
-    if (type == building::Extractor) {
-        return config::ExtractorCost;
-    }
-    if (type == building::DefenseTower) {
-        return config::TowerCost;
-    }
-    return config::BarracksCost;
 }
 
 float Game::damageMultiplier(int team) const
@@ -1116,8 +1001,7 @@ float Game::baseDamageTakenMultiplier(int attackerUnitName) const
 float Game::teamTrainTimeMultiplier(int team) const
 {
     const float logistics = static_cast<float>(perkLevel(team, perk::Logistics)) * 0.06f;
-    const float foundries = static_cast<float>(controlledResourceKindCount(team, resource::Foundry)) * 0.04f;
-    return std::clamp(1.f - logistics - foundries, 0.72f, 1.f);
+    return std::clamp(1.f - logistics, 0.74f, 1.f);
 }
 
 float Game::miningIncomeMultiplier(int team) const
@@ -1127,7 +1011,7 @@ float Game::miningIncomeMultiplier(int team) const
 
 int Game::defenseTowerRange(int team) const
 {
-    return config::DefenseTowerRange + std::min(2, perkLevel(team, perk::TowerCraft) / 2);
+    return config::DefenseTowerRange + std::min(1, perkLevel(team, perk::TowerCraft) / 3);
 }
 
 int Game::selectedLaneForTeam(int team) const
@@ -1177,16 +1061,19 @@ int Game::upgradeCostForNextLevel(int team) const
         520, 610, 710, 820, 950
     };
     int rawCost = costs[level];
-    if (team == AI && gameTimeSeconds > 420.f && controlledResourceCount(AI) <= 1) {
+    if (team == AI && gameTimeSeconds > 420.f && economyLevelForTeam(AI) <= 1) {
         rawCost = static_cast<int>(std::round(static_cast<float>(rawCost) * 0.62f));
     }
     if (team == AI && gameTimeSeconds > 840.f) {
         rawCost = static_cast<int>(std::round(static_cast<float>(rawCost) * 0.42f));
     }
-    const int flatDiscount = controlledResourceKindCount(team, resource::Crystal) * 14
-        + controlledResourceKindCount(team, resource::Shrine) * 6;
-    const int maxDiscount = static_cast<int>(std::round(static_cast<float>(rawCost) * 0.30f));
-    return std::max(25, rawCost - std::min(flatDiscount, maxDiscount));
+    else if (team == AI && gameTimeSeconds > 780.f) {
+        rawCost = static_cast<int>(std::round(static_cast<float>(rawCost) * 0.58f));
+    }
+    else if (team == AI && gameTimeSeconds > 660.f) {
+        rawCost = static_cast<int>(std::round(static_cast<float>(rawCost) * 0.74f));
+    }
+    return std::max(25, rawCost);
 }
 
 int Game::unitsNearPoint(int team, Point point, int radius) const
@@ -1196,46 +1083,6 @@ int Game::unitsNearPoint(int team, Point point, int radius) const
     return static_cast<int>(std::count_if(units.begin(), units.end(), [point, radiusSquared](const std::unique_ptr<MoveableUnit>& unit) {
         return unit->Health > 0 && distanceSquared(Point(unit->x, unit->y), point) <= radiusSquared;
     }));
-}
-
-bool Game::requestBuildExtractor(int team, int resourceIndex)
-{
-    if (resourceIndex < 0 || resourceIndex >= static_cast<int>(resources.size())) {
-        return false;
-    }
-    if (pendingOrCompleteExtractorForResource(resourceIndex) != 0) {
-        if (team == PLAYER) {
-            addFloatingText(sf::Vector2f(resources[resourceIndex].point.x * SqureSize, resources[resourceIndex].point.y * SqureSize - 8.f),
-                            "Mine exists", sf::Color(255, 214, 96), 12);
-        }
-        return false;
-    }
-    if (commandPool(*this, team) < config::ExtractorCost) {
-        if (team == PLAYER) {
-            addFloatingText(sf::Vector2f(resources[resourceIndex].point.x * SqureSize, resources[resourceIndex].point.y * SqureSize - 8.f),
-                            "Need CMD", sf::Color(255, 214, 96), 12);
-        }
-        return false;
-    }
-
-    commandPool(*this, team) -= config::ExtractorCost;
-    Building building;
-    building.id = nextEntityId++;
-    building.team = team;
-    building.type = building::Extractor;
-    building.point = resources[resourceIndex].point;
-    building.resourceIndex = resourceIndex;
-    building.buildSeconds = buildingSeconds(building.type);
-    building.maxHealth = buildingMaxHealth(building.type);
-    building.health = building.maxHealth;
-    buildings.push_back(building);
-    setTileID(building.point.x, building.point.y, buildingTileId(team, building.type));
-    if (team == PLAYER) {
-        addFloatingText(sf::Vector2f(building.point.x * SqureSize, building.point.y * SqureSize - 8.f),
-                        "Mine queued", sf::Color(218, 255, 134), 12);
-    }
-    logEvent(std::string(team == PLAYER ? "player" : "ai") + " queued mine id=" + std::to_string(building.id));
-    return true;
 }
 
 bool Game::requestBuildBarracks(int team, Point point)
@@ -1364,8 +1211,8 @@ bool Game::requestAutoBuildTower(int team)
 
 void Game::assignWorkers()
 {
-    // Worker routing is demand based: build tasks borrow idle/mining drones,
-    // then completed extractors claim one drone to keep income active.
+    // Worker routing is demand based: visible drones build nearby structures;
+    // economy upgrades simply add more drones around the base.
     for (auto& building : buildings) {
         if (building.complete) {
             continue;
@@ -1374,26 +1221,8 @@ void Game::assignWorkers()
             continue;
         }
 
-        Worker* worker = findAvailableWorker(building.team, true);
-        if (worker == nullptr && tryAutoRecruitWorker(building.team)) {
-            worker = &workers.back();
-        }
-        if (worker != nullptr) {
+        if (Worker* worker = findAvailableWorker(building.team)) {
             assignWorkerToBuilding(*worker, building);
-        }
-    }
-
-    for (auto& building : buildings) {
-        if (!building.complete || building.type != building::Extractor || assignedWorkerCount(building.id) > 0) {
-            continue;
-        }
-
-        Worker* worker = findIdleWorker(building.team);
-        if (worker == nullptr && tryAutoRecruitWorker(building.team)) {
-            worker = &workers.back();
-        }
-        if (worker != nullptr) {
-            assignWorkerToHarvest(*worker, building);
         }
     }
 }
@@ -1440,36 +1269,11 @@ void Game::updateWorkers(float dt)
             continue;
         }
 
-        if (worker.state == worker::MovingToHarvest || worker.state == worker::Harvesting) {
-            if (!building->complete || building->type != building::Extractor) {
-                worker.state = worker::Idle;
-                worker.buildingId = 0;
-                worker.path.clear();
-                worker.pendingPathRequest = 0;
-                continue;
-            }
-
-            if (nearPoint(worker.point, building->point, 1)) {
-                worker.state = worker::Harvesting;
-                worker.path.clear();
-                continue;
-            }
-
-            worker.state = worker::MovingToHarvest;
-            updateWorkerTravel(worker, findBuildStandPoint(*building), dt);
-            continue;
-        }
-
         if (building->complete) {
-            if (building->type == building::Extractor) {
-                assignWorkerToHarvest(worker, *building);
-            }
-            else {
-                worker.state = worker::Idle;
-                worker.buildingId = 0;
-                worker.path.clear();
-                worker.pendingPathRequest = 0;
-            }
+            worker.state = worker::Idle;
+            worker.buildingId = 0;
+            worker.path.clear();
+            worker.pendingPathRequest = 0;
             continue;
         }
 
@@ -1481,15 +1285,10 @@ void Game::updateWorkers(float dt)
                 building->complete = true;
                 worker.path.clear();
                 worker.pendingPathRequest = 0;
-                if (building->type == building::Extractor) {
-                    assignWorkerToHarvest(worker, *building);
-                }
-                else {
-                    worker.state = worker::Idle;
-                    worker.buildingId = 0;
-                }
+                worker.state = worker::Idle;
+                worker.buildingId = 0;
                 const sf::Vector2f pos(building->point.x * SqureSize, building->point.y * SqureSize - 10.f);
-                addFloatingText(pos, building->type == building::Extractor ? "Mine online" : (building->type == building::DefenseTower ? "Tower ready" : "Barracks ready"),
+                addFloatingText(pos, building->type == building::DefenseTower ? "Tower ready" : "Barracks ready",
                                 building->team == PLAYER ? sf::Color(218, 255, 134) : sf::Color(149, 203, 255), 12);
                 logEvent(std::string(building->team == PLAYER ? "player" : "ai") + " completed " + buildingName(building->type)
                     + " id=" + std::to_string(building->id));
@@ -1581,71 +1380,6 @@ void Game::updateEmergencyBaseTraining(float dt)
 
     trainFromBase(PLAYER, playerEmergencyTrainTimer);
     trainFromBase(AI, aiEmergencyTrainTimer);
-}
-
-void Game::updateResourceCaptures(float dt)
-{
-    for (int i = 0; i < static_cast<int>(resources.size()); ++i) {
-        auto& node = resources[i];
-        Building* extractor = findResourceExtractor(i);
-        if (extractor == nullptr || !extractor->complete) {
-            node.contestingTeam = -1;
-            node.captureProgress = 0.f;
-            continue;
-        }
-
-        const int owner = extractor->team;
-        const int enemy = owner == PLAYER ? AI : PLAYER;
-        int defenders = unitsNearPoint(owner, node.point, config::ResourceCaptureRadius);
-        const int attackers = unitsNearPoint(enemy, node.point, config::ResourceCaptureRadius);
-
-        // Mines are no longer flipped instantly by one passing unit. An active
-        // harvester and nearby tower count as local control, making resource
-        // steals a readable skirmish instead of a sudden economy wipe.
-        if (hasActiveHarvester(*extractor)) {
-            defenders += 1;
-        }
-        const bool towerCoversMine = std::any_of(buildings.begin(), buildings.end(), [this, owner, &node](const Building& building) {
-            if (!building.complete || building.team != owner || building.type != building::DefenseTower) {
-                return false;
-            }
-            const int range = defenseTowerRange(owner);
-            return distanceSquared(building.point, node.point) <= range * range;
-        });
-        if (towerCoversMine) {
-            defenders += 2;
-        }
-
-        if (attackers <= defenders || attackers <= 0) {
-            node.captureProgress = std::max(0.f, node.captureProgress - dt * 1.0f);
-            if (node.captureProgress <= 0.f) {
-                node.contestingTeam = -1;
-            }
-            continue;
-        }
-
-        if (node.contestingTeam != enemy) {
-            node.contestingTeam = enemy;
-            node.captureProgress = 0.f;
-        }
-        const float captureRate = std::clamp(static_cast<float>(attackers - defenders) * 0.55f, 0.45f, 1.35f);
-        node.captureProgress += dt * captureRate;
-        if (node.captureProgress < config::ResourceCaptureSeconds) {
-            continue;
-        }
-
-        const int previousTeam = extractor->team;
-        extractor->team = enemy;
-        node.contestingTeam = -1;
-        node.captureProgress = 0.f;
-        resetWorkersForBuilding(extractor->id);
-        setTileID(extractor->point.x, extractor->point.y, buildingTileId(extractor->team, extractor->type));
-        addFloatingText(sf::Vector2f(node.point.x * SqureSize + SqureSize / 2.f, node.point.y * SqureSize - 12.f),
-                        enemy == PLAYER ? "CAPTURED" : "ENEMY CAPTURED",
-                        enemy == PLAYER ? sf::Color(255, 220, 93) : sf::Color(145, 196, 255), 13);
-        logEvent(std::string(previousTeam == PLAYER ? "player" : "ai") + " mine captured by "
-            + (enemy == PLAYER ? "player" : "ai") + " id=" + std::to_string(extractor->id));
-    }
 }
 
 void Game::updateDefenseTowers(float dt)
@@ -1778,26 +1512,14 @@ void Game::cleanupDestroyedBuildings()
 
         const Building destroyed = *it;
         resetWorkersForBuilding(destroyed.id);
-        if (destroyed.type == building::Extractor && destroyed.resourceIndex >= 0
-            && destroyed.resourceIndex < static_cast<int>(resources.size())) {
-            auto& node = resources[destroyed.resourceIndex];
-            node.owner = -1;
-            node.contestingTeam = -1;
-            node.captureProgress = 0.f;
-            setTileID(destroyed.point.x, destroyed.point.y, tile::Resource);
-        }
-        else {
-            setTileID(destroyed.point.x, destroyed.point.y, tile::Empty);
-        }
+        setTileID(destroyed.point.x, destroyed.point.y, tile::Empty);
         addFloatingText(sf::Vector2f(destroyed.point.x * SqureSize, destroyed.point.y * SqureSize - 8.f),
                         std::string(buildingName(destroyed.type)) + " down", sf::Color(255, 218, 112), 12);
         const int destroyer = destroyed.team == PLAYER ? AI : PLAYER;
-        if (destroyed.type != building::Extractor) {
-            commandPool(*this, destroyer) = std::min(config::MaxCommand, commandPool(*this, destroyer) + 12);
-            if (destroyer == PLAYER) {
-                addFloatingText(sf::Vector2f(destroyed.point.x * SqureSize, destroyed.point.y * SqureSize - 24.f),
-                                "Raid +12 CMD", sf::Color(255, 224, 99), 12);
-            }
+        commandPool(*this, destroyer) = std::min(config::MaxCommand, commandPool(*this, destroyer) + 12);
+        if (destroyer == PLAYER) {
+            addFloatingText(sf::Vector2f(destroyed.point.x * SqureSize, destroyed.point.y * SqureSize - 24.f),
+                            "Raid +12 CMD", sf::Color(255, 224, 99), 12);
         }
         logEvent(std::string(destroyed.team == PLAYER ? "player" : "ai") + " "
             + buildingName(destroyed.type) + " destroyed id=" + std::to_string(destroyed.id));
@@ -1810,31 +1532,13 @@ Building* Game::chooseBuildingTarget(MoveableUnit& unit)
     Building* best = nullptr;
     int bestScore = std::numeric_limits<int>::max();
     const Point current(unit.x, unit.y);
-    const Point enemyBase = unit.myteam == PLAYER ? Blue_baseP : Red_baseP;
-    const int mapW = width / SqureSize;
-    const int enemyTeam = unit.myteam == PLAYER ? AI : PLAYER;
-    const bool enemyProductionBroken = gameTimeSeconds > 420.f
-        && completedBuildingCount(enemyTeam, building::Barracks) == 0
-        && completedBuildingCount(enemyTeam, building::DefenseTower) == 0;
-    const bool onEnemyHalf = unit.myteam == PLAYER ? current.x > mapW / 2 : current.x < mapW / 2;
-    const bool committingToBase = gameTimeSeconds > 330.f && nearPoint(current, enemyBase, 12);
     for (auto& building : buildings) {
         if (building.team == unit.myteam || building.health <= 0 || !building.complete) {
             continue;
         }
-        if (building.type == building::Extractor && gameTimeSeconds < 240.f) {
-            continue;
-        }
-        if ((committingToBase || (enemyProductionBroken && onEnemyHalf)) && building.type == building::Extractor) {
-            continue;
-        }
-
         int priority = 400;
         if (building.type == building::DefenseTower) {
             priority = 0;
-        }
-        else if (building.type == building::Extractor) {
-            priority = 120;
         }
         else if (building.type == building::Barracks) {
             priority = 220;
@@ -1853,10 +1557,7 @@ Building* Game::chooseBuildingTarget(MoveableUnit& unit)
 
 Point Game::chooseStrategicRallyPoint(const MoveableUnit& unit) const
 {
-    Point best(-1, -1);
-    int bestScore = std::numeric_limits<int>::max();
     const Point current(unit.x, unit.y);
-    const Point enemyBase = unit.myteam == PLAYER ? Blue_baseP : Red_baseP;
     const int mapW = width / SqureSize;
     const int enemyTeam = unit.myteam == PLAYER ? AI : PLAYER;
     const bool enemyProductionBroken = gameTimeSeconds > 420.f
@@ -1865,50 +1566,6 @@ Point Game::chooseStrategicRallyPoint(const MoveableUnit& unit) const
     const bool onEnemyHalf = unit.myteam == PLAYER ? current.x > mapW / 2 : current.x < mapW / 2;
     if (enemyProductionBroken && onEnemyHalf) {
         return Point(-1, -1);
-    }
-
-    for (int i = 0; i < static_cast<int>(resources.size()); ++i) {
-        const auto& node = resources[i];
-        const Building* extractor = findResourceExtractor(i);
-        const bool friendlyContested = extractor != nullptr
-            && extractor->team == unit.myteam
-            && node.contestingTeam != -1
-            && node.captureProgress > 0.f;
-        const bool enemyOwned = node.owner != -1 && node.owner != -2 && node.owner != unit.myteam && gameTimeSeconds > 210.f;
-        const bool valuableNeutral = extractor == nullptr && node.income >= 8 && gameTimeSeconds < 150.f;
-        if (!friendlyContested && !enemyOwned && !valuableNeutral) {
-            continue;
-        }
-
-        const Point goal = extractor != nullptr ? findBuildStandPoint(*extractor) : node.point;
-        if (!isCellWalkableForUnit(goal.x, goal.y)) {
-            continue;
-        }
-        if (nearPoint(current, goal, valuableNeutral ? 3 : 2)) {
-            continue;
-        }
-
-        // Strategic rallying keeps early armies contesting mines before they
-        // mindlessly base-race; once a unit reaches the area, auto-combat can
-        // resume pushing to the next building or base.
-        int score = distanceSquared(current, goal) + distanceSquared(goal, enemyBase) / 4 - node.income * 70;
-        if (friendlyContested) {
-            score -= 900;
-        }
-        if (enemyOwned) {
-            score -= 500;
-        }
-        if (valuableNeutral && gameTimeSeconds < 80.f) {
-            score -= 180;
-        }
-        if (score < bestScore) {
-            bestScore = score;
-            best = goal;
-        }
-    }
-
-    if (best.x >= 0) {
-        return best;
     }
 
     // Each produced unit belongs to a lane. It advances through center and
@@ -2108,6 +1765,7 @@ void Game::logicBeforeDraw()
     for (auto u = myunits.begin(); u != myunits.end(); ) {
         (*u)->updatemystate();
         if ((*u)->isdead()) {
+            awardKillBounty(AI, (*u)->unitName, Point((*u)->x, (*u)->y));
             if (MosOnUnit == u->get()) {
                 MosOnUnit = nullptr;
             }
@@ -2120,6 +1778,7 @@ void Game::logicBeforeDraw()
     for (auto u = enemys.begin(); u != enemys.end(); ) {
         (*u)->updatemystate();
         if ((*u)->isdead()) {
+            awardKillBounty(PLAYER, (*u)->unitName, Point((*u)->x, (*u)->y));
             if (MosOnUnit == u->get()) {
                 MosOnUnit = nullptr;
             }
@@ -2129,10 +1788,6 @@ void Game::logicBeforeDraw()
             ++u;
         }
     }
-    if (!realtimeMode) {
-        updateResourceControl();
-    }
-
 }
 
 void Game::logicAfterDraw()
@@ -2212,16 +1867,16 @@ void Game::handleRealtimeMapClick(Vector2i mousePos, Event event)
 
     const int tileX = mousePos.x / SqureSize;
     const int tileY = mousePos.y / SqureSize;
-    for (int i = 0; i < static_cast<int>(resources.size()); ++i) {
-        if (isResourceClick(resources[i], tileX, tileY)) {
-            requestBuildExtractor(PLAYER, i);
+    for (const auto& node : resources) {
+        if (isResourceClick(node, tileX, tileY)) {
+            addFloatingText(sf::Vector2f(node.point.x * SqureSize, node.point.y * SqureSize - 14.f),
+                            "Income: ECONOMY button", sf::Color(255, 226, 112), 12);
             return;
         }
     }
 
-    // Barracks and towers are auto-placed from side-panel buttons. Map clicks
-    // stay focused on the one meaningful manual build choice: which resource
-    // node to claim next.
+    // Economy is now a single natural-income track upgraded from the side
+    // panel. Map clicks are reserved for selection and lane reading.
 }
 
 void Game::GameInput(Vector2i mousePos, Event event) {
@@ -2291,7 +1946,6 @@ void Game::GameInput(Vector2i mousePos, Event event) {
             playerturn = false;
             Globle_text.setString("EnemyTurn");
             clearSelection();
-            updateResourceControl();
             addTurnIncome(AI);
             aiProductionDone = false;
             Unitsreset(myunits);
@@ -2456,6 +2110,12 @@ void Game::handleBuildButtons(Vector2i mousePos, Event event)
         upgradeBtn.setState(NORMAL);
     }
 
+    if (economyBtn.checkMouse(mousePos, event) == RELEASE) {
+        upgradeEconomy(PLAYER);
+        economyBtn.setState(NORMAL);
+        return;
+    }
+
     if (barracksBtn.checkMouse(mousePos, event) == RELEASE) {
         requestAutoBuildBarracks(PLAYER);
         barracksBtn.setState(NORMAL);
@@ -2547,6 +2207,7 @@ void Game::Draw()
         for (const auto& pathTile : drawPaths)
             window.draw(pathTile);
         drawGridOverlay();
+        drawLaneGuides();
         drawResourceNodes();
         drawBuildings();
         drawWorkers();
@@ -2669,6 +2330,40 @@ void Game::drawGridOverlay()
     window.draw(lines);
 }
 
+void Game::drawLaneGuides()
+{
+    const int mapH = height / SqureSize;
+    const int laneYs[] = {
+        std::max(4, mapH / 4),
+        mapH / 2,
+        std::min(mapH - 5, mapH * 3 / 4)
+    };
+    const char* labels[] = {"TOP", "MID", "BOT"};
+
+    for (int i = 0; i < lane::Count; ++i) {
+        const float y = static_cast<float>(laneYs[i] * SqureSize + SqureSize / 2);
+        sf::RectangleShape ribbon(sf::Vector2f(static_cast<float>(width), 5.f));
+        ribbon.setOrigin(0.f, 2.5f);
+        ribbon.setPosition(0.f, y);
+        ribbon.setFillColor(i == playerSelectedLane ? sf::Color(255, 218, 112, 72) : sf::Color(205, 220, 190, 34));
+        window.draw(ribbon);
+
+        sf::CircleShape arrow(7.f, 3);
+        arrow.setOrigin(7.f, 7.f);
+        arrow.setPosition(static_cast<float>(Red_baseP.x * SqureSize + 95), y);
+        arrow.setRotation(90.f);
+        arrow.setFillColor(i == playerSelectedLane ? sf::Color(255, 218, 112, 150) : sf::Color(220, 230, 196, 90));
+        window.draw(arrow);
+
+        sf::Text laneText(labels[i], myfont, 11);
+        laneText.setFillColor(i == playerSelectedLane ? sf::Color(255, 236, 168, 190) : sf::Color(213, 225, 198, 110));
+        laneText.setOutlineColor(sf::Color(24, 29, 23, 140));
+        laneText.setOutlineThickness(1.f);
+        laneText.setPosition(static_cast<float>(Red_baseP.x * SqureSize + 18), y - 18.f);
+        window.draw(laneText);
+    }
+}
+
 void Game::drawResourceNodes()
 {
     for (const auto& node : resources) {
@@ -2676,8 +2371,8 @@ void Game::drawResourceNodes()
             node.point.x * SqureSize + SqureSize / 2.f,
             node.point.y * SqureSize + SqureSize / 2.f);
         const float pulse = 1.f + std::sin(node.pulseClock.getElapsedTime().asSeconds() * 4.f) * 0.08f;
-        const sf::Color color = ownerColor(node.owner);
-        const sf::Color kindColor = resourceKindColor(node.kind);
+        const sf::Color color = sf::Color(226, 180, 63);
+        const sf::Color resourceColor = sf::Color(255, 211, 82);
 
         sf::CircleShape aura(11.f * pulse, 32);
         aura.setOrigin(11.f * pulse, 11.f * pulse);
@@ -2694,24 +2389,12 @@ void Game::drawResourceNodes()
         crystal.setPoint(3, center + sf::Vector2f(0.f, 10.f));
         crystal.setPoint(4, center + sf::Vector2f(-5.f, 6.f));
         crystal.setPoint(5, center + sf::Vector2f(-7.f, -3.f));
-        crystal.setFillColor(kindColor);
+        crystal.setFillColor(resourceColor);
         crystal.setOutlineColor(sf::Color(color.r, color.g, color.b, 220));
         crystal.setOutlineThickness(1.2f);
         window.draw(crystal);
 
-        if (node.captureProgress > 0.f) {
-            const float pct = std::clamp(node.captureProgress / config::ResourceCaptureSeconds, 0.f, 1.f);
-            sf::RectangleShape capBg(sf::Vector2f(18.f, 3.f));
-            capBg.setPosition(center + sf::Vector2f(-9.f, 12.f));
-            capBg.setFillColor(sf::Color(31, 27, 21, 180));
-            window.draw(capBg);
-            sf::RectangleShape capBar(sf::Vector2f(18.f * pct, 3.f));
-            capBar.setPosition(capBg.getPosition());
-            capBar.setFillColor(node.contestingTeam == PLAYER ? sf::Color(255, 220, 93) : sf::Color(145, 196, 255));
-            window.draw(capBar);
-        }
-
-        sf::Text label(std::string(resourceKindShortName(node.kind)) + "+" + std::to_string(node.income), myfont, 11);
+        sf::Text label("CMD", myfont, 11);
         label.setFillColor(sf::Color(63, 49, 25));
         label.setOutlineColor(sf::Color(255, 245, 190, 180));
         label.setOutlineThickness(0.8f);
@@ -2743,14 +2426,6 @@ void Game::drawBuildings()
             bar.setFillColor(sf::Color(255, 218, 112));
             window.draw(bar);
         }
-        else if (building.complete && building.type == building::Extractor) {
-            sf::CircleShape lamp(2.6f, 12);
-            lamp.setOrigin(2.6f, 2.6f);
-            lamp.setPosition(origin + sf::Vector2f(17.f, 4.f));
-            lamp.setFillColor(hasActiveHarvester(building) ? sf::Color(255, 224, 76) : sf::Color(88, 82, 67));
-            window.draw(lamp);
-        }
-
         if (building.complete && building.type == building::Barracks && building.production.load() > 0) {
             sf::Text queueText("Q" + std::to_string(building.production.load()), myfont, 9);
             queueText.setFillColor(sf::Color(255, 241, 177));
@@ -2778,16 +2453,6 @@ void Game::drawWorkers()
 {
     for (const auto& workerUnit : workers) {
         const sf::Vector2f center(workerUnit.point.x * SqureSize + SqureSize / 2.f, workerUnit.point.y * SqureSize + SqureSize / 2.f);
-        if (workerUnit.state == worker::Harvesting) {
-            sf::CircleShape gatherAura(7.8f, 28);
-            gatherAura.setOrigin(7.8f, 7.8f);
-            gatherAura.setPosition(center);
-            gatherAura.setFillColor(sf::Color(255, 221, 96, 48));
-            gatherAura.setOutlineColor(sf::Color(255, 221, 96, 155));
-            gatherAura.setOutlineThickness(1.f);
-            window.draw(gatherAura);
-        }
-
         sf::CircleShape body(5.f, 18);
         body.setOrigin(5.f, 5.f);
         body.setPosition(center);
@@ -2803,15 +2468,6 @@ void Game::drawWorkers()
             tool.setRotation(35.f);
             tool.setFillColor(sf::Color(255, 241, 177));
             window.draw(tool);
-        }
-        else if (workerUnit.state == worker::Harvesting) {
-            sf::CircleShape cargo(2.2f, 12);
-            cargo.setOrigin(2.2f, 2.2f);
-            cargo.setPosition(center + sf::Vector2f(4.5f, -4.5f));
-            cargo.setFillColor(sf::Color(255, 233, 93));
-            cargo.setOutlineColor(sf::Color(93, 69, 29));
-            cargo.setOutlineThickness(0.6f);
-            window.draw(cargo);
         }
     }
 }
@@ -2857,20 +2513,18 @@ void Game::drawTutorialOverlay()
         "  Build an economy, pick a lane, draft rogue tactics, then auto-push the enemy base.",
         "",
         "Core controls",
-        "  Left click a resource node: queue an Extractor. The base auto-sends a drone.",
+        "  Click ECONOMY: improve natural CMD income and add one visible drone.",
         "  Click Top / Mid / Bot, then click unit buttons to send new troops to that lane.",
         "  Barracks and Tower buttons auto-place buildings near your base or lane defense.",
         "  Click Upgrade: spend CMD to gain a LEVEL and choose one rogue tactic card.",
         "",
         "Automation",
-        "  Drones auto-build first. Extra drones cost CMD and train at the base.",
-        "  Extractors only pay income while a drone is harvesting and the mine is not contested.",
-        "  Combat units auto-path down their lane, fight enemies, then raid buildings.",
-        "  Towers auto-fire at long range and are strong, but cost more and have a cap.",
-        "  Main bases have a timed shield; siege units are the clean finisher.",
+        "  CMD comes from natural income and kill bounties based on enemy unit cost.",
+        "  Drones are your economy/readability meter and auto-build nearby structures.",
+        "  Combat units auto-path down highlighted lanes, fight enemies, then raid buildings.",
+        "  Towers beat basic attacks, but Siege outranges towers and forces a response.",
+        "  Main bases have a timed shield; siege pushes are the clean finisher.",
         "  If all Barracks fall, the base slowly drafts emergency troops.",
-        "  Enemy mines can be captured by holding the area with more units than defenders.",
-        "  Resource roles: Gold pays CMD, Crystal/Shrine discount LEVEL, Foundry speeds training.",
         "",
         "Tactics and counters",
         "  Every tech upgrade gives 3 tactic cards. Max tech is LEVEL 15.",
@@ -2880,10 +2534,10 @@ void Game::drawTutorialOverlay()
         "",
         "Unlocks",
         "  Infantry: 15 CMD, needs 1 Barracks.",
-        "  Shooter: 22 CMD, needs 1 Barracks and 1 Mine or Upgrade 1.",
-        "  Cavalry: 38 CMD, needs 2 Barracks and 2 Mines or LEVEL 3.",
-        "  Siege: 56 CMD, needs LEVEL 5, 2 Barracks, 2 Mines; shreds buildings.",
-        "  Guardian: 74 CMD, needs LEVEL 7, 3 Barracks, 3 Mines; anchors pushes.",
+        "  Shooter: 22 CMD, needs 1 Barracks and Economy 1 or LEVEL 1.",
+        "  Cavalry: 38 CMD, needs 2 Barracks and Economy 2 or LEVEL 3.",
+        "  Siege: 56 CMD, needs LEVEL 5, 2 Barracks, Economy 3; outranges towers.",
+        "  Guardian: 74 CMD, needs LEVEL 7, 3 Barracks, Economy 4; anchors pushes.",
         "",
         "Hotkeys",
         "  H: show / hide this guide.  C: restart map.  Esc: back to menu."
@@ -2943,7 +2597,12 @@ void Game::drawRewardOverlay()
         sf::CircleShape badge(17.f, 24);
         badge.setOrigin(17.f, 17.f);
         badge.setPosition(pos + sf::Vector2f(30.f, 30.f));
-        badge.setFillColor(resourceKindColor(i == 0 ? resource::Gold : (i == 1 ? resource::Crystal : resource::Foundry)));
+        const sf::Color badgeColor[] = {
+            sf::Color(255, 211, 82),
+            sf::Color(136, 207, 255),
+            sf::Color(255, 146, 92)
+        };
+        badge.setFillColor(badgeColor[i]);
         badge.setOutlineColor(sf::Color(39, 35, 26));
         badge.setOutlineThickness(1.4f);
         window.draw(badge);
@@ -3034,6 +2693,7 @@ void Game::DrawSidePanel()
     helpBtn.setPosition(config::ButtonX, config::HelpButtonY);
     EndTurnBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
     upgradeBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
+    economyBtn.setPosition(config::ButtonX, config::EconomyButtonY);
     barracksBtn.setPosition(config::ButtonX, config::BuildBarracksY);
     inf.setPosition(config::ButtonX, config::BuildInfantryY);
     sho.setPosition(config::ButtonX, config::BuildShooterY);
@@ -3101,10 +2761,9 @@ void Game::DrawSidePanel()
         + "\nLv " + std::to_string(playerUpgradeLevel)
         + "/" + std::to_string(config::MaxTechLevel)
         + "  Up " + std::to_string(upgradeCostForNextLevel(PLAYER))
-        + "\nG/C/F/S " + std::to_string(controlledResourceKindCount(PLAYER, resource::Gold))
-        + "/" + std::to_string(controlledResourceKindCount(PLAYER, resource::Crystal))
-        + "/" + std::to_string(controlledResourceKindCount(PLAYER, resource::Foundry))
-        + "/" + std::to_string(controlledResourceKindCount(PLAYER, resource::Shrine))
+        + "\nEco " + std::to_string(playerEconomyLevel)
+        + "/" + std::to_string(config::MaxEconomyLevel)
+        + "  Next " + std::to_string(economyUpgradeCost(PLAYER))
         + "\nDrone " + std::to_string(workerCount(PLAYER))
         + "/" + std::to_string(realtime::MaxWorkers)
         + " Rax " + std::to_string(completedBuildingCount(PLAYER, building::Barracks))
@@ -3126,7 +2785,6 @@ void Game::DrawSidePanel()
     }
     else {
         upgradeBtn.setColor(commandForTeam(PLAYER) >= upgradeCostForNextLevel(PLAYER)
-            && completedBuildingCount(PLAYER, building::Barracks) > 0
             && playerUpgradeLevel < config::MaxTechLevel
             ? sf::Color::White
             : sf::Color(255, 255, 255, 130));
@@ -3134,6 +2792,18 @@ void Game::DrawSidePanel()
     }
 
     const float laneY = 148.f;
+    int playerLaneCounts[lane::Count] = {};
+    int aiLaneCounts[lane::Count] = {};
+    for (const auto& unit : myunits) {
+        if (unit->Health > 0) {
+            ++playerLaneCounts[std::clamp(unit->laneIndex, 0, lane::Count - 1)];
+        }
+    }
+    for (const auto& unit : enemys) {
+        if (unit->Health > 0) {
+            ++aiLaneCounts[std::clamp(unit->laneIndex, 0, lane::Count - 1)];
+        }
+    }
     for (int i = 0; i < lane::Count; ++i) {
         sf::RectangleShape laneButton(sf::Vector2f(40.f, 24.f));
         laneButton.setPosition(config::PanelX + 14.f + static_cast<float>(i) * 47.f, laneY);
@@ -3144,12 +2814,45 @@ void Game::DrawSidePanel()
 
         sf::Text laneText(laneName(i), myfont, 11);
         laneText.setFillColor(playerSelectedLane == i ? sf::Color(41, 31, 20) : sf::Color(224, 232, 203));
-        laneText.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 4.f));
+        laneText.setPosition(laneButton.getPosition() + sf::Vector2f(7.f, 1.f));
         window.draw(laneText);
+
+        sf::Text laneCount(std::to_string(playerLaneCounts[i]) + "/" + std::to_string(aiLaneCounts[i]), myfont, 8);
+        laneCount.setFillColor(playerSelectedLane == i ? sf::Color(64, 45, 23) : sf::Color(205, 214, 188));
+        laneCount.setPosition(laneButton.getPosition() + sf::Vector2f(10.f, 14.f));
+        window.draw(laneCount);
     }
 
     panelHint.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 182.f);
-    panelHint.setString("Upgrade = rogue pick\nMine nodes manually");
+    const auto guideText = [this]() {
+        if (playerEconomyLevel == 0) {
+            return std::string("Next: ECONOMY first");
+        }
+        if (completedBuildingCount(PLAYER, building::Barracks) == 0) {
+            return std::string("Next: build Barracks");
+        }
+        if (playerUpgradeLevel < 1 && commandForTeam(PLAYER) >= upgradeCostForNextLevel(PLAYER)) {
+            return std::string("Next: Upgrade for cards");
+        }
+        if (totalBuildingCount(AI, building::DefenseTower) > 0 && !isUnitUnlocked(PLAYER, UName::SIEGE)) {
+            return std::string("Enemy tower: tech Siege");
+        }
+        if (myunits.size() + 4 < enemys.size()) {
+            return std::string("Under pressure: queue units");
+        }
+        if (playerEconomyLevel < config::MaxEconomyLevel && commandForTeam(PLAYER) >= economyUpgradeCost(PLAYER)) {
+            return std::string("Float CMD: buy ECONOMY");
+        }
+        return std::string("Pick lane, keep queues busy");
+    };
+    const int aiThreat = static_cast<int>(enemys.size()) - static_cast<int>(myunits.size());
+    panelHint.setString(guideText() + "\nLane P/AI  Threat " + std::to_string(aiThreat));
+    economyBtn.setColor(commandForTeam(PLAYER) >= economyUpgradeCost(PLAYER)
+        && playerEconomyLevel < config::MaxEconomyLevel
+        ? sf::Color::White
+        : sf::Color(255, 255, 255, 130));
+    economyLabel.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), config::EconomyButtonY - 12.f);
+    economyLabel.setString("Econ: +" + std::to_string(config::EconomyIncomeStep) + "/tick +drone");
     const bool canBuildBarracks = commandForTeam(PLAYER) >= config::BarracksCost
         && totalBuildingCount(PLAYER, building::Barracks) < buildingCap(PLAYER, building::Barracks);
     inf.setColor(canQueueUnit(PLAYER, UName::INFANTARY) ? sf::Color::White : sf::Color(255, 255, 255, 130));
@@ -3163,6 +2866,8 @@ void Game::DrawSidePanel()
     towerBtn.setColor(canQueueTower ? sf::Color::White : sf::Color(255, 255, 255, 130));
 
     window.draw(panelHint);
+    window.draw(economyBtn);
+    window.draw(economyLabel);
     window.draw(helpBtn);
     window.draw(barracksBtn);
     window.draw(barracksLabel);
@@ -3193,8 +2898,6 @@ void Game::clear()
     aiProductionDone = false;
     playerIncomeTimer = 0.f;
     aiIncomeTimer = 0.f;
-    playerWorkerTimer = realtime::WorkerTrainSeconds;
-    aiWorkerTimer = realtime::WorkerTrainSeconds;
     playerBaseAttackTimer = 0.f;
     aiBaseAttackTimer = 0.f;
     playerEmergencyTrainTimer = 0.f;
@@ -3214,6 +2917,8 @@ void Game::clear()
     nextEntityId = 1;
     playerUpgradeLevel = 0;
     aiUpgradeLevel = 0;
+    playerEconomyLevel = 0;
+    aiEconomyLevel = 0;
     realtimeFrameClock.restart();
     resources.clear();
     workers.clear();
@@ -3305,17 +3010,15 @@ void Game::placeResourceNodes()
     struct ResourceTarget
     {
         Point point;
-        int kind = resource::Gold;
-        int income = config::ResourceCommandIncome;
     };
     const std::vector<ResourceTarget> targets = {
-        {Point(Red_baseP.x + 8, Red_baseP.y + 4), resource::Gold, 6},
-        {Point(Blue_baseP.x - 8, Blue_baseP.y - 4), resource::Gold, 6},
-        {Point(mapW / 2, mapH / 2), resource::Shrine, 8},
-        {Point(mapW / 2, mapH / 4), resource::Crystal, 6},
-        {Point(mapW / 2, mapH * 3 / 4), resource::Crystal, 6},
-        {Point(mapW / 3, mapH / 2), resource::Foundry, 7},
-        {Point(mapW * 2 / 3, mapH / 2), resource::Foundry, 7}
+        {Point(Red_baseP.x + 8, Red_baseP.y + 4)},
+        {Point(Blue_baseP.x - 8, Blue_baseP.y - 4)},
+        {Point(mapW / 2, mapH / 2)},
+        {Point(mapW / 2, mapH / 4)},
+        {Point(mapW / 2, mapH * 3 / 4)},
+        {Point(mapW / 3, mapH / 2)},
+        {Point(mapW * 2 / 3, mapH / 2)}
     };
 
     for (const auto& target : targets) {
@@ -3343,7 +3046,7 @@ void Game::placeResourceNodes()
             continue;
         }
 
-        // Clear a small capture plaza so resource fights and hand-offs are readable.
+        // Clear a small plaza around CMD markers so lane objectives remain readable.
         for (int y = best.y - 2; y <= best.y + 2; ++y) {
             for (int x = best.x - 2; x <= best.x + 2; ++x) {
                 if (isMapCell(x, y)) {
@@ -3353,74 +3056,49 @@ void Game::placeResourceNodes()
         }
         ResourceNode node;
         node.point = best;
-        node.owner = -1;
-        node.kind = target.kind;
-        node.income = target.income;
         resources.push_back(node);
         setTileID(best.x, best.y, tile::Resource);
     }
 }
 
-void Game::updateResourceControl()
-{
-    for (std::size_t i = 0; i < resources.size(); ++i) {
-        auto& node = resources[i];
-        const int previousOwner = node.owner;
-        node.owner = -1;
-        const Building* extractor = findResourceExtractor(static_cast<int>(i));
-        if (extractor != nullptr && extractor->complete) {
-            const int enemy = extractor->team == PLAYER ? AI : PLAYER;
-            const bool contested = node.contestingTeam == enemy && node.captureProgress > 0.f;
-            node.owner = contested ? -2 : (hasActiveHarvester(*extractor) ? extractor->team : -1);
-        }
-
-        if (node.owner != previousOwner) {
-            node.pulseClock.restart();
-            const sf::Vector2f pos(node.point.x * SqureSize + SqureSize / 2.f, node.point.y * SqureSize - 4.f);
-            const std::string text = node.owner == PLAYER ? std::string(resourceKindName(node.kind)) + " ONLINE"
-                : (node.owner == AI ? std::string("ENEMY ") + resourceKindName(node.kind) : (node.owner == -2 ? "CONTESTED" : std::string(resourceKindName(node.kind)) + " IDLE"));
-            const sf::Color color = node.owner == PLAYER
-                ? sf::Color(255, 220, 93)
-                : (node.owner == AI ? sf::Color(145, 196, 255) : (node.owner == -2 ? sf::Color(255, 126, 84) : sf::Color(205, 196, 158)));
-            addFloatingText(pos, text, color, 12);
-            startScreenShake(0.10f, 1.5f);
-        }
-    }
-}
-
 int Game::resourceIncome(int team) const
 {
-    int income = config::BaseCommandIncome;
-    int owned = 0;
-    for (const auto& node : resources) {
-        if (node.owner == team) {
-            ++owned;
-            income += static_cast<int>(std::round(static_cast<float>(node.income) * miningIncomeMultiplier(team)));
-        }
-    }
-    // A small fallback stipend keeps a losing side from becoming inert; the
-    // winner still snowballs through mines, but the defender can rebuild.
-    if (gameTimeSeconds > 300.f && owned == 0) {
-        income += 3;
-    }
-    else if (gameTimeSeconds > 600.f && owned <= 1) {
-        income += 2;
+    const int level = economyLevelForTeam(team);
+    const float multiplier = miningIncomeMultiplier(team);
+    int income = config::BaseCommandIncome
+        + static_cast<int>(std::round(static_cast<float>(level * config::EconomyIncomeStep) * multiplier));
+    if (team == AI) {
+        // A mild difficulty stipend keeps heuristic AI competitive without
+        // adding hidden resource types for the player to understand.
+        income += 1 + static_cast<int>(gameTimeSeconds / 300.f);
     }
     return income;
 }
 
-int Game::controlledResourceCount(int team) const
+int Game::economyLevelForTeam(int team) const
 {
-    return static_cast<int>(std::count_if(resources.begin(), resources.end(), [team](const ResourceNode& node) {
-        return node.owner == team;
-    }));
+    return team == PLAYER ? playerEconomyLevel : aiEconomyLevel;
 }
 
-int Game::controlledResourceKindCount(int team, int kind) const
+int Game::economyUpgradeCost(int team) const
 {
-    return static_cast<int>(std::count_if(resources.begin(), resources.end(), [team, kind](const ResourceNode& node) {
-        return node.owner == team && node.kind == kind;
-    }));
+    const int level = economyLevelForTeam(team);
+    if (level >= config::MaxEconomyLevel) {
+        return 0;
+    }
+    int cost = config::EconomyUpgradeCost
+        + level * config::EconomyUpgradeCostStep
+        + level * level * 3;
+    if (team == AI && gameTimeSeconds > 840.f) {
+        cost = static_cast<int>(std::round(static_cast<float>(cost) * 0.52f));
+    }
+    else if (team == AI && gameTimeSeconds > 720.f) {
+        cost = static_cast<int>(std::round(static_cast<float>(cost) * 0.65f));
+    }
+    else if (team == AI && gameTimeSeconds > 420.f) {
+        cost = static_cast<int>(std::round(static_cast<float>(cost) * 0.78f));
+    }
+    return std::max(20, cost);
 }
 
 int Game::perkLevel(int team, int type) const
@@ -3477,8 +3155,7 @@ void Game::applyPerk(int team, int type)
     if (type == perk::WarChest) {
         auto& levels = team == PLAYER ? playerPerkLevels : aiPerkLevels;
         levels[static_cast<std::size_t>(type)] += 1;
-        const int bonus = 38 + (team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel) * 5
-            + controlledResourceKindCount(team, resource::Shrine) * 8;
+        const int bonus = 38 + (team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel) * 5;
         commandPool(*this, team) = std::min(config::MaxCommand, commandPool(*this, team) + bonus);
         Unit* base = team == PLAYER ? static_cast<Unit*>(Base_red.get()) : static_cast<Unit*>(Base_blue.get());
         if (base != nullptr) {
@@ -3545,7 +3222,13 @@ void Game::maybeGrantReward(int team, const std::string& reason)
     }
 
     int choice = perk::WarChest;
-    if (gameTimeSeconds > 720.f && perkLevel(AI, perk::SiegeCraft) < maxPerkLevel(perk::SiegeCraft)) {
+    const bool playerTurtling = totalBuildingCount(PLAYER, building::DefenseTower) > 0
+        || totalBuildingCount(PLAYER, building::Barracks) >= 3;
+    const bool aiMacroBehind = aiEconomyLevel < std::min(config::MaxEconomyLevel, 3 + static_cast<int>(gameTimeSeconds / 140.f));
+    if (aiMacroBehind && perkLevel(AI, perk::Mining) < maxPerkLevel(perk::Mining)) {
+        choice = perk::Mining;
+    }
+    else if ((playerTurtling || gameTimeSeconds > 720.f) && perkLevel(AI, perk::SiegeCraft) < maxPerkLevel(perk::SiegeCraft)) {
         choice = perk::SiegeCraft;
     }
     else if (completedBuildingCount(AI, building::Barracks) >= 2 && perkLevel(AI, perk::Logistics) < maxPerkLevel(perk::Logistics)) {
@@ -3595,20 +3278,20 @@ int Game::unitCost(int name) const
 
 bool Game::isUnitUnlocked(int team, int name) const
 {
-    const int extractors = completedBuildingCount(team, building::Extractor);
+    const int economy = economyLevelForTeam(team);
     const int barracks = completedBuildingCount(team, building::Barracks);
     const int upgrade = team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
     switch (name) {
     case UName::INFANTARY:
         return barracks >= 1;
     case UName::SHOOTER:
-        return barracks >= 1 && (extractors >= 1 || upgrade >= 1);
+        return barracks >= 1 && (economy >= 1 || upgrade >= 1);
     case UName::CAVALRY:
-        return barracks >= 2 && (extractors >= 2 || upgrade >= 3);
+        return barracks >= 2 && (economy >= 2 || upgrade >= 3);
     case UName::SIEGE:
-        return barracks >= 2 && extractors >= 2 && upgrade >= 5;
+        return barracks >= 2 && economy >= 3 && upgrade >= 5;
     case UName::GUARDIAN:
-        return barracks >= 3 && extractors >= 3 && upgrade >= 7;
+        return barracks >= 3 && economy >= 4 && upgrade >= 7;
     default:
         return false;
     }
@@ -3694,6 +3377,56 @@ bool Game::upgradeTeam(int team)
     return true;
 }
 
+void Game::syncWorkersForEconomy(int team)
+{
+    const int targetWorkers = std::min(realtime::MaxWorkers, realtime::StartingWorkers + economyLevelForTeam(team));
+    while (workerCount(team) < targetWorkers) {
+        createWorker(team, workerSpawnPoint(team));
+    }
+}
+
+bool Game::upgradeEconomy(int team)
+{
+    int& level = team == PLAYER ? playerEconomyLevel : aiEconomyLevel;
+    const int cost = economyUpgradeCost(team);
+    if (level >= config::MaxEconomyLevel || commandPool(*this, team) < cost) {
+        if (team == PLAYER) {
+            addFloatingText(sf::Vector2f(config::PanelX + 18.f, static_cast<float>(config::EconomyButtonY) - 18.f),
+                            level >= config::MaxEconomyLevel ? "Max economy" : "Need CMD",
+                            sf::Color(255, 214, 96), 12);
+        }
+        return false;
+    }
+
+    commandPool(*this, team) -= cost;
+    ++level;
+    syncWorkersForEconomy(team);
+    Unit* base = team == PLAYER ? static_cast<Unit*>(Base_red.get()) : static_cast<Unit*>(Base_blue.get());
+    if (base != nullptr) {
+        addFloatingText(sf::Vector2f(base->x * SqureSize + SqureSize, base->y * SqureSize - 42.f),
+                        "Economy Lv" + std::to_string(level),
+                        team == PLAYER ? sf::Color(218, 255, 134) : sf::Color(149, 203, 255), 13);
+    }
+    logEvent(std::string(team == PLAYER ? "player" : "ai") + " economy level " + std::to_string(level));
+    return true;
+}
+
+void Game::awardKillBounty(int receiverTeam, int defeatedUnitName, Point point)
+{
+    const int cost = unitCost(defeatedUnitName);
+    if (cost <= 0) {
+        return;
+    }
+    const int bounty = std::max(config::KillBountyMin,
+        static_cast<int>(std::round(static_cast<float>(cost * config::KillBountyPercent) / 100.f)));
+    commandPool(*this, receiverTeam) = std::min(config::MaxCommand, commandPool(*this, receiverTeam) + bounty);
+    addFloatingText(sf::Vector2f(point.x * SqureSize + SqureSize / 2.f, point.y * SqureSize - 22.f),
+                    "+" + std::to_string(bounty) + " CMD",
+                    receiverTeam == PLAYER ? sf::Color(255, 226, 112) : sf::Color(145, 196, 255), 12);
+    logEvent(std::string(receiverTeam == PLAYER ? "player" : "ai")
+        + " bounty +" + std::to_string(bounty) + " unit=" + std::to_string(defeatedUnitName));
+}
+
 int Game::commandForTeam(int team) const
 {
     return team == PLAYER ? playerCommand : aiCommand;
@@ -3762,170 +3495,183 @@ void Game::runAIProduction()
         return;
     }
 
-    const auto distanceScore = [](Point a, Point b) {
-        const int dx = a.x - b.x;
-        const int dy = a.y - b.y;
-        return dx * dx + dy * dy;
+    const int playerPressure = unitsNearPoint(PLAYER, Blue_baseP, 13);
+    const int aiPressure = unitsNearPoint(AI, Red_baseP, 13);
+    const int playerTowers = totalBuildingCount(PLAYER, building::DefenseTower);
+    const int playerBarracks = totalBuildingCount(PLAYER, building::Barracks);
+    const bool playerTurtling = playerTowers > 0 || playerBarracks >= 3;
+    const bool defenseMode = playerPressure >= 4 || (Base_blue && Base_blue->Health < 2800);
+    const bool armyBehind = static_cast<int>(enemys.size()) + 4 < static_cast<int>(myunits.size());
+    const bool siegeMode = !defenseMode && (playerTurtling || (gameTimeSeconds > 540.f && isUnitUnlocked(AI, UName::SIEGE)));
+    const bool macroMode = !defenseMode && !armyBehind && enemys.size() >= 14;
+
+    const auto nearestLaneForY = [this](int y) {
+        int bestLane = lane::Mid;
+        int bestDistance = std::numeric_limits<int>::max();
+        for (int i = 0; i < lane::Count; ++i) {
+            const int laneY = laneWaypoint(AI, i, 1).y;
+            const int distance = std::abs(y - laneY);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestLane = i;
+            }
+        }
+        return bestLane;
     };
-    const auto chooseResource = [this, distanceScore]() {
-        int bestIndex = -1;
-        int bestScore = std::numeric_limits<int>::max();
-        for (int i = 0; i < static_cast<int>(resources.size()); ++i) {
-            if (pendingOrCompleteExtractorForResource(i) != 0) {
+
+    const auto laneWithMostPlayerUnits = [this]() {
+        int counts[lane::Count] = {};
+        for (const auto& unit : myunits) {
+            if (unit->Health > 0) {
+                ++counts[std::clamp(unit->laneIndex, 0, lane::Count - 1)];
+            }
+        }
+        int bestLane = lane::Mid;
+        for (int i = 0; i < lane::Count; ++i) {
+            if (counts[i] > counts[bestLane]) {
+                bestLane = i;
+            }
+        }
+        return bestLane;
+    };
+
+    const auto laneWithMostPlayerStructures = [&nearestLaneForY, &laneWithMostPlayerUnits, this]() {
+        int scores[lane::Count] = {};
+        for (const auto& building : buildings) {
+            if (building.team != PLAYER || !building.complete) {
                 continue;
             }
-            // Prefer the safe natural first, then let income value pull the AI
-            // toward central/flank nodes later in the match.
-            int score = distanceScore(resources[i].point, Blue_baseP) - resources[i].income * 45;
-            if (gameTimeSeconds > 70.f && resources[i].income >= 8) {
-                score -= 160;
-            }
-            if (score < bestScore) {
-                bestScore = score;
-                bestIndex = i;
+            const int laneIndex = nearestLaneForY(building.point.y);
+            scores[laneIndex] += building.type == building::DefenseTower ? 4 : 2;
+        }
+        int bestLane = lane::Mid;
+        for (int i = 0; i < lane::Count; ++i) {
+            if (scores[i] > scores[bestLane]) {
+                bestLane = i;
             }
         }
-        return bestIndex;
+        return scores[bestLane] > 0 ? bestLane : laneWithMostPlayerUnits();
     };
 
-    const int totalExtractors = totalBuildingCount(AI, building::Extractor);
-    const int totalBarracks = totalBuildingCount(AI, building::Barracks);
-    const int totalTowers = totalBuildingCount(AI, building::DefenseTower);
-    const int completedExtractors = completedBuildingCount(AI, building::Extractor);
-    const int completedBarracks = completedBuildingCount(AI, building::Barracks);
-    const int currentBarracksCap = buildingCap(AI, building::Barracks);
-    const int currentTowerCap = buildingCap(AI, building::DefenseTower);
-    const auto allowedTechForAI = [this, completedBarracks, completedExtractors]() {
-        int allowedTech = (completedBarracks > 0 || gameTimeSeconds > 360.f)
-            ? static_cast<int>(gameTimeSeconds / 66.f)
-            : 0;
-        if (completedExtractors < 2) {
-            allowedTech = std::min(allowedTech, 5);
+    const auto chooseLane = [&](int orderIndex) {
+        if (defenseMode) {
+            return laneWithMostPlayerUnits();
         }
-        if (completedExtractors < 3) {
-            allowedTech = std::min(allowedTech, 9);
+        if (siegeMode) {
+            return laneWithMostPlayerStructures();
         }
-        if (gameTimeSeconds > 720.f) {
-            allowedTech = std::max(allowedTech, 12 + static_cast<int>((gameTimeSeconds - 720.f) / 55.f));
-        }
-        if (gameTimeSeconds > 870.f) {
-            allowedTech = config::MaxTechLevel;
-        }
-        return std::clamp(allowedTech, 0, config::MaxTechLevel);
+        return (static_cast<int>(gameTimeSeconds / 34.f) + orderIndex) % lane::Count;
     };
 
-    // Late AI tech can continue from the main base even after the player raids
-    // its barracks, so a dragged-out game still escalates toward max pressure.
-    const int catchupAllowedTech = allowedTechForAI();
-    if (gameTimeSeconds > 420.f
-        && aiUpgradeLevel < catchupAllowedTech
-        && commandForTeam(AI) >= upgradeCostForNextLevel(AI)) {
-        if (upgradeTeam(AI)) {
-            return;
-        }
+    int desiredEconomy = 1;
+    if (gameTimeSeconds > 40.f) desiredEconomy = 2;
+    if (gameTimeSeconds > 95.f) desiredEconomy = 3;
+    if (gameTimeSeconds > 165.f) desiredEconomy = 4;
+    if (gameTimeSeconds > 280.f) desiredEconomy = 5;
+    if (gameTimeSeconds > 420.f) desiredEconomy = 7;
+    if (gameTimeSeconds > 590.f) desiredEconomy = 9;
+    if (gameTimeSeconds > 760.f) desiredEconomy = 11;
+    if (gameTimeSeconds > 900.f) desiredEconomy = config::MaxEconomyLevel;
+    if (playerEconomyLevel > aiEconomyLevel + 1 || macroMode) {
+        ++desiredEconomy;
     }
+    desiredEconomy = std::clamp(desiredEconomy, 0, config::MaxEconomyLevel);
 
-    if (totalExtractors < 1
-        && !(gameTimeSeconds > 420.f && totalBarracks < 1)
-        && commandForTeam(AI) >= config::ExtractorCost) {
-        const int resourceIndex = chooseResource();
-        if (resourceIndex >= 0 && requestBuildExtractor(AI, resourceIndex)) {
-            return;
-        }
+    int allowedTech = static_cast<int>(gameTimeSeconds / 54.f);
+    allowedTech = std::min(allowedTech, aiEconomyLevel + (gameTimeSeconds > 720.f ? 7 : 4));
+    if (playerUpgradeLevel > aiUpgradeLevel) {
+        allowedTech = std::max(allowedTech, playerUpgradeLevel + 1);
     }
-
-    if (totalBarracks < 1 && commandForTeam(AI) >= config::BarracksCost) {
-        if (requestAutoBuildBarracks(AI)) {
-            return;
-        }
+    if (gameTimeSeconds > 720.f) {
+        allowedTech = std::max(allowedTech, 11 + static_cast<int>((gameTimeSeconds - 720.f) / 48.f));
     }
-    if (gameTimeSeconds > 420.f && totalBarracks < 1) {
-        return;
+    if (gameTimeSeconds > 840.f) {
+        allowedTech = config::MaxTechLevel;
     }
-
-    int desiredExtractors = 1;
-    if (gameTimeSeconds > 50.f) {
-        desiredExtractors = 2;
-    }
-    if (gameTimeSeconds > 120.f) {
-        desiredExtractors = 3;
-    }
-    if (gameTimeSeconds > 300.f && aiUpgradeLevel >= 6) {
-        desiredExtractors = 4;
-    }
-    if (gameTimeSeconds > 650.f && aiUpgradeLevel >= 10) {
-        desiredExtractors = 5;
-    }
-    if (controlledResourceCount(AI) + 1 < controlledResourceCount(PLAYER) && gameTimeSeconds > 130.f) {
-        desiredExtractors += 1;
-    }
-    desiredExtractors = std::min({desiredExtractors, static_cast<int>(resources.size()), realtime::MaxWorkers - 1});
-    if (totalExtractors < desiredExtractors && commandForTeam(AI) >= config::ExtractorCost) {
-        const int resourceIndex = chooseResource();
-        if (resourceIndex >= 0 && requestBuildExtractor(AI, resourceIndex)) {
-            return;
-        }
-    }
-    if (totalExtractors < desiredExtractors) {
-        return;
-    }
-
-    const int allowedTech = allowedTechForAI();
-
-    if (aiUpgradeLevel < std::min(config::MaxTechLevel, allowedTech)
-        && commandForTeam(AI) >= upgradeCostForNextLevel(AI)) {
-        if (upgradeTeam(AI)) {
-            return;
-        }
-    }
-    if (aiUpgradeLevel < std::min(config::MaxTechLevel, allowedTech)) {
-        return;
-    }
+    allowedTech = std::clamp(allowedTech, 0, config::MaxTechLevel);
 
     int desiredBarracks = 1;
-    if (gameTimeSeconds > 95.f && completedExtractors >= 2) {
-        desiredBarracks = 2;
-    }
-    if (gameTimeSeconds > 300.f && completedExtractors >= 2 && aiUpgradeLevel >= 4) {
-        desiredBarracks = 3;
-    }
-    if (gameTimeSeconds > 520.f && completedExtractors >= 3 && aiUpgradeLevel >= 9) {
-        desiredBarracks = 4;
-    }
-    if (gameTimeSeconds > 720.f && aiUpgradeLevel >= 12) {
-        desiredBarracks = 5;
-    }
-    if (gameTimeSeconds > 870.f && aiUpgradeLevel >= 14) {
-        desiredBarracks = 6;
-    }
-    desiredBarracks = std::min(desiredBarracks, currentBarracksCap);
-    if (totalBarracks < desiredBarracks && commandForTeam(AI) >= config::BarracksCost) {
-        if (requestAutoBuildBarracks(AI)) {
-            return;
+    if (gameTimeSeconds > 100.f && aiEconomyLevel >= 2) desiredBarracks = 2;
+    if (gameTimeSeconds > 250.f && aiUpgradeLevel >= 3) desiredBarracks = 3;
+    if (gameTimeSeconds > 430.f && aiUpgradeLevel >= 6) desiredBarracks = 4;
+    if (gameTimeSeconds > 640.f && aiUpgradeLevel >= 9) desiredBarracks = 5;
+    if (gameTimeSeconds > 820.f) desiredBarracks = 6;
+    if (armyBehind || siegeMode) ++desiredBarracks;
+    desiredBarracks = std::min(desiredBarracks, buildingCap(AI, building::Barracks));
+
+    int desiredTowers = 0;
+    if (playerPressure >= 4) desiredTowers = 1;
+    if (playerPressure >= 8 || (Base_blue && Base_blue->Health < 2200)) desiredTowers = 2;
+    if (gameTimeSeconds > 700.f && playerPressure >= 6 && aiUpgradeLevel >= 10) desiredTowers = 3;
+    desiredTowers = std::min(desiredTowers, buildingCap(AI, building::DefenseTower));
+
+    if (totalBuildingCount(AI, building::Barracks) < 1) {
+        aiSelectedLane = lane::Mid;
+        if (commandForTeam(AI) >= config::BarracksCost) {
+            requestAutoBuildBarracks(AI);
         }
+        return;
     }
-    if (totalBarracks < desiredBarracks) {
+    if (completedBuildingCount(AI, building::Barracks) < 1) {
         return;
     }
 
-    int desiredTowers = 0;
-    if (gameTimeSeconds > 140.f && completedBarracks > 0) {
-        desiredTowers = 1;
-    }
-    if (gameTimeSeconds > 250.f && completedBarracks >= 2) {
-        desiredTowers = 2;
-    }
-    if (gameTimeSeconds > 500.f && aiUpgradeLevel >= 8) {
-        desiredTowers = 3;
-    }
-    if (gameTimeSeconds > 780.f && aiUpgradeLevel >= 12) {
-        desiredTowers = 4;
-    }
-    desiredTowers = std::min(desiredTowers, currentTowerCap);
-    if (totalTowers < desiredTowers && commandForTeam(AI) >= config::TowerCost + config::InfantryCost) {
-        if (requestAutoBuildTower(AI)) {
+    bool majorActionTaken = false;
+    const auto tryMajorAction = [&](bool condition, const auto& action) {
+        if (majorActionTaken || !condition) {
             return;
         }
+        if (action()) {
+            majorActionTaken = true;
+        }
+    };
+
+    const bool openingNeedsUnits = enemys.size() < 8 && gameTimeSeconds < 185.f && playerPressure < 4;
+    if (!openingNeedsUnits) {
+        tryMajorAction(aiEconomyLevel < desiredEconomy && commandForTeam(AI) >= economyUpgradeCost(AI), [&]() {
+            return upgradeEconomy(AI);
+        });
+        tryMajorAction(aiUpgradeLevel < allowedTech && commandForTeam(AI) >= upgradeCostForNextLevel(AI), [&]() {
+            return upgradeTeam(AI);
+        });
+    }
+
+    tryMajorAction(totalBuildingCount(AI, building::Barracks) < desiredBarracks
+        && commandForTeam(AI) >= config::BarracksCost + (defenseMode ? 0 : config::InfantryCost), [&]() {
+        aiSelectedLane = chooseLane(0);
+        return requestAutoBuildBarracks(AI);
+    });
+
+    tryMajorAction(defenseMode
+        && totalBuildingCount(AI, building::DefenseTower) < desiredTowers
+        && commandForTeam(AI) >= config::TowerCost + config::InfantryCost, [&]() {
+        aiSelectedLane = laneWithMostPlayerUnits();
+        return requestAutoBuildTower(AI);
+    });
+
+    if (openingNeedsUnits && !majorActionTaken) {
+        tryMajorAction(aiEconomyLevel < std::min(3, desiredEconomy)
+            && enemys.size() >= 5
+            && commandForTeam(AI) >= economyUpgradeCost(AI), [&]() {
+            return upgradeEconomy(AI);
+        });
+    }
+
+    int reserve = 0;
+    const bool armyEmergency = defenseMode || armyBehind || enemys.size() < 10;
+    if (!armyEmergency) {
+        if (aiEconomyLevel < desiredEconomy) {
+            reserve = std::max(reserve, std::min(economyUpgradeCost(AI), macroMode ? 230 : 170));
+        }
+        if (aiUpgradeLevel < allowedTech) {
+            reserve = std::max(reserve, std::min(upgradeCostForNextLevel(AI), macroMode ? 270 : 190));
+        }
+        if (totalBuildingCount(AI, building::Barracks) < desiredBarracks) {
+            reserve = std::max(reserve, config::BarracksCost);
+        }
+    }
+    if (majorActionTaken) {
+        reserve = std::min(reserve, 55);
     }
 
     const int playerInfantry = countUnitsNamed(myunits, UName::INFANTARY);
@@ -3933,42 +3679,83 @@ void Game::runAIProduction()
     const int playerCavalry = countUnitsNamed(myunits, UName::CAVALRY);
     const int playerSiege = countUnitsNamed(myunits, UName::SIEGE);
     const int playerGuardian = countUnitsNamed(myunits, UName::GUARDIAN);
-    const int counterPick = playerShooters > playerInfantry
-        ? UName::CAVALRY
-        : (playerCavalry + playerGuardian > playerShooters ? UName::INFANTARY : UName::SHOOTER);
-    const int pressurePick = enemys.size() + 2 < myunits.size() ? UName::CAVALRY : UName::INFANTARY;
-    int techPick = counterPick;
-    if (isUnitUnlocked(AI, UName::GUARDIAN)) {
-        techPick = UName::GUARDIAN;
+
+    int counterPick = UName::SHOOTER;
+    if (playerShooters > playerInfantry + 1 || playerSiege > 0) {
+        counterPick = UName::CAVALRY;
     }
-    else if (isUnitUnlocked(AI, UName::SIEGE)) {
-        techPick = playerSiege > 0 ? UName::CAVALRY : UName::SIEGE;
+    else if (playerCavalry + playerGuardian > playerShooters) {
+        counterPick = UName::INFANTARY;
     }
-    const int priorities[] = {
-        techPick,
-        counterPick,
-        pressurePick,
-        UName::SIEGE,
-        UName::GUARDIAN,
-        UName::SHOOTER,
-        UName::INFANTARY
+
+    std::vector<int> priorities;
+    priorities.reserve(8);
+    if (defenseMode) {
+        priorities = {UName::GUARDIAN, UName::INFANTARY, UName::CAVALRY, counterPick, UName::SHOOTER};
+    }
+    else if (siegeMode) {
+        priorities = {UName::SIEGE, UName::GUARDIAN, UName::CAVALRY, counterPick, UName::SHOOTER, UName::INFANTARY};
+    }
+    else {
+        priorities = {counterPick, UName::SHOOTER, UName::CAVALRY, UName::INFANTARY, UName::SIEGE, UName::GUARDIAN};
+    }
+    if (aiPressure > 0 || playerTurtling) {
+        priorities.insert(priorities.begin(), UName::SIEGE);
+    }
+
+    const auto leastLoadedBarracks = [this]() {
+        int bestLoad = std::numeric_limits<int>::max();
+        for (const auto& building : buildings) {
+            if (building.team == AI && building.type == building::Barracks && building.complete) {
+                bestLoad = std::min(bestLoad, building.production.load());
+            }
+        }
+        return bestLoad == std::numeric_limits<int>::max() ? 0 : bestLoad;
     };
 
-    const int orders = std::min(completedBarracks, realtime::AIUnitsPerBurst + aiUpgradeLevel / 4 + (gameTimeSeconds > 840.f ? 2 : 0));
+    int orders = realtime::AIUnitsPerBurst + aiUpgradeLevel / 5;
+    if (aiEconomyLevel >= 4) ++orders;
+    if (aiEconomyLevel >= 8) ++orders;
+    if (armyBehind || defenseMode) ++orders;
+    if (siegeMode) ++orders;
+    if (gameTimeSeconds > 760.f) ++orders;
+    orders = std::min({orders, completedBuildingCount(AI, building::Barracks), 5});
+
+    const int queueLoadLimit = macroMode ? 3 : (defenseMode ? 6 : 4);
     for (int i = 0; i < orders; ++i) {
-        aiSelectedLane = gameTimeSeconds > 780.f
-            ? i % lane::Count
-            : (static_cast<int>(gameTimeSeconds / 35.f) + i) % lane::Count;
+        if (leastLoadedBarracks() >= queueLoadLimit && commandForTeam(AI) < reserve + 160 && !armyEmergency) {
+            break;
+        }
+
+        aiSelectedLane = chooseLane(i);
         bool queued = false;
         for (int code : priorities) {
+            const int cost = unitCost(code);
+            if (cost <= 0 || !isUnitUnlocked(AI, code)) {
+                continue;
+            }
+            if (!armyEmergency && commandForTeam(AI) < cost + reserve) {
+                continue;
+            }
             if (enqueueUnit(AI, code)) {
                 queued = true;
                 break;
             }
         }
+        if (!queued && armyEmergency && commandForTeam(AI) >= config::InfantryCost) {
+            queued = enqueueUnit(AI, UName::INFANTARY);
+        }
         if (!queued) {
             break;
         }
+    }
+
+    if (majorActionTaken) {
+        logEvent(std::string("ai plan=")
+            + (defenseMode ? "defense" : (siegeMode ? "siege" : (macroMode ? "macro" : "tempo")))
+            + " ecoTarget=" + std::to_string(desiredEconomy)
+            + " techTarget=" + std::to_string(allowedTech)
+            + " raxTarget=" + std::to_string(desiredBarracks));
     }
 }
 

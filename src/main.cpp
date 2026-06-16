@@ -10,46 +10,21 @@
 
 namespace
 {
-    int distanceSquared(Point a, Point b)
-    {
-        const int dx = a.x - b.x;
-        const int dy = a.y - b.y;
-        return dx * dx + dy * dy;
-    }
-
-    int chooseScriptedResource(Game& game, int team)
-    {
-        const Point base = team == PLAYER ? game.Red_baseP : game.Blue_baseP;
-        int bestIndex = -1;
-        int bestScore = 1'000'000;
-        for (int i = 0; i < static_cast<int>(game.resources.size()); ++i) {
-            if (game.pendingOrCompleteExtractorForResource(i) != 0) {
-                continue;
-            }
-            int score = distanceSquared(base, game.resources[i].point) - game.resources[i].income * 45;
-            if (game.gameTimeSeconds > 70.f && game.resources[i].income >= 8) {
-                score -= 160;
-            }
-            if (score < bestScore) {
-                bestScore = score;
-                bestIndex = i;
-            }
-        }
-        return bestIndex;
-    }
-
     void runScriptedPlayer(Game& game)
     {
-        const int totalExtractors = game.totalBuildingCount(PLAYER, building::Extractor);
         const int totalBarracks = game.totalBuildingCount(PLAYER, building::Barracks);
-        const int completedExtractors = game.completedBuildingCount(PLAYER, building::Extractor);
-        const int completedBarracks = game.completedBuildingCount(PLAYER, building::Barracks);
 
-        if (totalExtractors < 1 && game.commandForTeam(PLAYER) >= config::ExtractorCost) {
-            const int resource = chooseScriptedResource(game, PLAYER);
-            if (resource >= 0 && game.requestBuildExtractor(PLAYER, resource)) {
-                return;
-            }
+        int desiredEconomy = 1;
+        if (game.gameTimeSeconds > 45.f) desiredEconomy = 2;
+        if (game.gameTimeSeconds > 110.f) desiredEconomy = 3;
+        if (game.gameTimeSeconds > 200.f) desiredEconomy = 4;
+        if (game.gameTimeSeconds > 340.f) desiredEconomy = 5;
+        if (game.gameTimeSeconds > 520.f) desiredEconomy = 7;
+        desiredEconomy = std::min(desiredEconomy, config::MaxEconomyLevel);
+        bool spentMacro = false;
+        if (game.playerEconomyLevel < desiredEconomy
+            && game.commandForTeam(PLAYER) >= game.economyUpgradeCost(PLAYER)) {
+            spentMacro = game.upgradeEconomy(PLAYER);
         }
 
         if (totalBarracks < 1 && game.commandForTeam(PLAYER) >= config::BarracksCost) {
@@ -57,73 +32,46 @@ namespace
                 return;
             }
         }
-
-        int desiredExtractors = 1;
-        if (game.gameTimeSeconds > 50.f) {
-            desiredExtractors = 2;
-        }
-        if (game.gameTimeSeconds > 120.f) {
-            desiredExtractors = 3;
-        }
-        desiredExtractors = std::min(desiredExtractors, realtime::MaxWorkers - 1);
-        if (totalExtractors < desiredExtractors && game.commandForTeam(PLAYER) >= config::ExtractorCost) {
-            const int resource = chooseScriptedResource(game, PLAYER);
-            if (resource >= 0 && game.requestBuildExtractor(PLAYER, resource)) {
-                return;
-            }
-        }
-        if (totalExtractors < desiredExtractors) {
+        if (game.completedBuildingCount(PLAYER, building::Barracks) < 1) {
             return;
         }
 
-        int allowedTech = completedBarracks > 0 ? static_cast<int>(game.gameTimeSeconds / 62.f) : 0;
-        if (completedExtractors < 2) {
-            allowedTech = std::min(allowedTech, 6);
-        }
+        int allowedTech = static_cast<int>(game.gameTimeSeconds / 68.f);
+        allowedTech = std::min(allowedTech, game.playerEconomyLevel + 3);
         allowedTech = std::min(allowedTech, config::MaxTechLevel);
-        if (game.playerUpgradeLevel < allowedTech
+        if (!spentMacro
+            && game.playerUpgradeLevel < allowedTech
             && game.commandForTeam(PLAYER) >= game.upgradeCostForNextLevel(PLAYER)) {
-            if (game.upgradeTeam(PLAYER)) {
-                return;
-            }
-        }
-        if (game.playerUpgradeLevel < allowedTech) {
-            return;
+            spentMacro = game.upgradeTeam(PLAYER);
         }
 
         int desiredBarracks = 1;
-        if (game.gameTimeSeconds > 95.f && completedExtractors >= 2) {
-            desiredBarracks = 2;
-        }
-        if (game.gameTimeSeconds > 175.f && game.playerUpgradeLevel >= 2) {
-            desiredBarracks = 3;
-        }
+        if (game.gameTimeSeconds > 100.f && game.playerEconomyLevel >= 2) desiredBarracks = 2;
+        if (game.gameTimeSeconds > 230.f && game.playerUpgradeLevel >= 4) desiredBarracks = 3;
+        if (game.gameTimeSeconds > 520.f && game.playerUpgradeLevel >= 8) desiredBarracks = 4;
         desiredBarracks = std::min(desiredBarracks, game.buildingCap(PLAYER, building::Barracks));
-        if (totalBarracks < desiredBarracks && game.commandForTeam(PLAYER) >= config::BarracksCost) {
-            if (game.requestAutoBuildBarracks(PLAYER)) {
-                return;
-            }
-        }
-        if (totalBarracks < desiredBarracks) {
-            return;
+        if (!spentMacro
+            && game.totalBuildingCount(PLAYER, building::Barracks) < desiredBarracks
+            && game.commandForTeam(PLAYER) >= config::BarracksCost + config::InfantryCost) {
+            spentMacro = game.requestAutoBuildBarracks(PLAYER);
         }
 
-        const int desiredTowers = game.gameTimeSeconds > 150.f ? 1 : 0;
-        if (game.totalBuildingCount(PLAYER, building::DefenseTower) < desiredTowers
+        const int desiredTowers = game.gameTimeSeconds > 190.f ? 1 : 0;
+        if (!spentMacro
+            && game.totalBuildingCount(PLAYER, building::DefenseTower) < desiredTowers
             && game.commandForTeam(PLAYER) >= config::TowerCost + config::InfantryCost) {
-            if (game.requestAutoBuildTower(PLAYER)) {
-                return;
-            }
+            spentMacro = game.requestAutoBuildTower(PLAYER);
         }
 
         const int priorities[] = {
-            UName::GUARDIAN,
             UName::SIEGE,
+            UName::GUARDIAN,
             UName::SHOOTER,
             UName::INFANTARY,
             UName::CAVALRY
         };
-        const int orders = std::max(1, game.playerUpgradeLevel / 2 + 1);
+        const int currentBarracks = game.completedBuildingCount(PLAYER, building::Barracks);
+        const int orders = std::min(currentBarracks, std::max(1, game.playerUpgradeLevel / 3 + 1));
         for (int i = 0; i < orders; ++i) {
             game.playerSelectedLane = (static_cast<int>(game.gameTimeSeconds / 40.f) + i) % lane::Count;
             bool queued = false;

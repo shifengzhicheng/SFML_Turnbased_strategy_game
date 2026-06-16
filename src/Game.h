@@ -110,8 +110,6 @@ public:
     bool debugLogging = false;
     float playerIncomeTimer = 0.f;
     float aiIncomeTimer = 0.f;
-    float playerWorkerTimer = realtime::WorkerTrainSeconds;
-    float aiWorkerTimer = realtime::WorkerTrainSeconds;
     float playerBaseAttackTimer = 0.f;
     float aiBaseAttackTimer = 0.f;
     float playerEmergencyTrainTimer = 0.f;
@@ -125,6 +123,8 @@ public:
     int pathGeneration = 1;
     int playerUpgradeLevel = 0;
     int aiUpgradeLevel = 0;
+    int playerEconomyLevel = 0;
+    int aiEconomyLevel = 0;
     bool perkOverlayVisible = false;
     bool autoChooseRewards = false;
     int rewardSequence = 0;
@@ -145,6 +145,7 @@ public:
     Button startBtn,EndTurnBtn;
     Button inf, cav, sho, siegeBtn, guardianBtn;
     Button upgradeBtn;
+    Button economyBtn;
     Button barracksBtn;
     Button helpBtn;
     Button towerBtn;
@@ -155,6 +156,7 @@ public:
     sf::Texture tSiege, tSiegeHover, tSiegeClick;
     sf::Texture tGuardian, tGuardianHover, tGuardianClick;
     sf::Texture tUpgrade, tUpgradeHover, tUpgradeClick;
+    sf::Texture tEconomy, tEconomyHover, tEconomyClick;
     sf::Texture tBarracks, tBarracksHover, tBarracksClick;
     sf::Texture tHelp, tHelpHover, tHelpClick;
     sf::Texture tTower, tTowerHover, tTowerClick;
@@ -168,6 +170,7 @@ public:
     sf::Text cavalryLabel;
     sf::Text siegeLabel;
     sf::Text guardianLabel;
+    sf::Text economyLabel;
     sf::Text barracksLabel;
     sf::Text towerLabel;
 
@@ -212,6 +215,7 @@ public:
 
     void Draw();
     void DrawSidePanel();
+    void drawLaneGuides();
     void drawGridOverlay();
     void drawResourceNodes();
     void drawBuildings();
@@ -243,22 +247,18 @@ public:
 
     void setBase();
     void placeResourceNodes();
-    void updateResourceControl();
     void updateWorkers(float dt);
     void updateProduction(float dt);
     void updateDefenseTowers(float dt);
     void updateBaseDefenses(float dt);
     void updateEmergencyBaseTraining(float dt);
-    void updateResourceCaptures(float dt);
     void cleanupDestroyedBuildings();
     void handleRealtimeMapClick(sf::Vector2i mousePos, sf::Event event);
     int resourceIncome(int team) const;
-    int controlledResourceCount(int team) const;
-    int controlledResourceKindCount(int team, int kind) const;
+    int economyLevelForTeam(int team) const;
+    int economyUpgradeCost(int team) const;
     int completedBuildingCount(int team, int type) const;
-    int pendingOrCompleteExtractorForResource(int resourceIndex) const;
     int unitCost(int name) const;
-    int buildingCost(int type) const;
     int totalBuildingCount(int team, int type) const;
     int buildingCap(int team, int type) const;
     int upgradeCostForNextLevel(int team) const;
@@ -281,14 +281,14 @@ public:
     bool canQueueUnit(int team, int name) const;
     bool enqueueUnit(int team, int name);
     bool upgradeTeam(int team);
-    bool requestBuildExtractor(int team, int resourceIndex);
+    bool upgradeEconomy(int team);
+    void syncWorkersForEconomy(int team);
+    void awardKillBounty(int receiverTeam, int defeatedUnitName, Point point);
     bool requestBuildBarracks(int team, Point point);
     bool requestBuildTower(int team, Point point);
     bool requestAutoBuildBarracks(int team);
     bool requestAutoBuildTower(int team);
     Point findAutoBuildSite(int team, int type, int laneIndex) const;
-    Building* findResourceExtractor(int resourceIndex);
-    const Building* findResourceExtractor(int resourceIndex) const;
     Building* chooseBuildingTarget(MoveableUnit& unit);
     Point chooseStrategicRallyPoint(const MoveableUnit& unit) const;
     bool canAttackBuilding(const MoveableUnit& unit, const Building& building) const;
@@ -302,20 +302,18 @@ public:
     void logEvent(const std::string& message) const;
     void logDebugSummary() const;
     void assignWorkers();
-    bool tryAutoRecruitWorker(int team);
     int workerCount(int team) const;
     int assignedWorkerCount(int buildingId) const;
-    bool hasActiveHarvester(const Building& building) const;
-    Worker* findAvailableWorker(int team, bool allowHarvesting);
+    Worker* findAvailableWorker(int team);
     Worker* findIdleWorker(int team);
     Worker* findWorkerById(int id);
     Building* findBuildingById(int id);
     const Building* findBuildingById(int id) const;
     void assignWorkerToBuilding(Worker& worker, Building& building);
-    void assignWorkerToHarvest(Worker& worker, Building& building);
     void updateWorkerTravel(Worker& worker, Point target, float dt);
     Point workerSpawnPoint(int team) const;
     Point findBuildStandPoint(const Building& building) const;
+    Point findAttackStandPoint(const MoveableUnit& unit, const Building& building) const;
     Point findBuildableNear(Point anchor, int radius) const;
     Point findSpawnPointAround(Point anchor) const;
     void createStartingWorkers();

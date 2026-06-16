@@ -7,9 +7,7 @@ namespace realtime
     inline constexpr float AIThinkSeconds = 5.0f;
     inline constexpr int AIUnitsPerBurst = 1;
     inline constexpr int StartingWorkers = 2;
-    inline constexpr int MaxWorkers = 7;
-    inline constexpr float WorkerTrainSeconds = 5.5f;
-
+    inline constexpr int MaxWorkers = 14;
     inline constexpr float PathRefreshSeconds = 0.90f;
     inline constexpr float WorkerPathRefreshSeconds = 0.60f;
     inline constexpr float WorkerStepSeconds = 0.34f;
@@ -26,7 +24,6 @@ namespace realtime
     inline constexpr float GuardianAttackCooldown = 2.18f;
     inline constexpr float DefenseTowerAttackCooldown = 1.55f;
 
-    inline constexpr float ExtractorBuildSeconds = 7.0f;
     inline constexpr float BarracksBuildSeconds = 12.0f;
     inline constexpr float DefenseTowerBuildSeconds = 8.5f;
     inline constexpr float InfantryTrainSeconds = 8.0f;

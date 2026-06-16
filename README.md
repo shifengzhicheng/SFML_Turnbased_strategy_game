@@ -1,6 +1,6 @@
 # SFML Turnbased Strategy Game
 
-一个使用 SFML 2.x 实现的实时 rogue RTS 自走棋游戏。玩家点击资源点建矿、选择兵线并排队生产单位；工蜂、寻路、战斗和基地附近建筑摆放会自动执行。原工程是 Visual Studio/Win32 项目；当前仓库已整理为跨平台 CMake 工程，并通过 `third_party/SFML` submodule 从 SFML 源码编译依赖。
+一个使用 SFML 2.x 实现的实时 rogue RTS 自走棋游戏。玩家升级单一 CMD 经济、选择兵线并排队生产单位；工蜂、寻路、战斗和基地附近建筑摆放会自动执行。原工程是 Visual Studio/Win32 项目；当前仓库已整理为跨平台 CMake 工程，并通过 `third_party/SFML` submodule 从 SFML 源码编译依赖。
 
 ## 获取代码
 
@@ -60,6 +60,15 @@ ctest --test-dir build --output-on-failure
 ./build/sfml_tbs --simulate-player 800
 ./build/sfml_tbs --simulate-ignore-gameover 900
 ```
+
+## 当前玩法
+
+- 资源只有一种：`CMD`。CMD 来自自然增长和击杀赏金，击杀赏金按敌方单位造价比例返还。
+- `ECONOMY` 按钮会提高自然 CMD 增长，并增加基地附近可见工蜂数量；地图上的 CMD 标记只是读图锚点，不再需要占矿或抢矿。
+- `UPGRADE` 提升科技等级，并触发三选一 rogue 战术强化；双方基地状态会显示已选强化。
+- 兵营和防御塔由按钮自动放在基地/兵线附近，玩家只需要选 Top/Mid/Bot 后造兵。
+- 攻城车射程略远于防御塔，防御塔成群时需要用攻城车逼塔、再用部队保护攻城车。
+- AI 使用开局、宏运营、防守和反塔攻城几套内部策略，会根据玩家兵种、塔/兵营数量和基地压力切换。
 
 ## 项目结构
 

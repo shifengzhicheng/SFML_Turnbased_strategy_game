@@ -213,12 +213,6 @@ void MapPos::draw(sf::RenderTarget& target, sf::RenderStates states) const
     case tile::River:
         drawRiver(target, origin);
         break;
-    case tile::Player_Extractor:
-        drawBuildingTile(target, origin, sf::Color(218, 76, 60), false);
-        break;
-    case tile::Enemy_Extractor:
-        drawBuildingTile(target, origin, sf::Color(61, 128, 206), false);
-        break;
     case tile::Player_Barracks:
         drawBuildingTile(target, origin, sf::Color(218, 76, 60), true);
         break;
@@ -303,10 +297,6 @@ sf::Color MapPos::IDtoColor(tile::ID id)
         return sf::Color(115, 170, 98);
     case tile::Resource:
         return sf::Color(220, 198, 120);
-    case tile::Player_Extractor:
-        return sf::Color(171, 118, 82);
-    case tile::Enemy_Extractor:
-        return sf::Color(112, 142, 181);
     case tile::Player_Barracks:
         return sf::Color(160, 92, 75);
     case tile::Enemy_Barracks:

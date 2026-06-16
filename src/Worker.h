@@ -10,9 +10,7 @@ namespace worker
     {
         Idle,
         MovingToBuild,
-        Building,
-        MovingToHarvest,
-        Harvesting
+        Building
     };
 }
 

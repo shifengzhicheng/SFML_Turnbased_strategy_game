@@ -46,8 +46,8 @@ public:
 class bombard : public Attacker {
 public:
 	bombard(Game* _game) : Attacker(_game) {
-		damage = 58;
-		range = 7;
+		damage = 56;
+		range = 9;
 	}
 };
 class crush : public Attacker {
