@@ -248,7 +248,7 @@ public:
     bool requestAutoBuildTower(int team);
     Point findAutoBuildSite(int team, int type, int laneIndex) const;
     Building* chooseBuildingTarget(MoveableUnit& unit);
-    Point chooseStrategicRallyPoint(const MoveableUnit& unit) const;
+    Point chooseStrategicRallyPoint(MoveableUnit& unit);
     bool canAttackBuilding(const MoveableUnit& unit, const Building& building) const;
     void autoAttackBuilding(MoveableUnit& unit, Building& building);
     void applyStructureLossRelief(const Building& destroyed);

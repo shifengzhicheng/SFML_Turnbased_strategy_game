@@ -163,7 +163,7 @@ Building* Game::chooseBuildingTarget(MoveableUnit& unit)
     return best;
 }
 
-Point Game::chooseStrategicRallyPoint(const MoveableUnit& unit) const
+Point Game::chooseStrategicRallyPoint(MoveableUnit& unit)
 {
     const Point current(unit.x, unit.y);
     const int mapW = width / SqureSize;
@@ -173,20 +173,26 @@ Point Game::chooseStrategicRallyPoint(const MoveableUnit& unit) const
         && completedBuildingCount(enemyTeam, building::DefenseTower) == 0;
     const bool onEnemyHalf = unit.myteam == PLAYER ? current.x > mapW / 2 : current.x < mapW / 2;
     if (enemyProductionBroken && onEnemyHalf) {
+        unit.nextRallyStage = 3;
         return Point(-1, -1);
     }
 
-    // Each produced unit belongs to a lane. It advances through center and
-    // enemy-side waypoints before the normal target picker takes over near the
-    // opponent base.
-    const int stage = unit.myteam == PLAYER
-        ? (unit.x < mapW / 2 ? 1 : (unit.x < mapW * 3 / 4 ? 2 : 3))
-        : (unit.x > mapW / 2 ? 1 : (unit.x > mapW / 4 ? 2 : 3));
-    if (stage <= 2) {
-        const Point laneGoal = laneWaypoint(unit.myteam, unit.laneIndex, stage);
-        if (!nearPoint(current, laneGoal, 2) && isCellWalkableForUnit(laneGoal.x, laneGoal.y)) {
+    // Rally progress is one-way per unit. A* may briefly route a BOT-lane
+    // attacker away from the enemy base to avoid terrain; without memory it can
+    // re-trigger the previous lane waypoint and pace back and forth.
+    while (unit.nextRallyStage <= 2) {
+        const Point laneGoal = laneWaypoint(unit.myteam, unit.laneIndex, unit.nextRallyStage);
+        const bool passedStage = unit.myteam == PLAYER
+            ? current.x >= laneGoal.x - 1
+            : current.x <= laneGoal.x + 1;
+        if (nearPoint(current, laneGoal, 2) || passedStage) {
+            ++unit.nextRallyStage;
+            continue;
+        }
+        if (isCellWalkableForUnit(laneGoal.x, laneGoal.y)) {
             return laneGoal;
         }
+        ++unit.nextRallyStage;
     }
 
     return Point(-1, -1);

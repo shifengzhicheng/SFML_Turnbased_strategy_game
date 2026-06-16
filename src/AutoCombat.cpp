@@ -147,21 +147,20 @@ namespace
 
     void refreshPathIfNeeded(Game& game, MoveableUnit& unit, Point goal)
     {
-        if (unit.realtimePathTimer < realtime::PathRefreshSeconds && !unit.mypath.empty()) {
+        const bool sameGoal = unit.pendingPathGoal.x == goal.x && unit.pendingPathGoal.y == goal.y;
+        if (sameGoal && unit.realtimePathTimer < realtime::PathRefreshSeconds && !unit.mypath.empty()) {
             return;
         }
         if (!game.isCellWalkableForUnit(goal.x, goal.y)) {
             return;
         }
-        if (unit.pendingPathRequest != 0
-            && unit.pendingPathGoal.x == goal.x
-            && unit.pendingPathGoal.y == goal.y) {
+        if (unit.pendingPathRequest != 0 && sameGoal) {
             return;
         }
 
         unit.realtimePathTimer = 0.f;
-        // A* runs on the pathfinding service; the main thread only applies the
-        // returned path so SFML rendering/window access stays single-threaded.
+        // Refresh immediately when the tactical goal changes; otherwise a unit
+        // can keep following an old BOT-lane waypoint and appear to pace.
         game.requestPathForUnit(unit, goal);
     }
 

@@ -192,6 +192,24 @@ int main()
             "aggro should outrank an even closer unrelated target");
 
     game.clear();
+    const Point botEnemyRally = game.laneWaypoint(PLAYER, lane::Bot, 2);
+    for (int x = botEnemyRally.x - 6; x <= botEnemyRally.x + 2; ++x) {
+        game.setTileID(x, botEnemyRally.y, tile::Empty);
+    }
+    require(game.createUnit(PLAYER, UName::INFANTARY, botEnemyRally.x - 2, botEnemyRally.y, lane::Bot),
+            "bot-lane test unit should spawn near the enemy-side rally");
+    MoveableUnit* botLaneUnit = game.myunits.back().get();
+    botLaneUnit->nextRallyStage = 2;
+    Point rallyAfterArrival = game.chooseStrategicRallyPoint(*botLaneUnit);
+    require(rallyAfterArrival.x < 0 && botLaneUnit->nextRallyStage > 2,
+            "reaching the bot enemy-side rally should commit the unit to assault");
+    botLaneUnit->x = botEnemyRally.x - 5;
+    botLaneUnit->y = botEnemyRally.y;
+    Point rallyAfterDetour = game.chooseStrategicRallyPoint(*botLaneUnit);
+    require(rallyAfterDetour.x < 0,
+            "committed bot-lane units should not re-request old rally points after a detour");
+
+    game.clear();
     for (int y = 9; y <= 11; ++y) {
         for (int x = 9; x <= 12; ++x) {
             game.setTileID(x, y, tile::Empty);
