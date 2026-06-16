@@ -48,7 +48,7 @@ Windows 多配置生成器通常在：
 
 ## 测试
 
-当前包含 A* 和随机地图约束测试：
+当前包含 A*、随机地图约束和实时兵种速度层级测试：
 
 ```bash
 ctest --test-dir build --output-on-failure
@@ -88,10 +88,19 @@ ctest --test-dir build --output-on-failure
 ## 项目结构
 
 - `src/`：游戏源码
-- `tests/`：基础逻辑测试，覆盖 A* 寻路边界和随机地图连通性
-- `data/`：运行所需字体和 SVG 美术源稿；单位、按钮、背景等贴图在运行时由 SFML 矢量图元生成
+- `tests/`：基础逻辑测试，覆盖 A* 寻路边界、随机地图连通性和兵种移动速度层级
+- `data/`：运行资源；`data/ttf/arial.ttf` 是必需字体，`data/art/svg/` 是美术源稿/参考稿，当前可执行文件不直接读取这些 SVG
+- `docs/`：设计和重构记录；`docs/realtime_refactor_plan.md` 偏历史路线图，当前玩法说明以本 README 和游戏内 `HELP` 为准
+- `tools/`：辅助开发工具，例如生成美术预览的 `sfml_tbs_art_preview`
 - `third_party/SFML/`：SFML 2.6.2 submodule，跨平台从源码编译
 - `CMakeLists.txt`：跨平台构建入口
+
+## 保留说明
+
+- `tests/` 不参与正式运行，但建议保留；每次改寻路、地图、AI 节奏或移动速度后都应跑 `ctest` 防回归。
+- `data/ttf/arial.ttf` 是启动游戏和预览工具的运行时依赖，不能删除；构建会把整个 `data/` 复制到可执行文件目录。
+- `data/art/svg/` 目前不是运行时依赖，保留它是为了后续继续打磨单位、按钮、攻击特效等矢量源稿；若确定完全改成代码生成美术，可以单独清理这一子目录。
+- `docs/realtime_refactor_plan.md` 不是玩家手册，主要用于追踪从回合制改实时自走棋的历史决策；如果继续迭代，建议把它更新成当前的 `game_design` 文档。
 
 ## 说明
 
