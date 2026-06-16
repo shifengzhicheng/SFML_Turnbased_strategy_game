@@ -80,6 +80,7 @@ public:
 	Astar astar;
 
 	int myActionPoint;
+	int laneIndex = 1;
 	float realtimeMoveTimer = 0.f;
 	float realtimeAttackTimer = 0.f;
 	float realtimePathTimer = 0.f;
@@ -104,6 +105,7 @@ public:
 	virtual void updatemystate();
 	int myattack();
 	int myAttackRange() const;
+	void scaleMaxHealth(float multiplier);
 	float realtimeMoveStepSeconds() const;
 	float realtimeAttackCooldownSeconds() const;
 	bool canAutoAttack(Unit* target);

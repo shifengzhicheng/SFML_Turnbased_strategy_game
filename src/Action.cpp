@@ -93,7 +93,10 @@ void Attacker::Attack(MoveableUnit* me, Unit* u)
 	}
 	if (isInMyAttackRange(me, u) && me->isOktoAttackAndAttackconsume()) {
 		const DamageResult damageResult = calculateDamage(me, u, damage);
-		const int finalDamage = std::max(1, static_cast<int>(std::round(static_cast<float>(damageResult.amount) * mygame->damageMultiplier(me->myteam))));
+		int finalDamage = std::max(1, static_cast<int>(std::round(static_cast<float>(damageResult.amount) * mygame->unitDamageMultiplier(me->myteam, me->unitName))));
+		if (u->unitName == UName::BASE) {
+			finalDamage = std::max(1, static_cast<int>(std::round(static_cast<float>(finalDamage) * mygame->baseDamageTakenMultiplier(me->unitName))));
+		}
 		u->Health -= finalDamage;
 
 		const sf::Vector2f targetCenter = unitCenter(u);

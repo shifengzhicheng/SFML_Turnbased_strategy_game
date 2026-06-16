@@ -53,8 +53,7 @@ namespace
         }
 
         if (totalBarracks < 1 && game.commandForTeam(PLAYER) >= config::BarracksCost) {
-            const Point site = game.findBuildableNear(game.Red_baseP, 9);
-            if (site.x >= 0 && game.requestBuildBarracks(PLAYER, site)) {
+            if (game.requestAutoBuildBarracks(PLAYER)) {
                 return;
             }
         }
@@ -77,13 +76,11 @@ namespace
             return;
         }
 
-        int allowedTech = 0;
-        if (game.gameTimeSeconds > 70.f && completedExtractors >= 1 && completedBarracks >= 1) {
-            allowedTech = 1;
+        int allowedTech = completedBarracks > 0 ? static_cast<int>(game.gameTimeSeconds / 62.f) : 0;
+        if (completedExtractors < 2) {
+            allowedTech = std::min(allowedTech, 6);
         }
-        if (game.gameTimeSeconds > 145.f && completedExtractors >= 2) {
-            allowedTech = 2;
-        }
+        allowedTech = std::min(allowedTech, config::MaxTechLevel);
         if (game.playerUpgradeLevel < allowedTech
             && game.commandForTeam(PLAYER) >= game.upgradeCostForNextLevel(PLAYER)) {
             if (game.upgradeTeam(PLAYER)) {
@@ -103,13 +100,20 @@ namespace
         }
         desiredBarracks = std::min(desiredBarracks, game.buildingCap(PLAYER, building::Barracks));
         if (totalBarracks < desiredBarracks && game.commandForTeam(PLAYER) >= config::BarracksCost) {
-            const Point site = game.findBuildableNear(game.Red_baseP, 12);
-            if (site.x >= 0 && game.requestBuildBarracks(PLAYER, site)) {
+            if (game.requestAutoBuildBarracks(PLAYER)) {
                 return;
             }
         }
         if (totalBarracks < desiredBarracks) {
             return;
+        }
+
+        const int desiredTowers = game.gameTimeSeconds > 150.f ? 1 : 0;
+        if (game.totalBuildingCount(PLAYER, building::DefenseTower) < desiredTowers
+            && game.commandForTeam(PLAYER) >= config::TowerCost + config::InfantryCost) {
+            if (game.requestAutoBuildTower(PLAYER)) {
+                return;
+            }
         }
 
         const int priorities[] = {
@@ -121,6 +125,7 @@ namespace
         };
         const int orders = std::max(1, game.playerUpgradeLevel / 2 + 1);
         for (int i = 0; i < orders; ++i) {
+            game.playerSelectedLane = (static_cast<int>(game.gameTimeSeconds / 40.f) + i) % lane::Count;
             bool queued = false;
             for (int unit : priorities) {
                 if (game.enqueueUnit(PLAYER, unit)) {
@@ -139,6 +144,7 @@ int main(int argc, char* argv[])
 {
     bool simulate = false;
     bool simulatePlayer = false;
+    bool simulateIgnoreGameOver = false;
     float simulateSeconds = 120.f;
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
@@ -151,6 +157,13 @@ int main(int argc, char* argv[])
         else if (arg == "--simulate-player") {
             simulate = true;
             simulatePlayer = true;
+            if (i + 1 < argc) {
+                simulateSeconds = std::stof(argv[++i]);
+            }
+        }
+        else if (arg == "--simulate-ignore-gameover") {
+            simulate = true;
+            simulateIgnoreGameOver = true;
             if (i + 1 < argc) {
                 simulateSeconds = std::stof(argv[++i]);
             }
@@ -168,6 +181,7 @@ int main(int argc, char* argv[])
     Game game;
     if (simulate) {
         game.debugLogging = true;
+        game.autoChooseRewards = true;
         game.window.setVisible(false);
         game.gameSceneState = SCENE_GAME;
         game.clear();
@@ -175,7 +189,7 @@ int main(int argc, char* argv[])
         constexpr float dt = 0.10f;
         const int ticks = static_cast<int>(simulateSeconds / dt);
         float playerScriptTimer = 0.f;
-        for (int i = 0; i < ticks && !game.gameOver; ++i) {
+        for (int i = 0; i < ticks && (simulateIgnoreGameOver || !game.gameOver); ++i) {
             if (simulatePlayer) {
                 playerScriptTimer += dt;
                 if (playerScriptTimer >= realtime::AIThinkSeconds) {

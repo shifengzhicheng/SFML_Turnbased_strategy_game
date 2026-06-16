@@ -1,6 +1,6 @@
 # SFML Turnbased Strategy Game
 
-一个使用 SFML 2.x 实现的回合制策略游戏。原工程是 Visual Studio/Win32 项目；当前仓库已整理为跨平台 CMake 工程，并通过 `third_party/SFML` submodule 从 SFML 源码编译依赖。
+一个使用 SFML 2.x 实现的实时 rogue RTS 自走棋游戏。玩家点击资源点建矿、选择兵线并排队生产单位；工蜂、寻路、战斗和基地附近建筑摆放会自动执行。原工程是 Visual Studio/Win32 项目；当前仓库已整理为跨平台 CMake 工程，并通过 `third_party/SFML` submodule 从 SFML 源码编译依赖。
 
 ## 获取代码
 
@@ -48,16 +48,23 @@ Windows 多配置生成器通常在：
 
 ## 测试
 
-当前包含基础寻路单元测试：
+当前包含 A* 和随机地图约束测试：
 
 ```bash
 ctest --test-dir build --output-on-failure
 ```
 
+也可以运行无窗口脚本模拟来检查节奏：
+
+```bash
+./build/sfml_tbs --simulate-player 800
+./build/sfml_tbs --simulate-ignore-gameover 900
+```
+
 ## 项目结构
 
 - `src/`：游戏源码
-- `tests/`：基础逻辑测试，目前覆盖 A* 寻路边界
+- `tests/`：基础逻辑测试，覆盖 A* 寻路边界和随机地图连通性
 - `data/`：运行所需字体和 SVG 美术源稿；单位、按钮、背景等贴图在运行时由 SFML 矢量图元生成
 - `third_party/SFML/`：SFML 2.6.2 submodule，跨平台从源码编译
 - `CMakeLists.txt`：跨平台构建入口

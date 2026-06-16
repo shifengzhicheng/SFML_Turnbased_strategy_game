@@ -298,8 +298,8 @@ void mapgenerator::gmap(std::vector<std::vector<int>>& initMap, int cols, int li
     }
 
     initMap.assign(lines, std::vector<int>(cols, 0));
-    const GridPoint red{5, 5};
-    const GridPoint blue{std::max(5, cols - 7), std::max(5, lines - 7)};
+    const GridPoint red{5, std::max(5, lines / 2)};
+    const GridPoint blue{std::max(5, cols - 7), std::max(5, lines / 2)};
 
     const auto seed = static_cast<unsigned int>(std::time(nullptr))
         ^ static_cast<unsigned int>(reinterpret_cast<std::uintptr_t>(&initMap));
@@ -314,10 +314,18 @@ void mapgenerator::gmap(std::vector<std::vector<int>>& initMap, int cols, int li
     const GridPoint center{cols / 2, lines / 2};
     const GridPoint upper{cols / 2, std::max(4, lines / 4)};
     const GridPoint lower{cols / 2, std::min(lines - 5, lines * 3 / 4)};
-    carveMainRoute(initMap, routeMask, red, upper, rng);
-    carveMainRoute(initMap, routeMask, upper, blue, rng);
-    carveMainRoute(initMap, routeMask, red, lower, rng);
-    carveMainRoute(initMap, routeMask, lower, blue, rng);
+    const GridPoint redUpper{std::max(4, cols / 5), upper.y};
+    const GridPoint blueUpper{std::min(cols - 5, cols * 4 / 5), upper.y};
+    const GridPoint redLower{std::max(4, cols / 5), lower.y};
+    const GridPoint blueLower{std::min(cols - 5, cols * 4 / 5), lower.y};
+    carveMainRoute(initMap, routeMask, red, redUpper, rng);
+    carveMainRoute(initMap, routeMask, redUpper, upper, rng);
+    carveMainRoute(initMap, routeMask, upper, blueUpper, rng);
+    carveMainRoute(initMap, routeMask, blueUpper, blue, rng);
+    carveMainRoute(initMap, routeMask, red, redLower, rng);
+    carveMainRoute(initMap, routeMask, redLower, lower, rng);
+    carveMainRoute(initMap, routeMask, lower, blueLower, rng);
+    carveMainRoute(initMap, routeMask, blueLower, blue, rng);
 
     const std::vector<GridPoint> plazas = {
         center,

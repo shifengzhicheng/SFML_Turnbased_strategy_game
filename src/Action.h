@@ -25,35 +25,35 @@ public:
 class shot :public Attacker {
 public:
 	shot(Game* _game): Attacker(_game) {
-		damage = 30;
-		range = 6;
+		damage = 28;
+		range = 5;
 	}
 };
 class fight :public Attacker {
 public:
 	fight(Game* _game) : Attacker(_game) {
-		damage = 50;
+		damage = 48;
 		range = 2;
 	}
 };
 class roll : public Attacker {
 public:
 	roll(Game* _game) : Attacker(_game) {
-		damage = 80;
+		damage = 68;
 		range = 2;
 	}
 };
 class bombard : public Attacker {
 public:
 	bombard(Game* _game) : Attacker(_game) {
-		damage = 72;
-		range = 8;
+		damage = 58;
+		range = 7;
 	}
 };
 class crush : public Attacker {
 public:
 	crush(Game* _game) : Attacker(_game) {
-		damage = 112;
+		damage = 88;
 		range = 2;
 	}
 };

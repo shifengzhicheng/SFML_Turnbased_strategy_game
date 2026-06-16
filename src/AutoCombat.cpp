@@ -162,9 +162,9 @@ namespace
         unit.realtimeMoveTimer -= unit.realtimeMoveStepSeconds();
 
         const Point rallyPoint = game.chooseStrategicRallyPoint(unit);
-        const Point goal = buildingTarget != nullptr
-            ? game.findBuildStandPoint(*buildingTarget)
-            : (rallyPoint.x >= 0 ? rallyPoint : chooseApproachPoint(game, unit, target));
+        const Point goal = rallyPoint.x >= 0
+            ? rallyPoint
+            : (buildingTarget != nullptr ? game.findBuildStandPoint(*buildingTarget) : chooseApproachPoint(game, unit, target));
         refreshPathIfNeeded(game, unit, goal);
         if (unit.mypath.empty()) {
             unit.UnitState = UState::UNITNORMAL;

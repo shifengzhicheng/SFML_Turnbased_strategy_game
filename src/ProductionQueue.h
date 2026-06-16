@@ -2,10 +2,17 @@
 
 #include <deque>
 
+struct ProductionOrder
+{
+    int unit = -1;
+    int lane = 1;
+};
+
 struct ProductionQueue
 {
-    std::deque<int> orders;
+    std::deque<ProductionOrder> orders;
     int activeUnit = -1;
+    int activeLane = 1;
     float progress = 0.f;
 
     bool empty() const

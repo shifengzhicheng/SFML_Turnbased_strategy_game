@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <cstddef>
 #include <iostream>
 #include <list>
@@ -27,6 +28,30 @@ enum gameSeceneState {
 };
 enum gamePlayer {
     PLAYER,AI
+};
+
+namespace perk
+{
+    enum Type
+    {
+        Drill,
+        Fortitude,
+        Volley,
+        Charge,
+        SiegeCraft,
+        TowerCraft,
+        Logistics,
+        Mining,
+        WarChest,
+        Count
+    };
+}
+
+struct PerkChoice
+{
+    int type = perk::Drill;
+    std::string title;
+    std::string description;
 };
 
 class Game
@@ -87,6 +112,10 @@ public:
     float aiIncomeTimer = 0.f;
     float playerWorkerTimer = realtime::WorkerTrainSeconds;
     float aiWorkerTimer = realtime::WorkerTrainSeconds;
+    float playerBaseAttackTimer = 0.f;
+    float aiBaseAttackTimer = 0.f;
+    float playerEmergencyTrainTimer = 0.f;
+    float aiEmergencyTrainTimer = 0.f;
     float gameTimeSeconds = 0.f;
     float debugSummaryTimer = 0.f;
     AIController aiController;
@@ -96,6 +125,14 @@ public:
     int pathGeneration = 1;
     int playerUpgradeLevel = 0;
     int aiUpgradeLevel = 0;
+    bool perkOverlayVisible = false;
+    bool autoChooseRewards = false;
+    int rewardSequence = 0;
+    int playerSelectedLane = lane::Mid;
+    int aiSelectedLane = lane::Mid;
+    std::array<int, perk::Count> playerPerkLevels{};
+    std::array<int, perk::Count> aiPerkLevels{};
+    std::array<PerkChoice, 3> perkChoices{};
 
     std::size_t turn;
 
@@ -108,6 +145,7 @@ public:
     Button startBtn,EndTurnBtn;
     Button inf, cav, sho, siegeBtn, guardianBtn;
     Button upgradeBtn;
+    Button barracksBtn;
     Button helpBtn;
     Button towerBtn;
     Button endGame;
@@ -117,6 +155,7 @@ public:
     sf::Texture tSiege, tSiegeHover, tSiegeClick;
     sf::Texture tGuardian, tGuardianHover, tGuardianClick;
     sf::Texture tUpgrade, tUpgradeHover, tUpgradeClick;
+    sf::Texture tBarracks, tBarracksHover, tBarracksClick;
     sf::Texture tHelp, tHelpHover, tHelpClick;
     sf::Texture tTower, tTowerHover, tTowerClick;
     sf::Texture background;
@@ -129,6 +168,7 @@ public:
     sf::Text cavalryLabel;
     sf::Text siegeLabel;
     sf::Text guardianLabel;
+    sf::Text barracksLabel;
     sf::Text towerLabel;
 
     Game();
@@ -161,6 +201,7 @@ public:
     void updateRealtime(float dt);
     void updateRealtimeEconomy(float dt);
     void updateDebugSummary(float dt);
+    void updateTimedRewards();
 
     void run();
     void Unitsreset(std::list<std::unique_ptr<MoveableUnit>>& us);
@@ -176,11 +217,14 @@ public:
     void drawBuildings();
     void drawWorkers();
     void drawTutorialOverlay();
+    void drawRewardOverlay();
     void addAttackEffect(sf::Vector2f start, sf::Vector2f end, sf::Color color);
     void addFloatingText(sf::Vector2f position, const std::string& value, sf::Color color, unsigned int size = 15);
     void startScreenShake(float durationSeconds, float intensity);
     sf::Vector2f currentShakeOffset() const;
     void handleBuildButtons(sf::Vector2i mousePos, sf::Event event);
+    void handleRewardInput(sf::Vector2i mousePos, sf::Event event);
+    void handleLaneInput(sf::Vector2i mousePos, sf::Event event);
     void clearSelection();
     void selectOnly(Unit* unit);
     void syncMazeFromTiles();
@@ -203,11 +247,14 @@ public:
     void updateWorkers(float dt);
     void updateProduction(float dt);
     void updateDefenseTowers(float dt);
+    void updateBaseDefenses(float dt);
+    void updateEmergencyBaseTraining(float dt);
     void updateResourceCaptures(float dt);
     void cleanupDestroyedBuildings();
     void handleRealtimeMapClick(sf::Vector2i mousePos, sf::Event event);
     int resourceIncome(int team) const;
     int controlledResourceCount(int team) const;
+    int controlledResourceKindCount(int team, int kind) const;
     int completedBuildingCount(int team, int type) const;
     int pendingOrCompleteExtractorForResource(int resourceIndex) const;
     int unitCost(int name) const;
@@ -218,6 +265,16 @@ public:
     int unitsNearPoint(int team, Point point, int radius) const;
     int commandForTeam(int team) const;
     float damageMultiplier(int team) const;
+    float unitDamageMultiplier(int team, int unitName) const;
+    float unitHealthMultiplier(int team, int unitName) const;
+    float unitAttackCooldownMultiplier(int team, int unitName) const;
+    float baseDamageTakenMultiplier(int attackerUnitName) const;
+    float teamTrainTimeMultiplier(int team) const;
+    float miningIncomeMultiplier(int team) const;
+    int defenseTowerRange(int team) const;
+    int selectedLaneForTeam(int team) const;
+    Point laneWaypoint(int team, int laneIndex, int stage) const;
+    Point laneDefensePoint(int team, int laneIndex) const;
     bool hasUnitCapacity(int team) const;
     bool hasSpawnTile(int team) const;
     bool isUnitUnlocked(int team, int name) const;
@@ -227,6 +284,9 @@ public:
     bool requestBuildExtractor(int team, int resourceIndex);
     bool requestBuildBarracks(int team, Point point);
     bool requestBuildTower(int team, Point point);
+    bool requestAutoBuildBarracks(int team);
+    bool requestAutoBuildTower(int team);
+    Point findAutoBuildSite(int team, int type, int laneIndex) const;
     Building* findResourceExtractor(int resourceIndex);
     const Building* findResourceExtractor(int resourceIndex) const;
     Building* chooseBuildingTarget(MoveableUnit& unit);
@@ -234,6 +294,11 @@ public:
     bool canAttackBuilding(const MoveableUnit& unit, const Building& building) const;
     void autoAttackBuilding(MoveableUnit& unit, Building& building);
     void resetWorkersForBuilding(int buildingId);
+    void maybeGrantReward(int team, const std::string& reason);
+    void buildRewardChoices();
+    void applyRewardChoice(int index);
+    void applyPerk(int team, int type);
+    int perkLevel(int team, int type) const;
     void logEvent(const std::string& message) const;
     void logDebugSummary() const;
     void assignWorkers();
@@ -255,7 +320,7 @@ public:
     Point findSpawnPointAround(Point anchor) const;
     void createStartingWorkers();
     void createWorker(int team, Point point);
-    bool createUnit(int team, int name, int x, int y);
+    bool createUnit(int team, int name, int x, int y, int laneIndex = lane::Mid);
     std::string spawnBlockReason(int team, int name) const;
     bool canSpawnUnit(int team, int name) const;
     bool spendCommand(int team, int name);

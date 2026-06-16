@@ -79,17 +79,19 @@ int main()
             assert(map[y].back() == 1);
         }
 
-        if (countInArea(map, 5, 5, 3, 0) <= 35) {
+        if (countInArea(map, 5, lines / 2, 3, 0) <= 35) {
             return 1;
         }
-        if (countInArea(map, cols - 7, lines - 7, 3, 0) <= 35) {
+        if (countInArea(map, cols - 7, lines / 2, 3, 0) <= 35) {
             return 1;
         }
-        if (!hasPath(map, 5, 5, cols - 7, lines - 7)) {
+        if (!hasPath(map, 5, lines / 2, cols - 7, lines / 2)) {
             return 1;
         }
-        if (!hasPath(map, 5, 5, cols / 2, lines / 2)
-            || !hasPath(map, cols - 7, lines - 7, cols / 2, lines / 2)) {
+        if (!hasPath(map, 5, lines / 2, cols / 2, lines / 2)
+            || !hasPath(map, cols - 7, lines / 2, cols / 2, lines / 2)
+            || !hasPath(map, 5, lines / 2, cols / 2, lines / 4)
+            || !hasPath(map, 5, lines / 2, cols / 2, lines * 3 / 4)) {
             return 1;
         }
         if (countInArea(map, cols / 2, lines / 2, 2, 0) <= 20) {

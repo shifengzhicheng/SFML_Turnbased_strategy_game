@@ -66,15 +66,15 @@ Infantry::Infantry(int _team, int _x, int _y, Game* _mygame) :MoveableUnit(_team
 {
 	UnitState = 0;
 	unitName = UName::INFANTARY;
-	Health = 200;
+	Health = 220;
 	art::makeUnitTexture(mytexture, art::UnitKind::Infantry, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
 	setTexture(mytexture);
-	UnitText.setString("200/200");
+	UnitText.setString("220/220");
 	placeUnitSprite(*this, _x, _y, config::UnitSpriteScale);
 	placeHealthLabel(UnitText, _x, _y);
 	myActionPoint = 20;
 	myinfo.actionPoint = 20;
-	myinfo.Health = 200;
+	myinfo.Health = 220;
 	attackmethod = make_unique<fight>(mygame);
 	myinfo.attackconsume = 2;
 }
@@ -83,15 +83,15 @@ Cavalry::Cavalry(int _team, int _x, int _y, Game* _mygame) : MoveableUnit(_team,
 {
 	UnitState = 0;
 	unitName = UName::CAVALRY;
-	Health = 500;
+	Health = 420;
 	art::makeUnitTexture(mytexture, art::UnitKind::Cavalry, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
 	setTexture(mytexture);
-	UnitText.setString("500/500");
+	UnitText.setString("420/420");
 	placeUnitSprite(*this, _x, _y, config::UnitSpriteScale);
 	placeHealthLabel(UnitText, _x, _y);
 	myActionPoint = 40;
 	myinfo.actionPoint = 40;
-	myinfo.Health = 500;
+	myinfo.Health = 420;
 	attackmethod = make_unique<roll>(mygame);
 	myinfo.attackconsume = 10;
 }
@@ -100,15 +100,15 @@ Siege::Siege(int _team, int _x, int _y, Game* _mygame) : MoveableUnit(_team, _x,
 {
 	UnitState = 0;
 	unitName = UName::SIEGE;
-	Health = 320;
+	Health = 270;
 	art::makeUnitTexture(mytexture, art::UnitKind::Siege, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
 	setTexture(mytexture);
-	UnitText.setString("320/320");
+	UnitText.setString("270/270");
 	placeUnitSprite(*this, _x, _y, config::UnitSpriteScale);
 	placeHealthLabel(UnitText, _x, _y);
 	myActionPoint = 12;
 	myinfo.actionPoint = 12;
-	myinfo.Health = 320;
+	myinfo.Health = 270;
 	attackmethod = make_unique<bombard>(mygame);
 	myinfo.attackconsume = 3;
 }
@@ -117,15 +117,15 @@ Guardian::Guardian(int _team, int _x, int _y, Game* _mygame) : MoveableUnit(_tea
 {
 	UnitState = 0;
 	unitName = UName::GUARDIAN;
-	Health = 820;
+	Health = 720;
 	art::makeUnitTexture(mytexture, art::UnitKind::Guardian, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
 	setTexture(mytexture);
-	UnitText.setString("820/820");
+	UnitText.setString("720/720");
 	placeUnitSprite(*this, _x, _y, config::UnitSpriteScale);
 	placeHealthLabel(UnitText, _x, _y);
 	myActionPoint = 16;
 	myinfo.actionPoint = 16;
-	myinfo.Health = 820;
+	myinfo.Health = 720;
 	attackmethod = make_unique<crush>(mygame);
 	myinfo.attackconsume = 4;
 }
@@ -543,6 +543,16 @@ int MoveableUnit::myAttackRange() const
 	return attackmethod ? attackmethod->range : 0;
 }
 
+void MoveableUnit::scaleMaxHealth(float multiplier)
+{
+	if (multiplier <= 0.f) {
+		return;
+	}
+	myinfo.Health = std::max(1, static_cast<int>(std::round(static_cast<float>(myinfo.Health) * multiplier)));
+	Health = std::max(1, static_cast<int>(std::round(static_cast<float>(Health) * multiplier)));
+	UnitText.setString(std::to_string(Health) + "/" + std::to_string(myinfo.Health));
+}
+
 float MoveableUnit::realtimeMoveStepSeconds() const
 {
 	switch (unitName) {
@@ -562,19 +572,26 @@ float MoveableUnit::realtimeMoveStepSeconds() const
 
 float MoveableUnit::realtimeAttackCooldownSeconds() const
 {
+	float baseSeconds = realtime::InfantryAttackCooldown;
 	switch (unitName) {
 	case UName::SHOOTER:
-		return realtime::ShooterAttackCooldown;
+		baseSeconds = realtime::ShooterAttackCooldown;
+		break;
 	case UName::CAVALRY:
-		return realtime::CavalryAttackCooldown;
+		baseSeconds = realtime::CavalryAttackCooldown;
+		break;
 	case UName::SIEGE:
-		return realtime::SiegeAttackCooldown;
+		baseSeconds = realtime::SiegeAttackCooldown;
+		break;
 	case UName::GUARDIAN:
-		return realtime::GuardianAttackCooldown;
+		baseSeconds = realtime::GuardianAttackCooldown;
+		break;
 	case UName::INFANTARY:
 	default:
-		return realtime::InfantryAttackCooldown;
+		baseSeconds = realtime::InfantryAttackCooldown;
+		break;
 	}
+	return baseSeconds * mygame->unitAttackCooldownMultiplier(myteam, unitName);
 }
 
 bool MoveableUnit::canAutoAttack(Unit* target)
