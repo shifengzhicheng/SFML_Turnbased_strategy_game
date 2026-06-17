@@ -182,6 +182,51 @@ namespace art_internal
         drawPixelRect(target, origin, scale, x, y, w, h, fill);
     }
 
+    void drawPixelDiamond(sf::RenderTarget& target, sf::Vector2f origin, float scale,
+                          float cx, float cy, float rx, float ry, sf::Color fill, sf::Color outline = sf::Color::Transparent)
+    {
+        sf::ConvexShape diamond(4);
+        diamond.setPoint(0, sf::Vector2f(std::round(origin.x + cx * scale), std::round(origin.y + (cy - ry) * scale)));
+        diamond.setPoint(1, sf::Vector2f(std::round(origin.x + (cx + rx) * scale), std::round(origin.y + cy * scale)));
+        diamond.setPoint(2, sf::Vector2f(std::round(origin.x + cx * scale), std::round(origin.y + (cy + ry) * scale)));
+        diamond.setPoint(3, sf::Vector2f(std::round(origin.x + (cx - rx) * scale), std::round(origin.y + cy * scale)));
+        diamond.setFillColor(fill);
+        if (outline.a > 0) {
+            diamond.setOutlineColor(outline);
+            diamond.setOutlineThickness(std::max(1.f, std::round(scale)));
+        }
+        target.draw(diamond);
+    }
+
+    void drawPixelTriangle(sf::RenderTarget& target, sf::Vector2f origin, float scale,
+                           sf::Vector2f a, sf::Vector2f b, sf::Vector2f c, sf::Color fill)
+    {
+        sf::ConvexShape tri(3);
+        tri.setPoint(0, sf::Vector2f(std::round(origin.x + a.x * scale), std::round(origin.y + a.y * scale)));
+        tri.setPoint(1, sf::Vector2f(std::round(origin.x + b.x * scale), std::round(origin.y + b.y * scale)));
+        tri.setPoint(2, sf::Vector2f(std::round(origin.x + c.x * scale), std::round(origin.y + c.y * scale)));
+        tri.setFillColor(fill);
+        target.draw(tri);
+    }
+
+    void drawPixelLine(sf::RenderTarget& target, sf::Vector2f origin, float scale,
+                       sf::Vector2f a, sf::Vector2f b, float thickness, sf::Color color)
+    {
+        const sf::Vector2f start(std::round(origin.x + a.x * scale), std::round(origin.y + a.y * scale));
+        const sf::Vector2f end(std::round(origin.x + b.x * scale), std::round(origin.y + b.y * scale));
+        const sf::Vector2f delta(end.x - start.x, end.y - start.y);
+        const float length = std::sqrt(delta.x * delta.x + delta.y * delta.y);
+        if (length <= 0.1f) {
+            return;
+        }
+        sf::RectangleShape line(sf::Vector2f(length, std::max(1.f, std::round(thickness * scale))));
+        line.setOrigin(0.f, line.getSize().y * 0.5f);
+        line.setPosition(start);
+        line.setRotation(std::atan2(delta.y, delta.x) * 180.f / static_cast<float>(config::Pi));
+        line.setFillColor(color);
+        target.draw(line);
+    }
+
     void drawPixelShadow(sf::RenderTarget& target, sf::Vector2f origin, float scale,
                          float x, float y, float w, sf::Color color)
     {
@@ -235,41 +280,43 @@ namespace art_internal
     {
         const auto main = art::teamColor(team);
         const auto accent = art::teamAccent(team);
-        const auto outline = sf::Color(31, 27, 23);
+        const auto outline = sf::Color(27, 24, 21);
         const auto skin = sf::Color(238, 190, 134);
         const auto metal = sf::Color(219, 224, 213);
         const auto metalDark = sf::Color(121, 132, 130);
         const auto gold = sf::Color(235, 181, 67);
         const auto boot = sf::Color(58, 43, 33);
 
-        drawPixelShadow(target, origin, scale, 17.f, 58.f, 31.f, sf::Color(8, 13, 11, 118));
-        drawPixelRect(target, origin, scale, 27.f, 47.f, 5.f, 10.f, outline);
-        drawPixelRect(target, origin, scale, 36.f, 47.f, 5.f, 10.f, outline);
-        drawPixelRect(target, origin, scale, 26.f, 54.f, 9.f, 3.f, boot);
-        drawPixelRect(target, origin, scale, 35.f, 54.f, 9.f, 3.f, boot);
+        drawPixelShadow(target, origin, scale, 15.f, 58.f, 35.f, sf::Color(8, 13, 11, 124));
 
-        drawPixelOutline(target, origin, scale, 25.f, 31.f, 18.f, 18.f, main, outline);
-        drawPixelRect(target, origin, scale, 28.f, 34.f, 12.f, 4.f, mix(main, sf::Color::White, 0.34f));
-        drawPixelRect(target, origin, scale, 32.f, 39.f, 5.f, 10.f, accent);
-        drawPixelRect(target, origin, scale, 25.f, 32.f, 5.f, 17.f, mix(main, sf::Color::Black, 0.16f));
+        drawPixelRect(target, origin, scale, 26.f, 47.f, 5.f, 11.f, outline);
+        drawPixelRect(target, origin, scale, 37.f, 47.f, 5.f, 11.f, outline);
+        drawPixelRect(target, origin, scale, 24.f, 55.f, 10.f, 3.f, boot);
+        drawPixelRect(target, origin, scale, 35.f, 55.f, 10.f, 3.f, boot);
 
-        drawPixelOutline(target, origin, scale, 27.f, 22.f, 12.f, 10.f, skin, outline);
-        drawPixelRect(target, origin, scale, 29.f, 26.f, 2.f, 2.f, outline);
+        drawPixelOutline(target, origin, scale, 24.f, 31.f, 20.f, 18.f, main, outline);
+        drawPixelRect(target, origin, scale, 27.f, 34.f, 13.f, 4.f, mix(main, sf::Color::White, 0.32f));
+        drawPixelRect(target, origin, scale, 30.f, 39.f, 9.f, 9.f, accent);
+        drawPixelRect(target, origin, scale, 24.f, 32.f, 5.f, 17.f, mix(main, sf::Color::Black, 0.18f));
+        drawPixelTeamTab(target, origin, scale, 40.f, 34.f, team, outline);
+
+        drawPixelOutline(target, origin, scale, 27.f, 22.f, 13.f, 10.f, skin, outline);
+        drawPixelRect(target, origin, scale, 30.f, 26.f, 2.f, 2.f, outline);
         drawPixelRect(target, origin, scale, 36.f, 26.f, 2.f, 2.f, outline);
         drawPixelRect(target, origin, scale, 29.f, 19.f, 12.f, 4.f, metal);
-        drawPixelRect(target, origin, scale, 26.f, 21.f, 17.f, 5.f, metalDark);
-        drawPixelRect(target, origin, scale, 30.f, 16.f, 8.f, 4.f, metal);
-        drawPixelTeamTab(target, origin, scale, 23.f, 34.f, team, outline);
+        drawPixelRect(target, origin, scale, 25.f, 21.f, 18.f, 5.f, metalDark);
+        drawPixelRect(target, origin, scale, 30.f, 15.f, 8.f, 5.f, metal);
+        drawPixelRect(target, origin, scale, 38.f, 15.f, 5.f, 3.f, gold);
 
-        drawPixelOutline(target, origin, scale, 17.f, 33.f, 12.f, 18.f, gold, outline);
-        drawPixelRect(target, origin, scale, 20.f, 36.f, 7.f, 11.f, main);
-        drawPixelRect(target, origin, scale, 22.f, 38.f, 3.f, 7.f, mix(main, sf::Color::White, 0.22f));
-        drawPixelRect(target, origin, scale, 18.f, 32.f, 10.f, 3.f, sf::Color(255, 226, 105));
+        drawPixelDiamond(target, origin, scale, 19.f, 42.f, 9.f, 13.f, gold, outline);
+        drawPixelDiamond(target, origin, scale, 19.f, 42.f, 5.f, 8.f, main);
+        drawPixelRect(target, origin, scale, 18.f, 36.f, 3.f, 13.f, mix(main, sf::Color::White, 0.26f));
+        drawPixelRect(target, origin, scale, 13.f, 41.f, 12.f, 3.f, sf::Color(255, 226, 105));
 
-        drawPixelHilt(target, origin, scale, 48.f, 16.f, metal, gold, outline);
-        drawPixelRect(target, origin, scale, 47.f, 14.f, 3.f, 4.f, sf::Color(255, 250, 219));
-        drawPixelRect(target, origin, scale, 49.f, 18.f, 2.f, 27.f, sf::Color(245, 248, 226));
-        drawPixelRect(target, origin, scale, 51.f, 21.f, 1.f, 22.f, metalDark);
+        drawPixelLine(target, origin, scale, sf::Vector2f(47.f, 47.f), sf::Vector2f(57.f, 12.f), 4.f, outline);
+        drawPixelLine(target, origin, scale, sf::Vector2f(49.f, 46.f), sf::Vector2f(58.f, 13.f), 2.f, sf::Color(244, 247, 222));
+        drawPixelTriangle(target, origin, scale, sf::Vector2f(57.f, 10.f), sf::Vector2f(61.f, 15.f), sf::Vector2f(55.f, 15.f), sf::Color(255, 250, 219));
+        drawPixelRect(target, origin, scale, 43.f, 43.f, 11.f, 4.f, gold);
         drawPixelRect(target, origin, scale, 40.f, 47.f, 10.f, 3.f, boot);
     }
 
@@ -283,33 +330,40 @@ namespace art_internal
         const auto bow = sf::Color(213, 146, 59);
         const auto stringColor = sf::Color(248, 239, 201);
 
-        drawPixelShadow(target, origin, scale, 18.f, 58.f, 30.f, sf::Color(8, 13, 11, 112));
-        drawPixelRect(target, origin, scale, 26.f, 48.f, 5.f, 9.f, outline);
-        drawPixelRect(target, origin, scale, 35.f, 48.f, 5.f, 9.f, outline);
-        drawPixelRect(target, origin, scale, 25.f, 54.f, 9.f, 3.f, sf::Color(58, 43, 34));
-        drawPixelRect(target, origin, scale, 34.f, 54.f, 9.f, 3.f, sf::Color(58, 43, 34));
+        drawPixelShadow(target, origin, scale, 17.f, 58.f, 32.f, sf::Color(8, 13, 11, 114));
+        drawPixelRect(target, origin, scale, 25.f, 48.f, 5.f, 10.f, outline);
+        drawPixelRect(target, origin, scale, 36.f, 48.f, 5.f, 10.f, outline);
+        drawPixelRect(target, origin, scale, 24.f, 55.f, 9.f, 3.f, sf::Color(58, 43, 34));
+        drawPixelRect(target, origin, scale, 35.f, 55.f, 9.f, 3.f, sf::Color(58, 43, 34));
 
-        drawPixelOutline(target, origin, scale, 23.f, 31.f, 20.f, 18.f, mix(main, sf::Color::Black, 0.14f), outline);
-        drawPixelRect(target, origin, scale, 26.f, 34.f, 14.f, 4.f, mix(main, sf::Color::White, 0.23f));
-        drawPixelRect(target, origin, scale, 30.f, 39.f, 6.f, 10.f, accent);
-        drawPixelOutline(target, origin, scale, 25.f, 22.f, 17.f, 12.f, mix(main, sf::Color::Black, 0.06f), outline);
-        drawPixelRect(target, origin, scale, 28.f, 19.f, 11.f, 5.f, mix(main, sf::Color::White, 0.16f));
+        drawPixelOutline(target, origin, scale, 23.f, 31.f, 21.f, 18.f, mix(main, sf::Color::Black, 0.14f), outline);
+        drawPixelRect(target, origin, scale, 25.f, 34.f, 15.f, 4.f, mix(main, sf::Color::White, 0.25f));
+        drawPixelRect(target, origin, scale, 29.f, 39.f, 7.f, 10.f, accent);
+        drawPixelRect(target, origin, scale, 20.f, 34.f, 7.f, 16.f, leather);
+        drawPixelRect(target, origin, scale, 19.f, 32.f, 9.f, 3.f, sf::Color(236, 220, 162));
+
+        drawPixelTriangle(target, origin, scale, sf::Vector2f(24.f, 24.f), sf::Vector2f(35.f, 15.f), sf::Vector2f(45.f, 24.f), outline);
+        drawPixelOutline(target, origin, scale, 25.f, 22.f, 18.f, 12.f, mix(main, sf::Color::Black, 0.05f), outline);
+        drawPixelRect(target, origin, scale, 28.f, 19.f, 12.f, 5.f, mix(main, sf::Color::White, 0.18f));
         drawPixelRect(target, origin, scale, 30.f, 26.f, 8.f, 6.f, skin);
         drawPixelRect(target, origin, scale, 31.f, 28.f, 2.f, 2.f, outline);
-        drawPixelTeamTab(target, origin, scale, 17.f, 35.f, team, outline);
+        drawPixelTeamTab(target, origin, scale, 17.f, 38.f, team, outline);
 
-        drawPixelRect(target, origin, scale, 18.f, 35.f, 6.f, 15.f, leather);
-        drawPixelRect(target, origin, scale, 17.f, 32.f, 8.f, 3.f, sf::Color(236, 220, 162));
-        drawPixelRect(target, origin, scale, 36.f, 36.f, 19.f, 3.f, stringColor);
-        drawPixelRect(target, origin, scale, 52.f, 33.f, 7.f, 8.f, stringColor);
-        drawPixelRect(target, origin, scale, 55.f, 36.f, 6.f, 2.f, sf::Color(255, 250, 216));
+        drawPixelLine(target, origin, scale, sf::Vector2f(37.f, 38.f), sf::Vector2f(57.f, 38.f), 5.f, outline);
+        drawPixelLine(target, origin, scale, sf::Vector2f(38.f, 38.f), sf::Vector2f(58.f, 38.f), 2.f, stringColor);
+        drawPixelTriangle(target, origin, scale, sf::Vector2f(59.f, 34.f), sf::Vector2f(63.f, 38.f), sf::Vector2f(59.f, 42.f), sf::Color(255, 250, 216));
+        drawPixelRect(target, origin, scale, 45.f, 35.f, 4.f, 7.f, stringColor);
 
-        drawPixelRect(target, origin, scale, 47.f, 17.f, 4.f, 40.f, outline);
-        drawPixelRect(target, origin, scale, 49.f, 19.f, 3.f, 36.f, bow);
-        drawPixelRect(target, origin, scale, 51.f, 22.f, 2.f, 31.f, mix(bow, sf::Color::White, 0.24f));
-        drawPixelRect(target, origin, scale, 53.f, 24.f, 1.f, 27.f, stringColor);
-        drawPixelRect(target, origin, scale, 43.f, 20.f, 7.f, 4.f, bow);
-        drawPixelRect(target, origin, scale, 43.f, 50.f, 7.f, 4.f, bow);
+        drawPixelLine(target, origin, scale, sf::Vector2f(51.f, 18.f), sf::Vector2f(50.f, 56.f), 5.f, outline);
+        drawPixelLine(target, origin, scale, sf::Vector2f(52.f, 20.f), sf::Vector2f(51.f, 54.f), 3.f, bow);
+        drawPixelLine(target, origin, scale, sf::Vector2f(51.f, 18.f), sf::Vector2f(57.f, 26.f), 4.f, bow);
+        drawPixelLine(target, origin, scale, sf::Vector2f(51.f, 56.f), sf::Vector2f(58.f, 48.f), 4.f, bow);
+        drawPixelLine(target, origin, scale, sf::Vector2f(57.f, 26.f), sf::Vector2f(58.f, 48.f), 1.4f, stringColor);
+
+        drawPixelRect(target, origin, scale, 15.f, 28.f, 3.f, 22.f, outline);
+        drawPixelRect(target, origin, scale, 16.f, 29.f, 2.f, 18.f, sf::Color(124, 83, 42));
+        drawPixelLine(target, origin, scale, sf::Vector2f(13.f, 27.f), sf::Vector2f(22.f, 18.f), 1.3f, sf::Color(236, 220, 162));
+        drawPixelLine(target, origin, scale, sf::Vector2f(14.f, 32.f), sf::Vector2f(25.f, 22.f), 1.3f, sf::Color(236, 220, 162));
     }
 
     void drawCavalryPixel(sf::RenderTarget& target, sf::Vector2f origin, float scale, art::Team team)
@@ -323,33 +377,38 @@ namespace art_internal
         const auto metal = sf::Color(222, 226, 214);
         const auto gold = sf::Color(232, 177, 66);
 
-        drawPixelShadow(target, origin, scale, 10.f, 58.f, 47.f, sf::Color(8, 13, 11, 126));
-        drawPixelRect(target, origin, scale, 17.f, 47.f, 5.f, 11.f, outline);
-        drawPixelRect(target, origin, scale, 28.f, 47.f, 5.f, 11.f, outline);
-        drawPixelRect(target, origin, scale, 42.f, 46.f, 5.f, 12.f, outline);
-        drawPixelRect(target, origin, scale, 16.f, 54.f, 9.f, 3.f, horseDark);
-        drawPixelRect(target, origin, scale, 27.f, 54.f, 9.f, 3.f, horseDark);
-        drawPixelRect(target, origin, scale, 41.f, 54.f, 9.f, 3.f, horseDark);
+        drawPixelShadow(target, origin, scale, 7.f, 58.f, 52.f, sf::Color(8, 13, 11, 132));
+        drawPixelRect(target, origin, scale, 16.f, 47.f, 5.f, 11.f, outline);
+        drawPixelRect(target, origin, scale, 27.f, 47.f, 5.f, 11.f, outline);
+        drawPixelRect(target, origin, scale, 43.f, 46.f, 5.f, 12.f, outline);
+        drawPixelRect(target, origin, scale, 15.f, 55.f, 10.f, 3.f, horseDark);
+        drawPixelRect(target, origin, scale, 26.f, 55.f, 10.f, 3.f, horseDark);
+        drawPixelRect(target, origin, scale, 41.f, 55.f, 10.f, 3.f, horseDark);
 
-        drawPixelOutline(target, origin, scale, 14.f, 37.f, 33.f, 12.f, horse, outline);
-        drawPixelRect(target, origin, scale, 18.f, 35.f, 22.f, 4.f, horseLight);
-        drawPixelRect(target, origin, scale, 14.f, 34.f, 7.f, 8.f, horseDark);
-        drawPixelOutline(target, origin, scale, 43.f, 30.f, 11.f, 11.f, horse, outline);
-        drawPixelRect(target, origin, scale, 51.f, 34.f, 6.f, 3.f, outline);
+        drawPixelTriangle(target, origin, scale, sf::Vector2f(11.f, 38.f), sf::Vector2f(17.f, 30.f), sf::Vector2f(22.f, 38.f), outline);
+        drawPixelTriangle(target, origin, scale, sf::Vector2f(13.f, 38.f), sf::Vector2f(18.f, 32.f), sf::Vector2f(22.f, 38.f), horseDark);
+        drawPixelOutline(target, origin, scale, 13.f, 37.f, 35.f, 12.f, horse, outline);
+        drawPixelRect(target, origin, scale, 17.f, 35.f, 23.f, 4.f, horseLight);
+        drawPixelRect(target, origin, scale, 13.f, 35.f, 7.f, 8.f, horseDark);
+        drawPixelOutline(target, origin, scale, 43.f, 29.f, 12.f, 12.f, horse, outline);
+        drawPixelTriangle(target, origin, scale, sf::Vector2f(45.f, 28.f), sf::Vector2f(48.f, 22.f), sf::Vector2f(50.f, 29.f), outline);
+        drawPixelTriangle(target, origin, scale, sf::Vector2f(51.f, 29.f), sf::Vector2f(55.f, 24.f), sf::Vector2f(55.f, 32.f), outline);
+        drawPixelRect(target, origin, scale, 52.f, 34.f, 7.f, 3.f, outline);
         drawPixelRect(target, origin, scale, 47.f, 33.f, 2.f, 2.f, outline);
-        drawPixelRect(target, origin, scale, 22.f, 40.f, 16.f, 3.f, gold);
+        drawPixelRect(target, origin, scale, 22.f, 40.f, 18.f, 3.f, gold);
+        drawPixelRect(target, origin, scale, 24.f, 37.f, 14.f, 3.f, main);
 
-        drawPixelOutline(target, origin, scale, 28.f, 24.f, 12.f, 14.f, main, outline);
-        drawPixelRect(target, origin, scale, 30.f, 27.f, 8.f, 4.f, mix(main, sf::Color::White, 0.26f));
-        drawPixelRect(target, origin, scale, 31.f, 18.f, 9.f, 7.f, metal);
-        drawPixelRect(target, origin, scale, 34.f, 15.f, 4.f, 4.f, accent);
-        drawPixelTeamTab(target, origin, scale, 25.f, 28.f, team, outline);
+        drawPixelOutline(target, origin, scale, 28.f, 23.f, 13.f, 15.f, main, outline);
+        drawPixelRect(target, origin, scale, 30.f, 26.f, 9.f, 4.f, mix(main, sf::Color::White, 0.28f));
+        drawPixelRect(target, origin, scale, 31.f, 17.f, 10.f, 7.f, metal);
+        drawPixelRect(target, origin, scale, 34.f, 14.f, 5.f, 4.f, accent);
+        drawPixelTeamTab(target, origin, scale, 24.f, 28.f, team, outline);
 
-        drawPixelRect(target, origin, scale, 38.f, 18.f, 25.f, 5.f, outline);
-        drawPixelRect(target, origin, scale, 40.f, 19.f, 21.f, 2.f, sf::Color(248, 237, 190));
-        drawPixelRect(target, origin, scale, 60.f, 16.f, 4.f, 8.f, sf::Color(255, 250, 214));
-        drawPixelRect(target, origin, scale, 61.f, 18.f, 3.f, 4.f, sf::Color(255, 255, 236));
-        drawPixelRect(target, origin, scale, 39.f, 23.f, 8.f, 3.f, gold);
+        drawPixelLine(target, origin, scale, sf::Vector2f(38.f, 23.f), sf::Vector2f(64.f, 13.f), 5.f, outline);
+        drawPixelLine(target, origin, scale, sf::Vector2f(39.f, 23.f), sf::Vector2f(63.f, 14.f), 2.f, sf::Color(248, 237, 190));
+        drawPixelTriangle(target, origin, scale, sf::Vector2f(63.f, 10.f), sf::Vector2f(67.f, 14.f), sf::Vector2f(63.f, 18.f), sf::Color(255, 250, 214));
+        drawPixelRect(target, origin, scale, 40.f, 24.f, 8.f, 3.f, gold);
+        drawPixelTriangle(target, origin, scale, sf::Vector2f(52.f, 14.f), sf::Vector2f(58.f, 14.f), sf::Vector2f(55.f, 22.f), main);
     }
 
     void drawSiegePixel(sf::RenderTarget& target, sf::Vector2f origin, float scale, art::Team team)
@@ -363,29 +422,33 @@ namespace art_internal
         const auto steelLight = sf::Color(225, 224, 197);
         const auto fire = sf::Color(255, 185, 70);
 
-        drawPixelShadow(target, origin, scale, 8.f, 58.f, 50.f, sf::Color(8, 13, 11, 132));
-        drawPixelOutline(target, origin, scale, 16.f, 41.f, 34.f, 11.f, wood, outline);
-        drawPixelRect(target, origin, scale, 20.f, 43.f, 26.f, 3.f, woodLight);
-        drawPixelRect(target, origin, scale, 19.f, 50.f, 7.f, 3.f, mix(wood, sf::Color::Black, 0.18f));
-        drawPixelRect(target, origin, scale, 40.f, 50.f, 7.f, 3.f, mix(wood, sf::Color::Black, 0.18f));
+        drawPixelShadow(target, origin, scale, 6.f, 58.f, 54.f, sf::Color(8, 13, 11, 138));
+        drawPixelOutline(target, origin, scale, 14.f, 40.f, 38.f, 12.f, wood, outline);
+        drawPixelRect(target, origin, scale, 18.f, 42.f, 30.f, 3.f, woodLight);
+        drawPixelRect(target, origin, scale, 18.f, 48.f, 31.f, 2.f, mix(wood, sf::Color::Black, 0.20f));
 
-        drawPixelRect(target, origin, scale, 18.f, 31.f, 38.f, 10.f, outline);
-        drawPixelRect(target, origin, scale, 21.f, 33.f, 30.f, 6.f, sf::Color(79, 70, 59));
-        drawPixelRect(target, origin, scale, 23.f, 34.f, 22.f, 2.f, woodLight);
-        drawPixelRect(target, origin, scale, 45.f, 26.f, 19.f, 10.f, outline);
-        drawPixelRect(target, origin, scale, 47.f, 28.f, 15.f, 5.f, metal);
-        drawPixelRect(target, origin, scale, 54.f, 29.f, 7.f, 2.f, steelLight);
-        drawPixelRect(target, origin, scale, 62.f, 26.f, 4.f, 10.f, sf::Color(66, 66, 62));
+        drawPixelRect(target, origin, scale, 16.f, 30.f, 40.f, 11.f, outline);
+        drawPixelRect(target, origin, scale, 19.f, 32.f, 32.f, 7.f, sf::Color(79, 70, 59));
+        drawPixelRect(target, origin, scale, 22.f, 33.f, 25.f, 2.f, woodLight);
+        drawPixelRect(target, origin, scale, 24.f, 27.f, 18.f, 5.f, accent);
+        drawPixelTeamTab(target, origin, scale, 25.f, 22.f, team, outline);
 
-        drawPixelRect(target, origin, scale, 12.f, 50.f, 12.f, 9.f, outline);
-        drawPixelRect(target, origin, scale, 15.f, 52.f, 5.f, 5.f, sf::Color(225, 176, 74));
-        drawPixelRect(target, origin, scale, 40.f, 50.f, 13.f, 9.f, outline);
-        drawPixelRect(target, origin, scale, 44.f, 52.f, 5.f, 5.f, sf::Color(225, 176, 74));
-        drawPixelRect(target, origin, scale, 23.f, 29.f, 14.f, 5.f, accent);
-        drawPixelTeamTab(target, origin, scale, 25.f, 24.f, team, outline);
-        drawPixelRect(target, origin, scale, 58.f, 22.f, 5.f, 5.f, fire);
-        drawPixelRect(target, origin, scale, 61.f, 20.f, 2.f, 2.f, sf::Color(255, 232, 132));
-        drawPixelRect(target, origin, scale, 30.f, 38.f, 15.f, 3.f, main);
+        drawPixelLine(target, origin, scale, sf::Vector2f(41.f, 31.f), sf::Vector2f(65.f, 23.f), 12.f, outline);
+        drawPixelLine(target, origin, scale, sf::Vector2f(43.f, 31.f), sf::Vector2f(63.f, 24.f), 7.f, metal);
+        drawPixelLine(target, origin, scale, sf::Vector2f(51.f, 27.f), sf::Vector2f(62.f, 24.f), 2.f, steelLight);
+        drawPixelRect(target, origin, scale, 61.f, 20.f, 6.f, 11.f, sf::Color(66, 66, 62));
+        drawPixelRect(target, origin, scale, 62.f, 21.f, 3.f, 8.f, steelLight);
+
+        drawPixelRect(target, origin, scale, 10.f, 49.f, 13.f, 10.f, outline);
+        drawPixelRect(target, origin, scale, 14.f, 51.f, 5.f, 5.f, sf::Color(225, 176, 74));
+        drawPixelRect(target, origin, scale, 39.f, 49.f, 14.f, 10.f, outline);
+        drawPixelRect(target, origin, scale, 43.f, 51.f, 5.f, 5.f, sf::Color(225, 176, 74));
+        drawPixelRect(target, origin, scale, 13.f, 52.f, 8.f, 2.f, sf::Color(81, 63, 39));
+        drawPixelRect(target, origin, scale, 42.f, 52.f, 8.f, 2.f, sf::Color(81, 63, 39));
+        drawPixelRect(target, origin, scale, 29.f, 38.f, 17.f, 3.f, main);
+        drawPixelRect(target, origin, scale, 57.f, 18.f, 5.f, 5.f, fire);
+        drawPixelRect(target, origin, scale, 60.f, 16.f, 2.f, 2.f, sf::Color(255, 232, 132));
+        drawPixelRect(target, origin, scale, 53.f, 21.f, 3.f, 3.f, sf::Color(255, 111, 67));
     }
 
     void drawGuardianPixel(sf::RenderTarget& target, sf::Vector2f origin, float scale, art::Team team)
@@ -399,29 +462,32 @@ namespace art_internal
         const auto gold = sf::Color(238, 188, 73);
         const auto metal = sf::Color(232, 228, 198);
 
-        drawPixelShadow(target, origin, scale, 8.f, 58.f, 50.f, sf::Color(8, 13, 11, 136));
-        drawPixelRect(target, origin, scale, 22.f, 48.f, 7.f, 10.f, outline);
-        drawPixelRect(target, origin, scale, 37.f, 48.f, 7.f, 10.f, outline);
-        drawPixelRect(target, origin, scale, 20.f, 54.f, 12.f, 4.f, armorDark);
-        drawPixelRect(target, origin, scale, 35.f, 54.f, 12.f, 4.f, armorDark);
+        drawPixelShadow(target, origin, scale, 7.f, 58.f, 52.f, sf::Color(8, 13, 11, 140));
+        drawPixelRect(target, origin, scale, 21.f, 48.f, 7.f, 10.f, outline);
+        drawPixelRect(target, origin, scale, 38.f, 48.f, 7.f, 10.f, outline);
+        drawPixelRect(target, origin, scale, 19.f, 55.f, 12.f, 4.f, armorDark);
+        drawPixelRect(target, origin, scale, 36.f, 55.f, 12.f, 4.f, armorDark);
 
-        drawPixelOutline(target, origin, scale, 21.f, 25.f, 25.f, 26.f, armor, outline);
-        drawPixelRect(target, origin, scale, 25.f, 29.f, 17.f, 5.f, armorLight);
-        drawPixelRect(target, origin, scale, 29.f, 35.f, 9.f, 10.f, accent);
-        drawPixelRect(target, origin, scale, 32.f, 37.f, 4.f, 6.f, sf::Color(255, 230, 119));
-        drawPixelRect(target, origin, scale, 25.f, 21.f, 17.f, 6.f, armorLight);
-        drawPixelRect(target, origin, scale, 29.f, 14.f, 9.f, 8.f, gold);
-        drawPixelTeamTab(target, origin, scale, 24.f, 31.f, team, outline);
+        drawPixelOutline(target, origin, scale, 21.f, 25.f, 26.f, 26.f, armor, outline);
+        drawPixelRect(target, origin, scale, 25.f, 29.f, 18.f, 5.f, armorLight);
+        drawPixelRect(target, origin, scale, 28.f, 35.f, 11.f, 10.f, accent);
+        drawPixelDiamond(target, origin, scale, 33.f, 39.f, 4.f, 6.f, sf::Color(255, 230, 119));
+        drawPixelRect(target, origin, scale, 24.f, 21.f, 19.f, 6.f, armorLight);
+        drawPixelRect(target, origin, scale, 28.f, 13.f, 11.f, 9.f, gold);
+        drawPixelRect(target, origin, scale, 25.f, 16.f, 4.f, 4.f, gold);
+        drawPixelRect(target, origin, scale, 39.f, 16.f, 4.f, 4.f, gold);
+        drawPixelTeamTab(target, origin, scale, 40.f, 31.f, team, outline);
 
-        drawPixelOutline(target, origin, scale, 13.f, 33.f, 13.f, 18.f, gold, outline);
-        drawPixelRect(target, origin, scale, 16.f, 36.f, 7.f, 11.f, main);
-        drawPixelRect(target, origin, scale, 18.f, 38.f, 3.f, 7.f, mix(main, sf::Color::White, 0.20f));
+        drawPixelOutline(target, origin, scale, 10.f, 31.f, 18.f, 22.f, gold, outline);
+        drawPixelRect(target, origin, scale, 14.f, 35.f, 10.f, 14.f, main);
+        drawPixelRect(target, origin, scale, 17.f, 37.f, 4.f, 9.f, mix(main, sf::Color::White, 0.22f));
+        drawPixelDiamond(target, origin, scale, 19.f, 42.f, 4.f, 6.f, sf::Color(255, 226, 105, 210));
 
-        drawPixelHilt(target, origin, scale, 51.f, 15.f, metal, gold, outline);
-        drawPixelRect(target, origin, scale, 50.f, 12.f, 5.f, 7.f, sf::Color(255, 248, 206));
-        drawPixelRect(target, origin, scale, 52.f, 20.f, 2.f, 28.f, metal);
-        drawPixelRect(target, origin, scale, 54.f, 23.f, 1.f, 21.f, sf::Color(151, 151, 141));
-        drawPixelRect(target, origin, scale, 45.f, 25.f, 13.f, 4.f, gold);
+        drawPixelLine(target, origin, scale, sf::Vector2f(51.f, 50.f), sf::Vector2f(53.f, 13.f), 4.f, outline);
+        drawPixelLine(target, origin, scale, sf::Vector2f(52.f, 49.f), sf::Vector2f(54.f, 14.f), 2.f, metal);
+        drawPixelRect(target, origin, scale, 47.f, 24.f, 15.f, 5.f, outline);
+        drawPixelRect(target, origin, scale, 49.f, 25.f, 11.f, 3.f, gold);
+        drawPixelTriangle(target, origin, scale, sf::Vector2f(53.f, 10.f), sf::Vector2f(58.f, 16.f), sf::Vector2f(50.f, 16.f), sf::Color(255, 248, 206));
         drawPixelRect(target, origin, scale, 43.f, 31.f, 8.f, 18.f, armorLight);
     }
 

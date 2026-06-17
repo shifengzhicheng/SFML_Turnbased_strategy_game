@@ -15,6 +15,8 @@ namespace art_internal
     void drawSword(sf::RenderTarget& target, sf::Vector2f center, float scale, sf::Color metal, sf::Color accent);
     void drawBow(sf::RenderTarget& target, sf::Vector2f center, float scale, sf::Color accent, sf::Color stringColor);
     void drawBase(sf::RenderTarget& target, sf::Vector2f pos, float scale, art::Team team);
+    void drawPixelRect(sf::RenderTarget& target, sf::Vector2f origin, float scale,
+                       float x, float y, float w, float h, sf::Color color);
     void drawUnitIcon(sf::RenderTarget& target, art::UnitKind kind, art::Team team, sf::Vector2f center, float scale);
     std::string costForIcon(art::UnitKind icon);
     void drawTextCentered(sf::RenderTarget& target, const sf::Font& font, const std::string& label,

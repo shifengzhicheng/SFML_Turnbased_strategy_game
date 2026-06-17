@@ -36,10 +36,24 @@ void Game::drawTutorialOverlay()
     card.setOutlineThickness(3.f);
     window.draw(card);
 
+    sf::RectangleShape inner(sf::Vector2f(792.f, 592.f));
+    inner.setPosition(198.f, 58.f);
+    inner.setFillColor(sf::Color::Transparent);
+    inner.setOutlineColor(sf::Color(255, 241, 184, 34));
+    inner.setOutlineThickness(1.f);
+    window.draw(inner);
+
     sf::RectangleShape header(sf::Vector2f(820.f, 68.f));
     header.setPosition(184.f, 44.f);
     header.setFillColor(sf::Color(86, 61, 35, 238));
     window.draw(header);
+
+    for (int x = 214; x < 958; x += 24) {
+        sf::RectangleShape tick(sf::Vector2f(10.f, 2.f));
+        tick.setPosition(static_cast<float>(x), 101.f);
+        tick.setFillColor(sf::Color(255, 218, 112, 74));
+        window.draw(tick);
+    }
 
     sf::Text title("HOW TO PLAY", myfont, 31);
     title.setFillColor(sf::Color(255, 243, 201));
@@ -123,6 +137,13 @@ void Game::drawRewardOverlay()
     panel.setOutlineThickness(2.4f);
     window.draw(panel);
 
+    sf::RectangleShape innerPanel(sf::Vector2f(862.f, 302.f));
+    innerPanel.setPosition(209.f, 198.f);
+    innerPanel.setFillColor(sf::Color::Transparent);
+    innerPanel.setOutlineColor(sf::Color(255, 242, 188, 34));
+    innerPanel.setOutlineThickness(1.f);
+    window.draw(innerPanel);
+
     sf::Text title("Choose A Battle Tactic", myfont, 29);
     title.setFillColor(sf::Color(255, 239, 190));
     title.setPosition(236.f, 210.f);
@@ -140,6 +161,11 @@ void Game::drawRewardOverlay()
     reroll.setOutlineThickness(1.8f);
     window.draw(reroll);
 
+    sf::RectangleShape rerollShine(sf::Vector2f(188.f, 3.f));
+    rerollShine.setPosition(771.f, 224.f);
+    rerollShine.setFillColor(playerRewardRerolls > 0 ? sf::Color(255, 246, 190, 72) : sf::Color(255, 255, 255, 20));
+    window.draw(rerollShine);
+
     const std::string rerollText = playerRewardRerolls > 0
         ? ("Refresh cards (R) x" + std::to_string(playerRewardRerolls))
         : "Refresh used";
@@ -156,6 +182,21 @@ void Game::drawRewardOverlay()
         card.setOutlineColor(i == 1 ? sf::Color(255, 218, 112) : sf::Color(120, 137, 104));
         card.setOutlineThickness(2.f);
         window.draw(card);
+
+        sf::RectangleShape headerBand(sf::Vector2f(246.f, 42.f));
+        headerBand.setPosition(pos + sf::Vector2f(2.f, 2.f));
+        headerBand.setFillColor(i == 1 ? sf::Color(100, 74, 36, 190) : sf::Color(35, 48, 43, 190));
+        window.draw(headerBand);
+
+        sf::RectangleShape topLine(sf::Vector2f(218.f, 3.f));
+        topLine.setPosition(pos + sf::Vector2f(16.f, 10.f));
+        topLine.setFillColor(i == 1 ? sf::Color(255, 238, 160, 96) : sf::Color(186, 215, 156, 58));
+        window.draw(topLine);
+
+        sf::RectangleShape bottomRail(sf::Vector2f(218.f, 2.f));
+        bottomRail.setPosition(pos + sf::Vector2f(16.f, 154.f));
+        bottomRail.setFillColor(i == 1 ? sf::Color(255, 218, 112, 138) : sf::Color(120, 137, 104, 110));
+        window.draw(bottomRail);
 
         sf::CircleShape badge(17.f, 24);
         badge.setOrigin(17.f, 17.f);

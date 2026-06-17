@@ -103,6 +103,13 @@ namespace art
         const float scale = static_cast<float>(size.x) / 64.f;
         drawUnitIcon(canvas, kind, team, sf::Vector2f(size.x / 2.f, size.y / 2.f), scale);
         canvas.display();
+        if (team == Team::Enemy && kind != UnitKind::Base) {
+            sf::Image mirrored = canvas.getTexture().copyToImage();
+            mirrored.flipHorizontally();
+            texture.loadFromImage(mirrored);
+            texture.setSmooth(false);
+            return;
+        }
         commitTexture(texture, canvas);
     }
 
@@ -118,12 +125,12 @@ namespace art
         const bool pressed = state == ButtonState::Pressed;
         const bool hover = state == ButtonState::Hover;
         const float shift = pressed ? 2.f : 0.f;
-        const sf::Color ink(13, 17, 15);
-        const sf::Color brass = hover ? sf::Color(255, 224, 122) : sf::Color(218, 167, 78);
-        const sf::Color brassDark = pressed ? sf::Color(130, 91, 45) : sf::Color(176, 122, 54);
-        const sf::Color face = pressed ? sf::Color(33, 38, 34) : (hover ? sf::Color(48, 62, 54) : sf::Color(38, 47, 42));
-        const sf::Color faceTop = hover ? sf::Color(69, 86, 71) : sf::Color(51, 62, 53);
-        const sf::Color textColor = hover ? sf::Color(255, 240, 184) : sf::Color(232, 226, 199);
+        const sf::Color ink(8, 10, 9);
+        const sf::Color brass = hover ? sf::Color(255, 226, 120) : sf::Color(224, 170, 75);
+        const sf::Color brassDark = pressed ? sf::Color(118, 78, 37) : sf::Color(151, 101, 44);
+        const sf::Color face = pressed ? sf::Color(27, 33, 30) : (hover ? sf::Color(47, 61, 53) : sf::Color(34, 43, 39));
+        const sf::Color faceTop = hover ? sf::Color(70, 88, 72) : sf::Color(48, 59, 51);
+        const sf::Color textColor = hover ? sf::Color(255, 243, 187) : sf::Color(238, 231, 201);
 
         sf::RectangleShape shadow(sf::Vector2f(static_cast<float>(size.x) - 8.f, static_cast<float>(size.y) - 8.f));
         shadow.setPosition(6.f + shift, 8.f + shift);
@@ -139,6 +146,20 @@ namespace art
         rail.setPosition(outer.getPosition() + sf::Vector2f(2.f, 2.f));
         rail.setFillColor(brass);
         canvas.draw(rail);
+
+        // Pixel-cut corners keep every button in the same hard-edged UI language
+        // as the tiles and units without requiring external image assets.
+        const sf::Vector2f o = outer.getPosition();
+        const float ox = o.x;
+        const float oy = o.y;
+        const float ow = outer.getSize().x;
+        const float oh = outer.getSize().y;
+        drawPixelRect(canvas, sf::Vector2f(0.f, 0.f), 1.f, ox + 2.f, oy + 2.f, 5.f, 2.f, ink);
+        drawPixelRect(canvas, sf::Vector2f(0.f, 0.f), 1.f, ox + ow - 7.f, oy + 2.f, 5.f, 2.f, ink);
+        drawPixelRect(canvas, sf::Vector2f(0.f, 0.f), 1.f, ox + 2.f, oy + oh - 4.f, 5.f, 2.f, ink);
+        drawPixelRect(canvas, sf::Vector2f(0.f, 0.f), 1.f, ox + ow - 7.f, oy + oh - 4.f, 5.f, 2.f, ink);
+        drawPixelRect(canvas, sf::Vector2f(0.f, 0.f), 1.f, ox + 7.f, oy + 4.f, ow - 14.f, 1.f, sf::Color(255, 247, 183, hover ? 145 : 74));
+        drawPixelRect(canvas, sf::Vector2f(0.f, 0.f), 1.f, ox + 5.f, oy + oh - 5.f, ow - 10.f, 2.f, brassDark);
 
         sf::RectangleShape faceRect(sf::Vector2f(rail.getSize().x - 8.f, rail.getSize().y - 8.f));
         faceRect.setPosition(rail.getPosition() + sf::Vector2f(4.f, 4.f));
@@ -157,8 +178,13 @@ namespace art
 
         sf::RectangleShape highlight(sf::Vector2f(std::max(10.f, faceRect.getSize().x - 18.f), 2.f));
         highlight.setPosition(faceRect.getPosition() + sf::Vector2f(9.f, 5.f));
-        highlight.setFillColor(sf::Color(255, 246, 191, hover ? 90 : 42));
+        highlight.setFillColor(sf::Color(255, 246, 191, hover ? 96 : 40));
         canvas.draw(highlight);
+
+        sf::RectangleShape innerVignette(sf::Vector2f(faceRect.getSize().x, 5.f));
+        innerVignette.setPosition(faceRect.getPosition() + sf::Vector2f(0.f, faceRect.getSize().y - 7.f));
+        innerVignette.setFillColor(sf::Color(0, 0, 0, pressed ? 70 : 38));
+        canvas.draw(innerVignette);
 
         float textLeft = 13.f;
         float textRightPad = 12.f;
@@ -174,13 +200,17 @@ namespace art
             iconLight.setPosition(iconWell.getPosition() + sf::Vector2f(4.f, 4.f));
             iconLight.setFillColor(sf::Color(255, 239, 178, 38));
             canvas.draw(iconLight);
+            sf::RectangleShape iconFloor(sf::Vector2f(26.f, 3.f));
+            iconFloor.setPosition(iconWell.getPosition() + sf::Vector2f(6.f, 23.f));
+            iconFloor.setFillColor(sf::Color(0, 0, 0, 62));
+            canvas.draw(iconFloor);
             drawUnitIcon(canvas, icon, team, iconWell.getPosition() + sf::Vector2f(19.f, 16.f), 0.52f);
             textLeft = 52.f;
 
             const std::string cost = costForIcon(icon);
             sf::RectangleShape costChip(sf::Vector2f(25.f, 19.f));
             costChip.setPosition(static_cast<float>(size.x) - 31.f + shift, static_cast<float>(size.y) / 2.f - 9.5f + shift);
-            costChip.setFillColor(sf::Color(78, 56, 28));
+            costChip.setFillColor(sf::Color(72, 48, 23));
             costChip.setOutlineColor(sf::Color(255, 219, 93));
             costChip.setOutlineThickness(1.3f);
             canvas.draw(costChip);

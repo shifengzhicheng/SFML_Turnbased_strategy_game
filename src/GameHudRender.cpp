@@ -46,6 +46,13 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
     topGlow.setFillColor(sf::Color(255, 222, 138, 10));
     target.draw(topGlow);
 
+    for (int y = 0; y < config::WindowHeight; y += 18) {
+        sf::RectangleShape dash(sf::Vector2f(static_cast<float>(config::PanelWidth - 34), 1.f));
+        dash.setPosition(static_cast<float>(config::PanelX + 18), static_cast<float>(y + 7));
+        dash.setFillColor(sf::Color(255, 245, 190, y % 36 == 0 ? 13 : 7));
+        target.draw(dash);
+    }
+
     const float panelLeft = sidebar_layout::CardLeft;
     const float cardWidth = sidebar_layout::CardWidth;
     const auto drawPanelCard = [this, panelLeft, cardWidth, &target](float y, float h, sf::Color fill, sf::Color outline, const std::string& title) {
@@ -67,6 +74,19 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         inner.setOutlineColor(sf::Color(255, 246, 200, 18));
         inner.setOutlineThickness(1.f);
         target.draw(inner);
+
+        const sf::Color corner(outline.r, outline.g, outline.b, 145);
+        const sf::Vector2f cornerSize(12.f, 2.f);
+        sf::RectangleShape c(cornerSize);
+        c.setFillColor(corner);
+        c.setPosition(panelLeft + 7.f, y + 7.f);
+        target.draw(c);
+        c.setPosition(panelLeft + cardWidth - 19.f, y + 7.f);
+        target.draw(c);
+        c.setPosition(panelLeft + 7.f, y + h - 9.f);
+        target.draw(c);
+        c.setPosition(panelLeft + cardWidth - 19.f, y + h - 9.f);
+        target.draw(c);
 
         if (!title.empty()) {
             sf::RectangleShape titleBar(sf::Vector2f(cardWidth - 16.f, 1.4f));
@@ -156,51 +176,64 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         return text;
     };
 
-    CommandText.setCharacterSize(10);
-    CommandText.setFillColor(sf::Color(255, 226, 128));
-    CommandText.setOutlineColor(sf::Color(11, 14, 12, 200));
-    CommandText.setOutlineThickness(0.7f);
-    CommandText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 101.f);
-    CommandText.setString("CMD " + std::to_string(playerCommand)
-        + "   +" + std::to_string(resourceIncome(PLAYER)) + "/tick"
-        + "\nTECH " + std::to_string(playerUpgradeLevel)
-        + "/" + std::to_string(config::MaxTechLevel)
-        + "   AI " + std::to_string(aiUpgradeLevel)
-        + "/" + std::to_string(config::MaxTechLevel)
-        + "\nECON " + std::to_string(playerEconomyLevel)
-        + "/" + std::to_string(config::MaxEconomyLevel)
-        + "   DRN " + std::to_string(workerCount(PLAYER))
-        + "\nRAX " + std::to_string(completedBuildingCount(PLAYER, building::Barracks))
-        + "/" + std::to_string(buildingCap(PLAYER, building::Barracks))
-        + "  TWR " + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower))
-        + "/" + std::to_string(buildingCap(PLAYER, building::DefenseTower))
-        + "  ARMY " + std::to_string(myunits.size())
-        + "/" + std::to_string(config::MaxUnits));
-    target.draw(CommandText);
+    const auto drawStatChip = [this, &target](float x, float y, float w,
+                                               const std::string& label, const std::string& value,
+                                               sf::Color accent, bool strong = false) {
+        sf::RectangleShape shadow(sf::Vector2f(w, 17.f));
+        shadow.setPosition(x + 1.f, y + 2.f);
+        shadow.setFillColor(sf::Color(0, 0, 0, 82));
+        target.draw(shadow);
 
-    sf::Text perkText(std::string(inspectingEnemyBase ? "Enemy" : "Your") + " Lv" + std::to_string(shownLevel)
-        + " buffs: " + clampText(perkLine(), 24), myfont, 9);
+        sf::RectangleShape chip(sf::Vector2f(w, 17.f));
+        chip.setPosition(x, y);
+        chip.setFillColor(strong ? sf::Color(54, 44, 27, 235) : sf::Color(28, 36, 32, 232));
+        chip.setOutlineColor(strong ? sf::Color(242, 184, 82, 190) : sf::Color(91, 105, 79, 160));
+        chip.setOutlineThickness(1.f);
+        target.draw(chip);
+
+        sf::RectangleShape rail(sf::Vector2f(3.f, 13.f));
+        rail.setPosition(x + 3.f, y + 2.f);
+        rail.setFillColor(accent);
+        target.draw(rail);
+
+        sf::Text labelText(label, myfont, 8);
+        labelText.setFillColor(sf::Color(187, 197, 166));
+        labelText.setPosition(x + 10.f, y + 2.f);
+        target.draw(labelText);
+
+        sf::Text valueText(value, myfont, strong ? 12 : 10);
+        valueText.setFillColor(strong ? sf::Color(255, 231, 133) : sf::Color(239, 232, 201));
+        valueText.setOutlineColor(sf::Color(10, 13, 11, 190));
+        valueText.setOutlineThickness(0.5f);
+        const auto bounds = valueText.getLocalBounds();
+        valueText.setPosition(x + w - bounds.width - bounds.left - 7.f, y + (strong ? 0.f : 2.f));
+        target.draw(valueText);
+    };
+
+    const float statusX = static_cast<float>(config::PanelX + config::PanelPadding);
+    drawStatChip(statusX, 108.f, 112.f, "CMD", std::to_string(playerCommand), sf::Color(255, 210, 91), true);
+    drawStatChip(statusX + 118.f, 108.f, 102.f, "FLOW", "+" + std::to_string(resourceIncome(PLAYER)) + "/t", sf::Color(118, 209, 134), true);
+    drawStatChip(statusX, 130.f, 68.f, "TECH", std::to_string(playerUpgradeLevel) + "/" + std::to_string(config::MaxTechLevel), sf::Color(255, 193, 86));
+    drawStatChip(statusX + 74.f, 130.f, 68.f, "AI", std::to_string(aiUpgradeLevel) + "/" + std::to_string(config::MaxTechLevel), sf::Color(116, 181, 255));
+    drawStatChip(statusX + 148.f, 130.f, 72.f, "ECON", std::to_string(playerEconomyLevel) + "/" + std::to_string(config::MaxEconomyLevel), sf::Color(136, 214, 116));
+    drawStatChip(statusX, 148.f, 68.f, "RAX", std::to_string(completedBuildingCount(PLAYER, building::Barracks)) + "/" + std::to_string(buildingCap(PLAYER, building::Barracks)), sf::Color(224, 150, 72));
+    drawStatChip(statusX + 74.f, 148.f, 68.f, "TWR", std::to_string(totalBuildingCount(PLAYER, building::DefenseTower)) + "/" + std::to_string(buildingCap(PLAYER, building::DefenseTower)), sf::Color(239, 202, 107));
+    drawStatChip(statusX + 148.f, 148.f, 72.f, "ARMY", std::to_string(myunits.size()) + "/" + std::to_string(config::MaxUnits), sf::Color(222, 86, 68));
+
+    sf::RectangleShape buffStrip(sf::Vector2f(220.f, 11.f));
+    buffStrip.setPosition(statusX, 167.f);
+    buffStrip.setFillColor(sf::Color(17, 24, 21, 180));
+    buffStrip.setOutlineColor(inspectingEnemyBase ? sf::Color(80, 140, 206, 120) : sf::Color(212, 152, 60, 120));
+    buffStrip.setOutlineThickness(1.f);
+    target.draw(buffStrip);
+
+    sf::Text perkText(std::string(inspectingEnemyBase ? "ENEMY" : "YOUR") + " Lv" + std::to_string(shownLevel)
+        + " BUFFS " + clampText(perkLine(), 24), myfont, 8);
     perkText.setFillColor(inspectingEnemyBase ? sf::Color(149, 203, 255) : sf::Color(255, 226, 142));
     perkText.setOutlineColor(sf::Color(11, 14, 12, 200));
-    perkText.setOutlineThickness(0.7f);
-    perkText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 153.f);
+    perkText.setOutlineThickness(0.6f);
+    perkText.setPosition(statusX + 5.f, 166.f);
     target.draw(perkText);
-
-    const auto masteryBonus = [this, shownTeam](int unitName) {
-        return static_cast<int>(std::round(static_cast<float>(unitMasteryLevel(shownTeam, unitName))
-            * config::MasteryStatBonusPerLevel * 100.f));
-    };
-    sf::Text masteryText("MST I+" + std::to_string(masteryBonus(UName::INFANTARY))
-        + " Sh+" + std::to_string(masteryBonus(UName::SHOOTER))
-        + " Cv+" + std::to_string(masteryBonus(UName::CAVALRY))
-        + " Sg+" + std::to_string(masteryBonus(UName::SIEGE))
-        + " Gd+" + std::to_string(masteryBonus(UName::GUARDIAN))
-        + "%", myfont, 8);
-    masteryText.setFillColor(inspectingEnemyBase ? sf::Color(149, 203, 255) : sf::Color(151, 235, 154));
-    masteryText.setOutlineColor(sf::Color(11, 14, 12, 200));
-    masteryText.setOutlineThickness(0.7f);
-    masteryText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 164.f);
-    target.draw(masteryText);
 
     int playerLaneCounts[lane::Count] = {};
     int aiLaneCounts[lane::Count] = {};

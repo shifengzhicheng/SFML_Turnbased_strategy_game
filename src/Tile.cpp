@@ -56,16 +56,16 @@ namespace
     }
 
     void drawGrassBase(sf::RenderTarget& target, sf::Vector2f origin, int x, int y,
-                       sf::Color base = sf::Color(139, 176, 98))
+                       sf::Color base = sf::Color(132, 173, 96))
     {
         const int shade = terrainHash(x, y, 1) % 5;
-        const sf::Color ground = mixColor(base, shade < 2 ? sf::Color(111, 148, 85) : sf::Color(201, 202, 124), shade < 2 ? 0.20f : 0.12f);
+        const sf::Color ground = mixColor(base, shade < 2 ? sf::Color(104, 143, 82) : sf::Color(196, 198, 119), shade < 2 ? 0.18f : 0.10f);
         drawPixelRect(target, origin, 0.f, 0.f, SqureSize, SqureSize, ground);
 
         // A few deterministic patches keep repeated tiles from looking like a
         // flat fill while still preserving crisp pixel readability.
-        const sf::Color patchA(92, 140, 76, 54);
-        const sf::Color patchB(220, 211, 127, 46);
+        const sf::Color patchA(66, 118, 68, 45);
+        const sf::Color patchB(223, 212, 131, 38);
         drawPixelRect(target, origin,
                       static_cast<float>(2 + terrainHash(x, y, 2) % 12),
                       static_cast<float>(3 + terrainHash(x, y, 3) % 8),
@@ -74,8 +74,14 @@ namespace
                       static_cast<float>(5 + terrainHash(x, y, 4) % 12),
                       static_cast<float>(13 + terrainHash(x, y, 5) % 7),
                       6.f, 2.f, shade % 2 == 0 ? patchB : patchA);
+        if (terrainHash(x, y, 8) % 6 == 0) {
+            drawPixelRect(target, origin,
+                          static_cast<float>(4 + terrainHash(x, y, 9) % 13),
+                          static_cast<float>(8 + terrainHash(x, y, 11) % 8),
+                          2.f, 1.f, sf::Color(236, 218, 124, 65));
+        }
 
-        drawPixelFrame(target, origin, sf::Color(236, 245, 176, 24), sf::Color(65, 96, 63, 30));
+        drawPixelFrame(target, origin, sf::Color(235, 245, 176, 18), sf::Color(55, 86, 58, 20));
     }
 
     void drawGrassDetail(sf::RenderTarget& target, sf::Vector2f origin, int x, int y)
@@ -100,15 +106,20 @@ namespace
 
     void drawPathGround(sf::RenderTarget& target, sf::Vector2f origin, int x, int y)
     {
-        drawGrassBase(target, origin, x, y, sf::Color(150, 177, 103));
-        drawPixelRect(target, origin, 0.f, 7.f, SqureSize, 10.f, sf::Color(118, 98, 66, 112));
-        drawPixelRect(target, origin, 0.f, 8.f, SqureSize, 7.f, sf::Color(176, 145, 87));
-        drawPixelRect(target, origin, 0.f, 15.f, SqureSize, 2.f, sf::Color(91, 80, 57, 102));
-        drawPixelRect(target, origin, 0.f, 6.f, SqureSize, 2.f, sf::Color(231, 210, 128, 84));
+        drawGrassBase(target, origin, x, y, sf::Color(144, 172, 101));
+        const sf::Color dirt(176, 137, 78);
+        const sf::Color dirtLight(217, 176, 96);
+        const sf::Color dirtDark(112, 86, 55);
+        drawPixelRect(target, origin, 0.f, 6.f, SqureSize, 12.f, sf::Color(86, 71, 48, 82));
+        drawPixelRect(target, origin, 0.f, 7.f, SqureSize, 10.f, dirt);
+        drawPixelRect(target, origin, 0.f, 7.f, SqureSize, 2.f, sf::Color(dirtLight.r, dirtLight.g, dirtLight.b, 118));
+        drawPixelRect(target, origin, 0.f, 15.f, SqureSize, 2.f, sf::Color(dirtDark.r, dirtDark.g, dirtDark.b, 92));
+        drawPixelRect(target, origin, 0.f, 5.f, SqureSize, 1.f, sf::Color(218, 205, 119, 54));
+        drawPixelRect(target, origin, 0.f, 18.f, SqureSize, 1.f, sf::Color(57, 101, 58, 60));
 
         const float pebbleX = static_cast<float>(3 + terrainHash(x, y, 40) % 15);
-        drawPixelRect(target, origin, pebbleX, 10.f, 3.f, 2.f, sf::Color(225, 198, 122, 120));
-        drawPixelRect(target, origin, static_cast<float>(8 + terrainHash(x, y, 41) % 11), 14.f, 2.f, 1.f, sf::Color(95, 80, 55, 82));
+        drawPixelRect(target, origin, pebbleX, 10.f, 3.f, 2.f, sf::Color(235, 203, 122, 130));
+        drawPixelRect(target, origin, static_cast<float>(8 + terrainHash(x, y, 41) % 11), 14.f, 2.f, 1.f, sf::Color(91, 71, 46, 92));
     }
 
     void drawRiverGround(sf::RenderTarget& target, sf::Vector2f origin, int x, int y)
@@ -133,27 +144,28 @@ namespace
         const sf::Color outline(20, 43, 29);
         const sf::Color trunk(117, 74, 39);
         const sf::Color trunkLight(162, 103, 55);
-        const sf::Color leaf = terrainHash(x, y, 61) % 2 == 0 ? sf::Color(42, 116, 61) : sf::Color(51, 134, 69);
+        const sf::Color leaf = terrainHash(x, y, 61) % 2 == 0 ? sf::Color(38, 113, 58) : sf::Color(47, 128, 66);
         const sf::Color leafDark(29, 82, 50);
-        const sf::Color leafLight(112, 184, 86);
+        const sf::Color leafLight(118, 189, 91);
 
         drawPixelDiamond(target, origin, 11.f, 20.f, 11.f, 3.5f, sf::Color(7, 15, 11, 82));
         drawPixelRect(target, origin, 8.f, 8.f, 6.f, 14.f, outline);
         drawPixelRect(target, origin, 9.f, 9.f, 4.f, 13.f, trunk);
         drawPixelRect(target, origin, 11.f, 9.f, 1.f, 9.f, trunkLight);
 
-        drawPixelRect(target, origin, 3.f, 6.f, 17.f, 10.f, outline);
-        drawPixelRect(target, origin, 1.f, 10.f, 21.f, 8.f, outline);
-        drawPixelRect(target, origin, 5.f, -3.f, 13.f, 10.f, outline);
-        drawPixelRect(target, origin, 6.f, -8.f, 10.f, 7.f, outline);
+        drawPixelRect(target, origin, 4.f, 5.f, 16.f, 11.f, outline);
+        drawPixelRect(target, origin, 1.f, 10.f, 22.f, 8.f, outline);
+        drawPixelRect(target, origin, 5.f, -2.f, 14.f, 9.f, outline);
+        drawPixelRect(target, origin, 7.f, -8.f, 10.f, 7.f, outline);
 
-        drawPixelRect(target, origin, 4.f, 7.f, 15.f, 8.f, leaf);
-        drawPixelRect(target, origin, 2.f, 11.f, 19.f, 6.f, leafDark);
-        drawPixelRect(target, origin, 6.f, -2.f, 11.f, 8.f, leaf);
-        drawPixelRect(target, origin, 7.f, -7.f, 8.f, 6.f, mixColor(leaf, sf::Color::White, 0.10f));
-        drawPixelRect(target, origin, 8.f, -4.f, 5.f, 2.f, leafLight);
-        drawPixelRect(target, origin, 5.f, 8.f, 5.f, 2.f, leafLight);
-        drawPixelRect(target, origin, 15.f, 12.f, 3.f, 2.f, leafLight);
+        drawPixelRect(target, origin, 5.f, 6.f, 14.f, 9.f, leaf);
+        drawPixelRect(target, origin, 2.f, 11.f, 20.f, 6.f, leafDark);
+        drawPixelRect(target, origin, 6.f, -1.f, 12.f, 7.f, leaf);
+        drawPixelRect(target, origin, 8.f, -7.f, 8.f, 6.f, mixColor(leaf, sf::Color::White, 0.10f));
+        drawPixelRect(target, origin, 4.f, 14.f, 9.f, 2.f, sf::Color(18, 61, 41, 92));
+        drawPixelRect(target, origin, 9.f, -4.f, 5.f, 2.f, leafLight);
+        drawPixelRect(target, origin, 6.f, 8.f, 5.f, 2.f, leafLight);
+        drawPixelRect(target, origin, 15.f, 11.f, 4.f, 2.f, leafLight);
     }
 
     void drawMount(sf::RenderTarget& target, sf::Vector2f origin, int x, int y)
