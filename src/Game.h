@@ -93,6 +93,7 @@ public:
     bool perkOverlayVisible = false;
     bool autoChooseRewards = false;
     int rewardSequence = 0;
+    int playerRewardRerolls = 0;
     int playerSelectedLane = lane::Mid;
     int aiSelectedLane = lane::Mid;
     std::array<int, perk::Count> playerPerkLevels{};
@@ -255,6 +256,7 @@ public:
     void resetWorkersForBuilding(int buildingId);
     void maybeGrantReward(int team, const std::string& reason);
     void buildRewardChoices();
+    void rerollRewardChoices();
     void applyRewardChoice(int index);
     void applyPerk(int team, int type);
     int perkLevel(int team, int type) const;

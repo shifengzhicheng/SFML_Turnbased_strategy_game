@@ -258,11 +258,11 @@ void Game::DrawSidePanel()
     setLabel(barracksLabel, std::to_string(buildingCommandCost(building::Barracks)) + " | cap "
         + std::to_string(totalBuildingCount(PLAYER, building::Barracks)) + "/"
         + std::to_string(buildingCap(PLAYER, building::Barracks)) + " auto near base", config::BuildBarracksY);
-    setLabel(infantryLabel, std::to_string(config::InfantryCost) + " | steady frontline", config::BuildInfantryY);
-    setLabel(shooterLabel, std::to_string(config::ShooterCost) + " | ranged, slower", config::BuildShooterY);
-    setLabel(cavalryLabel, std::to_string(config::CavalryCost) + " | fastest dive", config::BuildCavalryY);
-    setLabel(siegeLabel, std::to_string(config::SiegeCost) + " | very slow tower-breaker", config::BuildSiegeY);
-    setLabel(guardianLabel, std::to_string(config::GuardianCost) + " | slow heavy tank", config::BuildGuardianY);
+    setLabel(infantryLabel, std::to_string(unitCost(UName::INFANTARY)) + " | steady frontline", config::BuildInfantryY);
+    setLabel(shooterLabel, std::to_string(unitCost(UName::SHOOTER)) + " | ranged, slower", config::BuildShooterY);
+    setLabel(cavalryLabel, std::to_string(unitCost(UName::CAVALRY)) + " | fastest dive", config::BuildCavalryY);
+    setLabel(siegeLabel, std::to_string(unitCost(UName::SIEGE)) + " | very slow tower-breaker", config::BuildSiegeY);
+    setLabel(guardianLabel, std::to_string(unitCost(UName::GUARDIAN)) + " | slow heavy tank", config::BuildGuardianY);
     setLabel(towerLabel, std::to_string(buildingCommandCost(building::DefenseTower)) + " | cap "
         + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower)) + "/"
         + std::to_string(buildingCap(PLAYER, building::DefenseTower)) + " anti-rush", config::BuildTowerY);

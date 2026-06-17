@@ -88,6 +88,27 @@ namespace
         return closeTo(p, red) || closeTo(p, blue);
     }
 
+    void mirrorTerrainHorizontally(std::vector<std::vector<int>>& map,
+                                   const std::vector<std::vector<bool>>& routeMask,
+                                   GridPoint red, GridPoint blue)
+    {
+        const int lines = static_cast<int>(map.size());
+        const int cols = static_cast<int>(map.front().size());
+        for (int y = 1; y < lines - 1; ++y) {
+            for (int x = 1; x < cols / 2; ++x) {
+                const int mirrorX = cols - 1 - x;
+                const GridPoint left{x, y};
+                const GridPoint right{mirrorX, y};
+                if (routeMask[y][x] || routeMask[y][mirrorX]
+                    || nearBase(left, red, blue, 7)
+                    || nearBase(right, red, blue, 7)) {
+                    continue;
+                }
+                map[y][mirrorX] = map[y][x];
+            }
+        }
+    }
+
     std::vector<GridPoint> carveMainRoute(std::vector<std::vector<int>>& map,
                                           std::vector<std::vector<bool>>& routeMask,
                                           GridPoint start, GridPoint end,
@@ -278,6 +299,68 @@ namespace
         }
     }
 
+    void placeLaneShoulders(std::vector<std::vector<int>>& map, const std::vector<std::vector<bool>>& routeMask,
+                            GridPoint red, GridPoint blue, std::mt19937& rng)
+    {
+        const int lines = static_cast<int>(map.size());
+        const int cols = static_cast<int>(map.front().size());
+        const int laneY[] = {
+            std::max(4, lines / 4),
+            lines / 2,
+            std::min(lines - 5, lines * 3 / 4)
+        };
+        std::uniform_int_distribution<int> jitter(-1, 1);
+
+        for (int lane = 0; lane < 3; ++lane) {
+            for (int x = 8; x < cols / 2 - 2; x += 6) {
+                const int side = ((x / 6 + lane) % 2 == 0) ? -1 : 1;
+                const GridPoint center{
+                    std::clamp(x + jitter(rng), 3, cols - 4),
+                    std::clamp(laneY[lane] + side * (4 + lane % 2) + jitter(rng), 3, lines - 4)
+                };
+                const int value = lane == 1 ? 3 : ((x / 6) % 2 == 0 ? 1 : 3);
+                placeCluster(map, routeMask, center, 2, value, red, blue, rng);
+            }
+        }
+    }
+
+    void placePonds(std::vector<std::vector<int>>& map, const std::vector<std::vector<bool>>& routeMask,
+                    GridPoint red, GridPoint blue, std::mt19937& rng)
+    {
+        const int lines = static_cast<int>(map.size());
+        const int cols = static_cast<int>(map.front().size());
+        std::uniform_int_distribution<int> jitter(-2, 2);
+        const auto paintPond = [&](GridPoint center) {
+            for (int y = center.y - 2; y <= center.y + 2; ++y) {
+                for (int x = center.x - 2; x <= center.x + 2; ++x) {
+                    if (!inside(x, y, cols, lines)
+                        || routeMask[y][x]
+                        || nearBase(GridPoint{x, y}, red, blue, 8)) {
+                        continue;
+                    }
+                    const int dx = x - center.x;
+                    const int dy = y - center.y;
+                    if (dx * dx + dy * dy <= 4) {
+                        map[y][x] = 2;
+                    }
+                }
+            }
+        };
+        const std::vector<GridPoint> anchors = {
+            GridPoint{cols / 4, std::max(5, lines / 2 - 8)},
+            GridPoint{cols / 3, std::min(lines - 6, lines / 2 + 9)},
+            GridPoint{std::max(4, cols / 5), std::max(5, lines / 4 - 2)}
+        };
+
+        for (const auto& anchor : anchors) {
+            const GridPoint center{
+                std::clamp(anchor.x + jitter(rng), 3, cols - 4),
+                std::clamp(anchor.y + jitter(rng), 3, lines - 4)
+            };
+            paintPond(center);
+        }
+    }
+
     void addBorder(std::vector<std::vector<int>>& map)
     {
         const int lines = static_cast<int>(map.size());
@@ -365,7 +448,10 @@ void mapgenerator::gmap(std::vector<std::vector<int>>& initMap, int cols, int li
         placeCluster(initMap, routeMask, GridPoint{xDist(rng), yDist(rng)}, forestRadius(rng), 3, red, blue, rng);
     }
     placeRidgeFingers(initMap, routeMask, red, blue, rng);
+    placeLaneShoulders(initMap, routeMask, red, blue, rng);
+    placePonds(initMap, routeMask, red, blue, rng);
     placeResourceCover(initMap, routeMask, plazas, red, blue, rng);
+    mirrorTerrainHorizontally(initMap, routeMask, red, blue);
 
     for (int y = 0; y < lines; ++y) {
         for (int x = 0; x < cols; ++x) {

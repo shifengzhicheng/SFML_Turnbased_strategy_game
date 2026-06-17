@@ -72,17 +72,18 @@ void Game::drawTutorialOverlay()
         "",
         "Tactics and counters",
         "  Every tech upgrade gives 3 tactic cards. Max tech is LEVEL 15.",
-        "  Perks are chunky and stack, so late builds can bend the soft counter rules.",
+        "  Press R on the tactic screen to refresh once if the 3 cards miss your build.",
+        "  Perks are huge and stack, so late builds can bend the soft counter rules.",
         "  Shooter > Infantry, Infantry > Cavalry, Cavalry > Shooter/Siege.",
         "  Cavalry rotates almost twice as fast as infantry; Siege crawls and needs escorts.",
-        "  Siege cracks Guardians and buildings; Guardians anchor against Cavalry dives.",
+        "  Siege cracks buildings; Guardians are heavy tanks that resist siege splash.",
         "",
         "Unlocks",
-        "  Infantry: 15 CMD, needs 1 Barracks.",
-        "  Shooter: 22 CMD, needs 1 Barracks and Economy 1 or LEVEL 1.",
-        "  Cavalry: 44 CMD, needs 2 Barracks and Economy 2 or LEVEL 3.",
-        "  Siege: 72 CMD, needs LEVEL 5, 2 Barracks, Economy 3; outranges towers.",
-        "  Guardian: 92 CMD, needs LEVEL 7, 3 Barracks, Economy 4; anchors pushes.",
+        "  Infantry: " + std::to_string(unitCost(UName::INFANTARY)) + " CMD, needs 1 Barracks.",
+        "  Shooter: " + std::to_string(unitCost(UName::SHOOTER)) + " CMD, needs 1 Barracks and Economy 1 or LEVEL 1.",
+        "  Cavalry: " + std::to_string(unitCost(UName::CAVALRY)) + " CMD, needs 2 Barracks and Economy 2 or LEVEL 3.",
+        "  Siege: " + std::to_string(unitCost(UName::SIEGE)) + " CMD, needs LEVEL 5, 2 Barracks, Economy 3; outranges towers.",
+        "  Guardian: " + std::to_string(unitCost(UName::GUARDIAN)) + " CMD, needs LEVEL 7, 3 Barracks, Economy 4; anchors pushes.",
         "",
         "Hotkeys",
         "  H: show / hide this guide.  C: restart map.  Esc: back to menu."
@@ -125,10 +126,25 @@ void Game::drawRewardOverlay()
     title.setPosition(236.f, 210.f);
     window.draw(title);
 
-    sf::Text hint("Each tactic is a chunky power spike, but unit roles still matter. Press 1/2/3 or click a card.", myfont, 14);
+    sf::Text hint("Each tactic is a huge power spike. Press 1/2/3, click a card, or press R to refresh once.", myfont, 14);
     hint.setFillColor(sf::Color(222, 230, 204));
     hint.setPosition(236.f, 250.f);
     window.draw(hint);
+
+    sf::RectangleShape reroll(sf::Vector2f(210.f, 42.f));
+    reroll.setPosition(760.f, 216.f);
+    reroll.setFillColor(playerRewardRerolls > 0 ? sf::Color(82, 69, 39, 242) : sf::Color(52, 55, 50, 226));
+    reroll.setOutlineColor(playerRewardRerolls > 0 ? sf::Color(255, 218, 112) : sf::Color(116, 124, 105));
+    reroll.setOutlineThickness(1.8f);
+    window.draw(reroll);
+
+    const std::string rerollText = playerRewardRerolls > 0
+        ? ("Refresh cards (R) x" + std::to_string(playerRewardRerolls))
+        : "Refresh used";
+    sf::Text rerollLabel(rerollText, myfont, 14);
+    rerollLabel.setFillColor(playerRewardRerolls > 0 ? sf::Color(255, 239, 190) : sf::Color(185, 192, 170));
+    rerollLabel.setPosition(782.f, 228.f);
+    window.draw(rerollLabel);
 
     for (int i = 0; i < static_cast<int>(perkChoices.size()); ++i) {
         const sf::Vector2f pos(235.f + static_cast<float>(i) * 278.f, 295.f);

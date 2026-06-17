@@ -77,6 +77,23 @@ void Game::buildRewardChoices()
     ++rewardSequence;
 }
 
+void Game::rerollRewardChoices()
+{
+    if (!perkOverlayVisible) {
+        return;
+    }
+    if (playerRewardRerolls <= 0) {
+        addFloatingText(sf::Vector2f(236.f, 486.f), "No reroll left", sf::Color(255, 184, 116), 12);
+        return;
+    }
+
+    --playerRewardRerolls;
+    buildRewardChoices();
+    // Rerolling advances the deterministic reward sequence, so the player can
+    // fish for a build-defining spike without adding hidden randomness.
+    addFloatingText(sf::Vector2f(236.f, 486.f), "Tactics refreshed", sf::Color(218, 255, 134), 12);
+}
+
 void Game::applyPerk(int team, int type)
 {
     if (type < 0 || type >= perk::Count) {
@@ -130,6 +147,7 @@ void Game::applyRewardChoice(int index)
         return;
     }
     applyPerk(PLAYER, perkChoices[static_cast<std::size_t>(index)].type);
+    playerRewardRerolls = 0;
     perkOverlayVisible = false;
 }
 
@@ -139,6 +157,7 @@ void Game::maybeGrantReward(int team, const std::string& reason)
         if (perkOverlayVisible) {
             return;
         }
+        playerRewardRerolls = config::RewardRerollsPerChoice;
         buildRewardChoices();
         if (autoChooseRewards) {
             applyRewardChoice(0);

@@ -102,11 +102,11 @@ void Game::Initial()
     setupText(panelHint, myfont, 12, sf::Color(211, 199, 165), "Pick lane, queue units", panelTextX, 184.f);
     setupText(economyLabel, myfont, 10, sf::Color(228, 218, 185), "natural CMD", panelTextX, config::EconomyButtonY - 12.f);
     setupText(barracksLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(buildingCommandCost(building::Barracks)) + " auto near base", panelTextX, config::BuildBarracksY + 43.f);
-    setupText(infantryLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::InfantryCost) + " core / steady", panelTextX, config::BuildInfantryY + 43.f);
-    setupText(shooterLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::ShooterCost) + " ranged / slow", panelTextX, config::BuildShooterY + 43.f);
-    setupText(cavalryLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::CavalryCost) + " fast dive", panelTextX, config::BuildCavalryY + 43.f);
-    setupText(siegeLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::SiegeCost) + " slow anti-tower", panelTextX, config::BuildSiegeY + 43.f);
-    setupText(guardianLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(config::GuardianCost) + " heavy / slow", panelTextX, config::BuildGuardianY + 43.f);
+    setupText(infantryLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(unitCost(UName::INFANTARY)) + " core / steady", panelTextX, config::BuildInfantryY + 43.f);
+    setupText(shooterLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(unitCost(UName::SHOOTER)) + " ranged / slow", panelTextX, config::BuildShooterY + 43.f);
+    setupText(cavalryLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(unitCost(UName::CAVALRY)) + " fast dive", panelTextX, config::BuildCavalryY + 43.f);
+    setupText(siegeLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(unitCost(UName::SIEGE)) + " slow anti-tower", panelTextX, config::BuildSiegeY + 43.f);
+    setupText(guardianLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(unitCost(UName::GUARDIAN)) + " heavy / slow", panelTextX, config::BuildGuardianY + 43.f);
     setupText(towerLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(buildingCommandCost(building::DefenseTower)) + " auto lane fort", panelTextX, config::BuildTowerY + 43.f);
 
     sidePanel.setSize(sf::Vector2f(config::PanelWidth, config::WindowHeight));
@@ -153,6 +153,7 @@ void Game::clear()
     towerPlacementMode = false;
     perkOverlayVisible = false;
     rewardSequence = 0;
+    playerRewardRerolls = 0;
     playerSelectedLane = lane::Mid;
     aiSelectedLane = lane::Mid;
     playerPerkLevels.fill(0);

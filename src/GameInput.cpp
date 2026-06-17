@@ -253,6 +253,9 @@ void Game::handleRewardInput(sf::Vector2i mousePos, sf::Event event)
         else if (event.key.code == sf::Keyboard::Num3 || event.key.code == sf::Keyboard::Numpad3) {
             applyRewardChoice(2);
         }
+        else if (event.key.code == sf::Keyboard::R || event.key.code == sf::Keyboard::Space) {
+            rerollRewardChoices();
+        }
         return;
     }
 
@@ -267,5 +270,10 @@ void Game::handleRewardInput(sf::Vector2i mousePos, sf::Event event)
             applyRewardChoice(i);
             return;
         }
+    }
+
+    const sf::FloatRect rerollButton(760.f, 216.f, 210.f, 42.f);
+    if (rerollButton.contains(point)) {
+        rerollRewardChoices();
     }
 }

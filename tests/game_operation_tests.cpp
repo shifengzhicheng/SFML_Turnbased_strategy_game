@@ -107,9 +107,9 @@ int main()
     const float shooterDamageBefore = game.unitDamageMultiplier(PLAYER, UName::SHOOTER);
     const float shooterCooldownBefore = game.unitAttackCooldownMultiplier(PLAYER, UName::SHOOTER);
     game.applyPerk(PLAYER, perk::Volley);
-    require(game.unitDamageMultiplier(PLAYER, UName::SHOOTER) >= shooterDamageBefore + 0.19f,
+    require(game.unitDamageMultiplier(PLAYER, UName::SHOOTER) >= shooterDamageBefore + 0.29f,
             "Volley should be a chunky shooter damage upgrade");
-    require(game.unitAttackCooldownMultiplier(PLAYER, UName::SHOOTER) <= shooterCooldownBefore - 0.07f,
+    require(game.unitAttackCooldownMultiplier(PLAYER, UName::SHOOTER) <= shooterCooldownBefore - 0.09f,
             "Volley should noticeably speed up shooter attacks");
     const float trainBefore = game.teamTrainTimeMultiplier(PLAYER);
     game.applyPerk(PLAYER, perk::Logistics);
@@ -120,6 +120,16 @@ int main()
     game.applyPerk(PLAYER, perk::WarChest);
     require(game.playerCommand >= config::WarChestBaseBonus + config::WarChestTechBonus * 5,
             "War Chest should be large enough to create an immediate play");
+
+    game.perkOverlayVisible = true;
+    game.playerRewardRerolls = 1;
+    game.buildRewardChoices();
+    const int firstRewardType = game.perkChoices.front().type;
+    game.rerollRewardChoices();
+    require(game.playerRewardRerolls == 0,
+            "reward refresh should consume the free reroll");
+    require(game.perkChoices.front().type != firstRewardType,
+            "reward refresh should produce a different tactic rotation");
 
     game.clear();
     game.playerCommand = 1000;
@@ -211,6 +221,22 @@ int main()
             "aggro should make the defender retaliate against its attacker");
     require(decoyTarget->Health == decoyHealthBeforeAggro,
             "aggro should outrank an even closer unrelated target");
+
+    game.clear();
+    for (int x = 10; x <= 19; ++x) {
+        game.setTileID(x, 12, tile::Empty);
+    }
+    require(game.createUnit(PLAYER, UName::SIEGE, 10, 12, lane::Mid),
+            "test siege should spawn for tank resistance checks");
+    require(game.createUnit(AI, UName::GUARDIAN, 19, 12, lane::Mid),
+            "test guardian should spawn in siege range");
+    MoveableUnit* testSiege = game.myunits.back().get();
+    MoveableUnit* testGuardian = game.enemys.back().get();
+    const int guardianHealthBefore = testGuardian->Health;
+    testSiege->autoAttack(testGuardian);
+    const int siegeDamageToGuardian = guardianHealthBefore - testGuardian->Health;
+    require(siegeDamageToGuardian > 0 && siegeDamageToGuardian < config::SiegeDamage,
+            "guardian tanks should resist siege instead of being countered by it");
 
     game.clear();
     const Point botEnemyRally = game.laneWaypoint(PLAYER, lane::Bot, 2);

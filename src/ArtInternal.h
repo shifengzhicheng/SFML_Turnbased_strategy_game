@@ -16,7 +16,7 @@ namespace art_internal
     void drawBow(sf::RenderTarget& target, sf::Vector2f center, float scale, sf::Color accent, sf::Color stringColor);
     void drawBase(sf::RenderTarget& target, sf::Vector2f pos, float scale, art::Team team);
     void drawUnitIcon(sf::RenderTarget& target, art::UnitKind kind, art::Team team, sf::Vector2f center, float scale);
-    const char* costForIcon(art::UnitKind icon);
+    std::string costForIcon(art::UnitKind icon);
     void drawTextCentered(sf::RenderTarget& target, const sf::Font& font, const std::string& label,
                           unsigned int size, sf::Color color, sf::FloatRect box);
 }

@@ -1,7 +1,10 @@
 #include "Map.h"
 
 #include <cassert>
+#include <cstdlib>
+#include <iostream>
 #include <queue>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -55,6 +58,50 @@ namespace
         }
         return count;
     }
+
+    int countValue(const std::vector<std::vector<int>>& map, int value)
+    {
+        int count = 0;
+        for (const auto& row : map) {
+            for (int cell : row) {
+                if (cell == value) {
+                    ++count;
+                }
+            }
+        }
+        return count;
+    }
+
+    int countBlockersInHalf(const std::vector<std::vector<int>>& map, bool leftHalf)
+    {
+        const int cols = static_cast<int>(map.front().size());
+        int count = 0;
+        for (int y = 1; y < static_cast<int>(map.size()) - 1; ++y) {
+            const int begin = leftHalf ? 1 : cols / 2;
+            const int end = leftHalf ? cols / 2 : cols - 1;
+            for (int x = begin; x < end; ++x) {
+                if (map[y][x] != 0) {
+                    ++count;
+                }
+            }
+        }
+        return count;
+    }
+
+    int failMapCheck(const std::string& reason, const std::vector<std::vector<int>>& map, int cols, int lines)
+    {
+        std::cerr << "map_tests: " << reason
+                  << " terrain mount=" << countValue(map, 1)
+                  << " river=" << countValue(map, 2)
+                  << " forest=" << countValue(map, 3)
+                  << " half=" << countBlockersInHalf(map, true)
+                  << "/" << countBlockersInHalf(map, false)
+                  << " baseOpen=" << countInArea(map, 5, lines / 2, 3, 0)
+                  << "/" << countInArea(map, cols - 7, lines / 2, 3, 0)
+                  << " centerOpen=" << countInArea(map, cols / 2, lines / 2, 2, 0)
+                  << '\n';
+        return 1;
+    }
 }
 
 int main()
@@ -80,22 +127,28 @@ int main()
         }
 
         if (countInArea(map, 5, lines / 2, 3, 0) <= 35) {
-            return 1;
+            return failMapCheck("red base plaza too cramped", map, cols, lines);
         }
         if (countInArea(map, cols - 7, lines / 2, 3, 0) <= 35) {
-            return 1;
+            return failMapCheck("blue base plaza too cramped", map, cols, lines);
         }
         if (!hasPath(map, 5, lines / 2, cols - 7, lines / 2)) {
-            return 1;
+            return failMapCheck("main lane disconnected", map, cols, lines);
         }
         if (!hasPath(map, 5, lines / 2, cols / 2, lines / 2)
             || !hasPath(map, cols - 7, lines / 2, cols / 2, lines / 2)
             || !hasPath(map, 5, lines / 2, cols / 2, lines / 4)
             || !hasPath(map, 5, lines / 2, cols / 2, lines * 3 / 4)) {
-            return 1;
+            return failMapCheck("lane network disconnected", map, cols, lines);
         }
         if (countInArea(map, cols / 2, lines / 2, 2, 0) <= 20) {
-            return 1;
+            return failMapCheck("center plaza too cramped", map, cols, lines);
+        }
+        if (countValue(map, 1) < 90 || countValue(map, 2) < 20 || countValue(map, 3) < 95) {
+            return failMapCheck("terrain lacks visual variety", map, cols, lines);
+        }
+        if (std::abs(countBlockersInHalf(map, true) - countBlockersInHalf(map, false)) > 18) {
+            return failMapCheck("terrain halves are unfair", map, cols, lines);
         }
     }
 

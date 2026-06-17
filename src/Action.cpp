@@ -26,7 +26,6 @@ namespace
 		return (attacker == UName::SHOOTER && defender == UName::INFANTARY)
 			|| (attacker == UName::INFANTARY && defender == UName::CAVALRY)
 			|| (attacker == UName::CAVALRY && (defender == UName::SHOOTER || defender == UName::SIEGE))
-			|| (attacker == UName::SIEGE && defender == UName::GUARDIAN)
 			|| (attacker == UName::GUARDIAN && defender == UName::CAVALRY);
 	}
 
@@ -56,8 +55,13 @@ namespace
 		}
 
 		// The readable counter web stays small: core units form a triangle,
-		// while cavalry dives siege and siege cracks heavy guardians.
-		if (counters(attacker->unitName, defender->unitName)) {
+		// cavalry dives siege, and guardians remain the late-game tank rather
+		// than being invalidated by siege splash.
+		if (attacker->unitName == UName::SIEGE && defender->unitName == UName::GUARDIAN) {
+			result.amount = static_cast<int>(std::round(static_cast<float>(baseDamage) * 0.85f));
+			result.resisted = true;
+		}
+		else if (counters(attacker->unitName, defender->unitName)) {
 			result.amount = static_cast<int>(std::round(static_cast<float>(baseDamage) * 1.45f));
 			result.counter = true;
 		}

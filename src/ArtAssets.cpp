@@ -161,7 +161,7 @@ namespace art
             drawUnitIcon(canvas, icon, team, medallion.getPosition(), 0.82f);
             textLeft = 52.f;
 
-            const char* cost = costForIcon(icon);
+            const std::string cost = costForIcon(icon);
             sf::CircleShape costChip(10.f, 24);
             costChip.setOrigin(10.f, 10.f);
             costChip.setPosition(static_cast<float>(size.x) - 17.f, 16.f + inset * 0.35f);

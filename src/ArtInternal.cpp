@@ -393,19 +393,19 @@ namespace art_internal
         target.draw(badge);
     }
 
-    const char* costForIcon(art::UnitKind icon)
+    std::string costForIcon(art::UnitKind icon)
     {
         switch (icon) {
         case art::UnitKind::Infantry:
-            return "12";
+            return std::to_string(config::InfantryCost);
         case art::UnitKind::Shooter:
-            return "18";
+            return std::to_string(config::ShooterCost);
         case art::UnitKind::Cavalry:
-            return "30";
+            return std::to_string(config::CavalryCost);
         case art::UnitKind::Siege:
-            return "44";
+            return std::to_string(config::SiegeCost);
         case art::UnitKind::Guardian:
-            return "58";
+            return std::to_string(config::GuardianCost);
         default:
             return "";
         }
