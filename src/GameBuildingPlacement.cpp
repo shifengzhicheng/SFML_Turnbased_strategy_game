@@ -129,15 +129,80 @@ Point Game::findAutoBuildSite(int team, int type, int laneIndex) const
         }
         return Point(-1, -1);
     };
+    const auto findTowerNearAnchor = [this, team, mirrorX](Point center, int maxRadius) {
+        Point bestSpaced(-1, -1);
+        int bestSpacedScore = std::numeric_limits<int>::max();
+        Point bestRelaxed(-1, -1);
+        int bestRelaxedScore = std::numeric_limits<int>::max();
+
+        for (int radius = 0; radius <= maxRadius; ++radius) {
+            for (int dy = -radius; dy <= radius; ++dy) {
+                for (int dx = -radius; dx <= radius; ++dx) {
+                    if (std::max(std::abs(dx), std::abs(dy)) != radius) {
+                        continue;
+                    }
+                    const Point candidate(center.x + dx * mirrorX, center.y + dy);
+                    if (!isBuildableCell(candidate.x, candidate.y)
+                        || !isBuildSiteInInfluence(team, candidate, building::DefenseTower)) {
+                        continue;
+                    }
+
+                    bool tooClose = false;
+                    int spacingPenalty = 0;
+                    for (const auto& existing : buildings) {
+                        if (existing.team != team || existing.type != building::DefenseTower) {
+                            continue;
+                        }
+                        const int deltaX = std::abs(candidate.x - existing.point.x);
+                        const int deltaY = std::abs(candidate.y - existing.point.y);
+                        const int chebyshev = std::max(deltaX, deltaY);
+                        if (chebyshev < config::TowerPlacementMinSpacing) {
+                            tooClose = true;
+                            break;
+                        }
+                        if (chebyshev < config::TowerPlacementPreferredSpacing) {
+                            spacingPenalty += 480;
+                        }
+                        // Prefer a staggered battery instead of lining towers up
+                        // so tightly that they visually or tactically mask each other.
+                        if ((deltaX == 0 || deltaY == 0 || deltaX == deltaY)
+                            && deltaX + deltaY <= config::DefenseTowerRange) {
+                            spacingPenalty += 120;
+                        }
+                    }
+                    if (tooClose) {
+                        continue;
+                    }
+
+                    const int score = distanceSquared(candidate, center) * 10
+                        + std::abs(candidate.y - center.y) * 3
+                        + spacingPenalty;
+                    if (score < bestRelaxedScore) {
+                        bestRelaxedScore = score;
+                        bestRelaxed = candidate;
+                    }
+                    if (spacingPenalty == 0 && score < bestSpacedScore) {
+                        bestSpacedScore = score;
+                        bestSpaced = candidate;
+                    }
+                }
+            }
+        }
+        return bestSpaced.x >= 0 ? bestSpaced : bestRelaxed;
+    };
 
     // Barracks are production lifelines, so they stay in the protected base
     // pocket instead of auto-placing near the first contested lane anchor.
-    const Point primarySite = findNearAnchor(anchor, type == building::Barracks ? 7 : 9);
+    const Point primarySite = type == building::DefenseTower
+        ? findTowerNearAnchor(anchor, 10)
+        : findNearAnchor(anchor, 7);
     if (primarySite.x >= 0) {
         return primarySite;
     }
 
-    const Point baseSite = findNearAnchor(base, 12);
+    const Point baseSite = type == building::DefenseTower
+        ? findTowerNearAnchor(base, 12)
+        : findNearAnchor(base, 12);
     if (baseSite.x >= 0) {
         return baseSite;
     }

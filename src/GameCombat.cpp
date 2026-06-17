@@ -47,7 +47,7 @@ void Game::updateDefenseTowers(float dt)
             if (dist > rangeSquared) {
                 return;
             }
-            if (!hasLineOfSight(building.point, Point(candidate->x, candidate->y))) {
+            if (!hasLineOfSightForTower(building.point, Point(candidate->x, candidate->y), building.team)) {
                 return;
             }
             int score = dist * 10;

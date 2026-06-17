@@ -6,6 +6,7 @@
 #include "SidebarLayout.h"
 #include "UnitDefinition.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -136,6 +137,21 @@ int main()
     game.playerUpgradeLevel = 0;
     game.playerEconomyLevel = 0;
     game.playerPerkLevels.fill(0);
+
+    game.clear();
+    game.playerCommand = 1000;
+    const Point midDefense = game.laneDefensePoint(PLAYER, lane::Mid);
+    clearArea(game, midDefense, 5);
+    require(game.executeOperation(PLAYER, GameOperation(gameop::BuildTower, lane::Mid)),
+            "first tower should auto-place near the selected lane");
+    require(game.executeOperation(PLAYER, GameOperation(gameop::BuildTower, lane::Mid)),
+            "second tower should auto-place near the selected lane");
+    const Point firstTower = game.buildings[0].point;
+    const Point secondTower = game.buildings[1].point;
+    require(std::max(std::abs(firstTower.x - secondTower.x), std::abs(firstTower.y - secondTower.y))
+                >= config::TowerPlacementMinSpacing,
+            "automatic tower placement should keep towers from visually stacking");
+    game.clear();
 
     require(!game.canQueueUnit(PLAYER, UName::INFANTARY),
             "infantry should require a completed barracks");
@@ -497,6 +513,19 @@ int main()
     game.updateDefenseTowers(0.25f);
     require(losTowerTarget->Health < targetHealthBeforeBlockedTower,
             "clearing tower line-of-sight should restore tower fire");
+
+    game.clear();
+    for (int x = 10; x <= 15; ++x) {
+        game.setTileID(x, 10, tile::Empty);
+    }
+    game.setTileID(12, 10, tile::Player_Tower);
+    require(!game.hasLineOfSight(Point(10, 10), Point(15, 10)),
+            "ordinary line-of-sight should still treat towers as blockers");
+    require(game.hasLineOfSightForTower(Point(10, 10), Point(15, 10), PLAYER),
+            "friendly towers should not block another tower's defensive fire");
+    game.setTileID(12, 10, tile::Enemy_Tower);
+    require(!game.hasLineOfSightForTower(Point(10, 10), Point(15, 10), PLAYER),
+            "enemy towers should remain real line-of-sight blockers");
 
     game.clear();
     for (int x = 10; x <= 15; ++x) {

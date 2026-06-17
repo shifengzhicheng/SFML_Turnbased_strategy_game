@@ -87,6 +87,8 @@ namespace config
     inline constexpr int DefenseTowerRange = 7;
     inline constexpr int DefenseTowerSplashDamage = 10;
     inline constexpr int DefenseTowerSplashRadius = 2;
+    inline constexpr int TowerPlacementMinSpacing = 2;
+    inline constexpr int TowerPlacementPreferredSpacing = 3;
     inline constexpr int BaseDefenseDamage = 34;
     inline constexpr int BaseDefenseRange = 8;
     inline constexpr int BuildInfluenceRadius = 13;

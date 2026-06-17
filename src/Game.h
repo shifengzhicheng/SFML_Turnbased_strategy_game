@@ -202,6 +202,7 @@ public:
     bool isBuildableCell(int x, int y) const;
     bool isBuildSiteInInfluence(int team, Point point, int type) const;
     bool hasLineOfSight(Point from, Point to) const;
+    bool hasLineOfSightForTower(Point from, Point to, int towerTeam) const;
     bool canUnitStepInto(const MoveableUnit& unit, Point point) const;
     
     void clear();

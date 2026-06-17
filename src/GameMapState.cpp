@@ -15,6 +15,53 @@ using namespace sf;
 using namespace std;
 using namespace game_internal;
 
+namespace
+{
+    bool isFriendlyTowerTile(tile::ID id, int towerTeam)
+    {
+        return (towerTeam == PLAYER && id == tile::Player_Tower)
+            || (towerTeam == AI && id == tile::Enemy_Tower);
+    }
+
+    bool hasLineOfSightImpl(const Game& game, Point from, Point to, int transparentTowerTeam)
+    {
+        int currentX = from.x;
+        int currentY = from.y;
+        const int dx = std::abs(to.x - from.x);
+        const int dy = std::abs(to.y - from.y);
+        const int stepX = from.x < to.x ? 1 : -1;
+        const int stepY = from.y < to.y ? 1 : -1;
+        int error = dx - dy;
+
+        while (currentX != to.x || currentY != to.y) {
+            const int doubledError = error * 2;
+            if (doubledError > -dy) {
+                error -= dy;
+                currentX += stepX;
+            }
+            if (doubledError < dx) {
+                error += dx;
+                currentY += stepY;
+            }
+
+            if (currentX == to.x && currentY == to.y) {
+                break;
+            }
+            if (!game.isMapCell(currentX, currentY)) {
+                return false;
+            }
+            const tile::ID id = game.tiles[currentY * game.horizontalTiles + currentX].getID();
+            if (transparentTowerTeam >= 0 && isFriendlyTowerTile(id, transparentTowerTeam)) {
+                continue;
+            }
+            if (game.isBlockingTile(id)) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
 bool Game::isBlockingTile(tile::ID id) const
 {
     return id == tile::Mount
@@ -64,37 +111,15 @@ bool Game::canUnitStepInto(const MoveableUnit& unit, Point point) const
 
 bool Game::hasLineOfSight(Point from, Point to) const
 {
-    int currentX = from.x;
-    int currentY = from.y;
-    const int dx = std::abs(to.x - from.x);
-    const int dy = std::abs(to.y - from.y);
-    const int stepX = from.x < to.x ? 1 : -1;
-    const int stepY = from.y < to.y ? 1 : -1;
-    int error = dx - dy;
+    return hasLineOfSightImpl(*this, from, to, -1);
+}
 
-    while (currentX != to.x || currentY != to.y) {
-        const int doubledError = error * 2;
-        if (doubledError > -dy) {
-            error -= dy;
-            currentX += stepX;
-        }
-        if (doubledError < dx) {
-            error += dx;
-            currentY += stepY;
-        }
-
-        if (currentX == to.x && currentY == to.y) {
-            break;
-        }
-        if (!isMapCell(currentX, currentY)) {
-            return false;
-        }
-        const tile::ID id = tiles[currentY * horizontalTiles + currentX].getID();
-        if (isBlockingTile(id)) {
-            return false;
-        }
-    }
-    return true;
+bool Game::hasLineOfSightForTower(Point from, Point to, int towerTeam) const
+{
+    // Friendly towers are transparent for defensive fire: stacked fort lines
+    // should not make the rear tower useless, while terrain/enemy structures
+    // still create real sight blockers.
+    return hasLineOfSightImpl(*this, from, to, towerTeam);
 }
 
 bool Game::isBuildableCell(int x, int y) const
