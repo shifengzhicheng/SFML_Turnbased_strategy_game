@@ -11,11 +11,11 @@
 namespace
 {
     const std::array<UnitMasteryDefinition, TrainableUnitCount> Definitions = {{
-        {UName::INFANTARY, config::MasteryStatBonusPerLevel, 5.0f, 1.30f},
-        {UName::SHOOTER, config::MasteryStatBonusPerLevel, 5.2f, 1.31f},
-        {UName::CAVALRY, config::MasteryStatBonusPerLevel, 5.6f, 1.32f},
-        {UName::SIEGE, config::MasteryStatBonusPerLevel, 5.8f, 1.34f},
-        {UName::GUARDIAN, config::MasteryStatBonusPerLevel, 5.8f, 1.34f},
+        {UName::INFANTARY, config::MasteryStatBonusPerLevel, 3.4f, 1.140f},
+        {UName::SHOOTER, config::MasteryStatBonusPerLevel, 3.5f, 1.145f},
+        {UName::CAVALRY, config::MasteryStatBonusPerLevel, 3.8f, 1.150f},
+        {UName::SIEGE, config::MasteryStatBonusPerLevel, 4.0f, 1.155f},
+        {UName::GUARDIAN, config::MasteryStatBonusPerLevel, 4.1f, 1.155f},
     }};
 }
 

@@ -5,6 +5,7 @@
 #include "UnitDefinition.h"
 #include "UnitUpgradeDefinition.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <set>
@@ -92,6 +93,14 @@ int main()
             "siege should look far enough ahead to escort itself near towers");
     require(unitMasteryUpgradeCost(UName::INFANTARY, 1) > unitMasteryUpgradeCost(UName::INFANTARY, 0),
             "unit mastery costs should grow forever");
+    for (const UnitDefinition& definition : definitions) {
+        require(unitMasteryUpgradeCost(definition.unitName, 0) <= std::max(60, definition.commandCost * 5),
+                "first mastery purchase should be reachable soon after a unit unlocks");
+        require(unitMasteryUpgradeCost(definition.unitName, 10) <= definition.commandCost * 28,
+                "level 10 mastery should be a strategic purchase, not an economy wall");
+        require(unitMasteryUpgradeCost(definition.unitName, 20) <= definition.commandCost * 90,
+                "level 20 mastery should remain reachable in long games");
+    }
     require(unitMasteryStatMultiplier(UName::SIEGE, 7) >= 1.f + 7.f * config::MasteryStatBonusPerLevel - 0.001f,
             "unit mastery should expose the expected +10 percent per level multiplier");
     require(config::MaxCommand > unitMasteryUpgradeCost(UName::INFANTARY, 20),

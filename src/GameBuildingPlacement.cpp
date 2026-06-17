@@ -98,13 +98,45 @@ bool Game::requestBuildTower(int team, Point point)
 Point Game::findAutoBuildSite(int team, int type, int laneIndex) const
 {
     const Point base = team == PLAYER ? Red_baseP : Blue_baseP;
+    const int safeLane = std::clamp(laneIndex, 0, lane::Count - 1);
     const Point anchor = type == building::DefenseTower
-        ? laneDefensePoint(team, laneIndex)
-        : Point(base.x + 4, base.y + (laneIndex - 1) * 3);
+        ? laneDefensePoint(team, safeLane)
+        : laneWaypoint(team, safeLane, 0);
 
-    for (int radius = 1; radius <= 9; ++radius) {
-        for (int y = anchor.y - radius; y <= anchor.y + radius; ++y) {
-            for (int x = anchor.x - radius; x <= anchor.x + radius; ++x) {
+    const int mirrorX = team == PLAYER ? 1 : -1;
+    const auto findNearAnchor = [this, team, type, mirrorX](Point center, int maxRadius) {
+        for (int radius = 0; radius <= maxRadius; ++radius) {
+            for (int dy = -radius; dy <= radius; ++dy) {
+                for (int dx = -radius; dx <= radius; ++dx) {
+                    if (std::max(std::abs(dx), std::abs(dy)) != radius) {
+                        continue;
+                    }
+                    const Point candidate(center.x + dx * mirrorX, center.y + dy);
+                    if (isBuildableCell(candidate.x, candidate.y) && isBuildSiteInInfluence(team, candidate, type)) {
+                        return candidate;
+                    }
+                }
+            }
+        }
+        return Point(-1, -1);
+    };
+
+    // Both sides use the same lane-exit anchor and mirrored scan order. This
+    // keeps AI barracks from drifting into the far-right edge while player
+    // barracks sit naturally beside their selected lane.
+    const Point laneSite = findNearAnchor(anchor, 9);
+    if (laneSite.x >= 0) {
+        return laneSite;
+    }
+
+    const Point baseSite = findNearAnchor(base, 12);
+    if (baseSite.x >= 0) {
+        return baseSite;
+    }
+
+    for (int radius = 1; radius <= 12; ++radius) {
+        for (int y = base.y - radius; y <= base.y + radius; ++y) {
+            for (int x = base.x - radius; x <= base.x + radius; ++x) {
                 const Point candidate(x, y);
                 if (isBuildableCell(x, y) && isBuildSiteInInfluence(team, candidate, type)) {
                     return candidate;
@@ -112,7 +144,7 @@ Point Game::findAutoBuildSite(int team, int type, int laneIndex) const
             }
         }
     }
-    return findBuildableNear(base, 12);
+    return Point(-1, -1);
 }
 
 bool Game::requestAutoBuildBarracks(int team)

@@ -197,15 +197,20 @@ Point Game::chooseStrategicRallyPoint(MoveableUnit& unit)
         return Point(-1, -1);
     }
 
-    // Rally progress is one-way per unit. A* may briefly route a BOT-lane
-    // attacker away from the enemy base to avoid terrain; without memory it can
-    // re-trigger the previous lane waypoint and pace back and forth.
+    // Rally progress is one-way per unit. Early lane gates require both forward
+    // progress and lane alignment so fresh units do not skip the Top/Bot exit
+    // anchor just because their barracks spawned slightly ahead of it. The
+    // final gate stays x-based: once a unit has crossed the enemy-side anchor,
+    // it should commit to the base instead of walking backward after a detour.
     while (unit.nextRallyStage <= 2) {
-        const Point laneGoal = laneWaypoint(unit.myteam, unit.laneIndex, unit.nextRallyStage);
-        const bool passedStage = unit.myteam == PLAYER
+        const int stage = unit.nextRallyStage;
+        const Point laneGoal = laneWaypoint(unit.myteam, unit.laneIndex, stage);
+        const bool crossedStage = unit.myteam == PLAYER
             ? current.x >= laneGoal.x - 1
             : current.x <= laneGoal.x + 1;
-        if (nearPoint(current, laneGoal, 2) || passedStage) {
+        const bool alignedWithGate = std::abs(current.y - laneGoal.y) <= (stage == 0 ? 4 : 3);
+        const bool passedStage = crossedStage && (stage == 2 || alignedWithGate);
+        if (nearPoint(current, laneGoal, stage == 2 ? 2 : 3) || passedStage) {
             ++unit.nextRallyStage;
             continue;
         }

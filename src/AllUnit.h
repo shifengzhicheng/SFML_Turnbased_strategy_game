@@ -76,7 +76,7 @@ public:
 	float realtimePathTimer = 0.f;
 	int pendingPathRequest = 0;
 	Point pendingPathGoal;
-	int nextRallyStage = 1;
+	int nextRallyStage = 0;
 	int aggroTargetId = 0;
 	float aggroSeconds = 0.f;
 

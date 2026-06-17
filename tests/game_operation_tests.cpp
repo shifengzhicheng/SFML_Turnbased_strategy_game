@@ -19,6 +19,17 @@ namespace
             std::exit(1);
         }
     }
+
+    void clearArea(Game& game, Point center, int radius)
+    {
+        for (int y = center.y - radius; y <= center.y + radius; ++y) {
+            for (int x = center.x - radius; x <= center.x + radius; ++x) {
+                if (game.isMapCell(x, y)) {
+                    game.setTileID(x, y, tile::Empty);
+                }
+            }
+        }
+    }
 }
 
 int main()
@@ -57,6 +68,27 @@ int main()
     const sf::FloatRect laneStrip = sidebar_layout::laneHitStripRect();
     require(laneStrip.top + laneStrip.height <= static_cast<float>(config::EconomyButtonY),
             "lane hitboxes must not overlap the economy action button");
+
+    const int mapW = config::MapTilesX;
+    for (int laneIndex = 0; laneIndex < lane::Count; ++laneIndex) {
+        for (int stage = 0; stage <= 2; ++stage) {
+            const Point playerAnchor = game.laneWaypoint(PLAYER, laneIndex, stage);
+            const Point aiAnchor = game.laneWaypoint(AI, laneIndex, stage);
+            require(playerAnchor.x + aiAnchor.x == mapW - 1 && playerAnchor.y == aiAnchor.y,
+                    "lane rally anchors should be mirrored for both teams");
+        }
+
+        const Point playerAnchor = game.laneWaypoint(PLAYER, laneIndex, 0);
+        const Point aiAnchor = game.laneWaypoint(AI, laneIndex, 0);
+        clearArea(game, playerAnchor, 1);
+        clearArea(game, aiAnchor, 1);
+        const Point playerBarracks = game.findAutoBuildSite(PLAYER, building::Barracks, laneIndex);
+        const Point aiBarracks = game.findAutoBuildSite(AI, building::Barracks, laneIndex);
+        require(playerBarracks.x >= 0 && aiBarracks.x >= 0,
+                "both teams should find an automatic barracks site on each lane");
+        require(playerBarracks.x + aiBarracks.x == mapW - 1 && playerBarracks.y == aiBarracks.y,
+                "automatic barracks placement should mirror across the map center");
+    }
 
     require(!game.canQueueUnit(PLAYER, UName::INFANTARY),
             "infantry should require a completed barracks");
@@ -371,6 +403,26 @@ int main()
     const int siegeDamageToGuardian = guardianHealthBefore - testGuardian->Health;
     require(siegeDamageToGuardian > 0 && siegeDamageToGuardian < config::SiegeDamage,
             "guardian tanks should resist siege instead of being countered by it");
+
+    game.clear();
+    const Point topExit = game.laneWaypoint(PLAYER, lane::Top, 0);
+    const Point topMid = game.laneWaypoint(PLAYER, lane::Top, 1);
+    const Point offLaneSpawn(topExit.x + 2, game.Red_baseP.y);
+    clearArea(game, topExit, 2);
+    clearArea(game, offLaneSpawn, 1);
+    require(game.createUnit(PLAYER, UName::INFANTARY, offLaneSpawn.x, offLaneSpawn.y, lane::Top),
+            "top-lane rally test unit should spawn ahead of the exit anchor");
+    MoveableUnit* topLaneUnit = game.myunits.back().get();
+    require(topLaneUnit->nextRallyStage == 0,
+            "newly spawned units should start at the lane-exit rally stage");
+    Point firstTopRally = game.chooseStrategicRallyPoint(*topLaneUnit);
+    require(firstTopRally.x == topExit.x && firstTopRally.y == topExit.y,
+            "off-lane units should still route through the selected lane exit anchor");
+    topLaneUnit->x = topExit.x;
+    topLaneUnit->y = topExit.y;
+    Point secondTopRally = game.chooseStrategicRallyPoint(*topLaneUnit);
+    require(secondTopRally.x == topMid.x && secondTopRally.y == topMid.y && topLaneUnit->nextRallyStage == 1,
+            "reaching the lane exit should advance to the central lane anchor");
 
     game.clear();
     const Point botEnemyRally = game.laneWaypoint(PLAYER, lane::Bot, 2);
