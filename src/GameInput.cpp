@@ -16,6 +16,25 @@ using namespace sf;
 using namespace std;
 using namespace game_internal;
 
+namespace
+{
+    sf::Vector2i toLogicalMouse(const sf::RenderWindow& window, sf::Vector2i pixel)
+    {
+        const sf::Vector2u size = window.getSize();
+        if (size.x == 0 || size.y == 0
+            || (size.x == config::WindowWidth && size.y == config::WindowHeight)) {
+            return pixel;
+        }
+
+        // Defensive fallback: if the OS ever resizes the window despite the
+        // fixed style, keep input in the same logical coordinate system as
+        // rendering instead of using stretched window pixels.
+        return sf::Vector2i(
+            static_cast<int>(std::round(static_cast<float>(pixel.x) * static_cast<float>(config::WindowWidth) / static_cast<float>(size.x))),
+            static_cast<int>(std::round(static_cast<float>(pixel.y) * static_cast<float>(config::WindowHeight) / static_cast<float>(size.y))));
+    }
+}
+
 void Game::startInput(Vector2i mousePos, Event event) {
     startBtn.setPosition(470.f, 410.f);
     startHelpBtn.setPosition(710.f, 410.f);
@@ -157,12 +176,18 @@ void Game::Input()
     sf::Event event;
     while (window.pollEvent(event))
     {
-        sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+        if (event.type == Event::Resized) {
+            window.setSize(sf::Vector2u(config::WindowWidth, config::WindowHeight));
+            window.setView(sf::View(sf::FloatRect(0.f, 0.f, config::WindowWidth, config::WindowHeight)));
+            continue;
+        }
+
+        sf::Vector2i mousePos = toLogicalMouse(window, sf::Mouse::getPosition(window));
         if (event.type == Event::MouseButtonPressed || event.type == Event::MouseButtonReleased) {
-            mousePos = sf::Vector2i(event.mouseButton.x, event.mouseButton.y);
+            mousePos = toLogicalMouse(window, sf::Vector2i(event.mouseButton.x, event.mouseButton.y));
         }
         else if (event.type == Event::MouseMoved) {
-            mousePos = sf::Vector2i(event.mouseMove.x, event.mouseMove.y);
+            mousePos = toLogicalMouse(window, sf::Vector2i(event.mouseMove.x, event.mouseMove.y));
         }
         if (event.type == Event::Closed) {
             window.close();
