@@ -308,7 +308,7 @@ void Game::DrawSidePanel()
     window.draw(towerLabel);
 
     const auto drawMasteryButton = [this](int unitName, int buttonY) {
-        const sf::FloatRect rect(static_cast<float>(config::ButtonX + config::SideButtonWidth - config::MasteryButtonWidth),
+        const sf::FloatRect rect(static_cast<float>(config::MasteryButtonX),
                                  static_cast<float>(buttonY + config::MasteryButtonInsetY),
                                  static_cast<float>(config::MasteryButtonWidth),
                                  static_cast<float>(config::MasteryButtonHeight));

@@ -28,6 +28,8 @@ namespace config
     inline constexpr int MasteryButtonWidth = 62;
     inline constexpr int MasteryButtonHeight = 32;
     inline constexpr int MasteryButtonInsetY = 3;
+    inline constexpr int UnitButtonWidth = SideButtonWidth - MasteryButtonWidth - 8;
+    inline constexpr int MasteryButtonX = ButtonX + UnitButtonWidth + 8;
     inline constexpr int UnitTextureSize = 44;
     inline constexpr float UnitSpriteScale = 0.66f;
     inline constexpr int BaseFootprintSize = 2;

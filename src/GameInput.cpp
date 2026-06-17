@@ -231,7 +231,7 @@ void Game::handleBuildButtons(Vector2i mousePos, Event event)
 
     if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
         const auto masteryRect = [](int buttonY) {
-            return sf::FloatRect(static_cast<float>(config::ButtonX + config::SideButtonWidth - config::MasteryButtonWidth),
+            return sf::FloatRect(static_cast<float>(config::MasteryButtonX),
                                  static_cast<float>(buttonY + config::MasteryButtonInsetY),
                                  static_cast<float>(config::MasteryButtonWidth),
                                  static_cast<float>(config::MasteryButtonHeight));
