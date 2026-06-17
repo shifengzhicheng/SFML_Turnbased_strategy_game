@@ -45,8 +45,17 @@ int main()
         require(game.playerSelectedLane == laneIndex,
                 "lane button clicks should select the matching lane");
     }
-    const sf::FloatRect lastLaneHit = sidebar_layout::laneButtonHitRect(lane::Bot);
-    require(lastLaneHit.top + lastLaneHit.height < static_cast<float>(config::EconomyButtonY),
+    const sf::FloatRect topRect = sidebar_layout::laneButtonRect(lane::Top);
+    const sf::Vector2i gapClick(static_cast<int>(topRect.left + topRect.width + sidebar_layout::LaneButtonGap * 0.5f),
+                                static_cast<int>(topRect.top + topRect.height * 0.5f));
+    lanePress.mouseButton.x = gapClick.x;
+    lanePress.mouseButton.y = gapClick.y;
+    require(game.handleLaneInput(gapClick, lanePress),
+            "lane strip gap clicks should still be accepted");
+    require(game.playerSelectedLane == lane::Mid,
+            "clicking the first lane gap should choose the adjacent middle segment");
+    const sf::FloatRect laneStrip = sidebar_layout::laneHitStripRect();
+    require(laneStrip.top + laneStrip.height <= static_cast<float>(config::EconomyButtonY),
             "lane hitboxes must not overlap the economy action button");
 
     require(!game.canQueueUnit(PLAYER, UName::INFANTARY),

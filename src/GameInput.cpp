@@ -283,16 +283,20 @@ bool Game::handleLaneInput(Vector2i mousePos, Event event)
         return false;
     }
 
-    for (int i = 0; i < lane::Count; ++i) {
-        const sf::FloatRect rect = sidebar_layout::laneButtonHitRect(i);
-        if (rect.contains(static_cast<float>(mousePos.x), static_cast<float>(mousePos.y))) {
-            if (isLeftPress || playerSelectedLane != i) {
-                playerSelectedLane = i;
-                addFloatingText(sf::Vector2f(config::PanelX + 20.f, 146.f),
-                                std::string("Lane: ") + laneName(i), sf::Color(218, 255, 134), 12);
-            }
-            return true;
+    const sf::Vector2f point(static_cast<float>(mousePos.x), static_cast<float>(mousePos.y));
+    // The visible lane tabs have small gaps, so treat the whole strip as a
+    // three-way segmented control. A click in a gap selects the nearest lane
+    // instead of feeling like the button is broken.
+    const sf::FloatRect strip = sidebar_layout::laneHitStripRect();
+    if (strip.contains(point)) {
+        const float segment = strip.width / static_cast<float>(lane::Count);
+        const int laneIndex = std::clamp(static_cast<int>((point.x - strip.left) / segment), 0, lane::Count - 1);
+        if (isLeftPress || playerSelectedLane != laneIndex) {
+            playerSelectedLane = laneIndex;
+            addFloatingText(sf::Vector2f(config::PanelX + 20.f, 146.f),
+                            std::string("Lane: ") + laneName(laneIndex), sf::Color(218, 255, 134), 12);
         }
+        return true;
     }
     return false;
 }

@@ -21,12 +21,13 @@ namespace sidebar_layout
     inline constexpr float HelpCardY = 668.f;
     inline constexpr float HelpCardH = 44.f;
 
-    inline constexpr float LaneButtonTop = 188.f;
-    inline constexpr float LaneButtonWidth = 60.f;
-    inline constexpr float LaneButtonHeight = 30.f;
+    inline constexpr float LaneButtonTop = 180.f;
+    inline constexpr float LaneButtonWidth = (static_cast<float>(config::PanelWidth) - 40.f) / 3.f;
+    inline constexpr float LaneButtonHeight = 40.f;
     inline constexpr float LaneButtonGap = 4.f;
     inline constexpr float LaneButtonLeft = static_cast<float>(config::PanelX) + 16.f;
-    inline constexpr float LaneHitPadding = 2.f;
+    inline constexpr float LaneHitPaddingX = 8.f;
+    inline constexpr float LaneHitPaddingY = 6.f;
 
     inline sf::FloatRect laneButtonRect(int laneIndex)
     {
@@ -39,10 +40,20 @@ namespace sidebar_layout
     inline sf::FloatRect laneButtonHitRect(int laneIndex)
     {
         const sf::FloatRect visual = laneButtonRect(laneIndex);
-        return sf::FloatRect(visual.left - LaneHitPadding,
-                             visual.top - LaneHitPadding,
-                             visual.width + LaneHitPadding * 2.f,
-                             visual.height + LaneHitPadding * 2.f);
+        return sf::FloatRect(visual.left - LaneHitPaddingX,
+                             visual.top - LaneHitPaddingY,
+                             visual.width + LaneHitPaddingX * 2.f,
+                             visual.height + LaneHitPaddingY * 2.f);
+    }
+
+    inline sf::FloatRect laneHitStripRect()
+    {
+        constexpr float width = LaneButtonWidth * static_cast<float>(lane::Count)
+            + LaneButtonGap * static_cast<float>(lane::Count - 1);
+        return sf::FloatRect(LaneButtonLeft - LaneHitPaddingX,
+                             LaneButtonTop - LaneHitPaddingY,
+                             width + LaneHitPaddingX * 2.f,
+                             LaneButtonHeight + LaneHitPaddingY * 2.f);
     }
 
     inline sf::FloatRect masteryButtonRect(int buttonY)

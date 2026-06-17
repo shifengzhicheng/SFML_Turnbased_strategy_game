@@ -235,9 +235,14 @@ namespace art_internal
         drawPixelRect(target, origin, scale, 28.f, 16.f, 9.f, 4.f, metal);
         drawPixelRect(target, origin, scale, 23.f, 34.f, 10.f, 16.f, gold);
         drawPixelRect(target, origin, scale, 25.f, 37.f, 6.f, 10.f, main);
-        drawPixelRect(target, origin, scale, 43.f, 22.f, 3.f, 28.f, sf::Color(236, 239, 218));
-        drawPixelRect(target, origin, scale, 40.f, 24.f, 9.f, 3.f, gold);
-        drawPixelRect(target, origin, scale, 44.f, 18.f, 1.f, 5.f, sf::Color(255, 248, 214));
+        drawPixelRect(target, origin, scale, 43.f, 18.f, 6.f, 34.f, outline);
+        drawPixelRect(target, origin, scale, 45.f, 16.f, 2.f, 4.f, sf::Color(255, 248, 214));
+        drawPixelRect(target, origin, scale, 45.f, 20.f, 2.f, 27.f, sf::Color(236, 239, 218));
+        drawPixelRect(target, origin, scale, 47.f, 23.f, 1.f, 21.f, sf::Color(154, 163, 162));
+        drawPixelRect(target, origin, scale, 40.f, 25.f, 11.f, 4.f, gold);
+        drawPixelRect(target, origin, scale, 42.f, 47.f, 7.f, 3.f, sf::Color(89, 58, 34));
+        drawPixelRect(target, origin, scale, 29.f, 27.f, 2.f, 2.f, outline);
+        drawPixelRect(target, origin, scale, 35.f, 27.f, 2.f, 2.f, outline);
     }
 
     void drawShooterPixel(sf::RenderTarget& target, sf::Vector2f origin, float scale, art::Team team)
@@ -259,12 +264,15 @@ namespace art_internal
         drawPixelRect(target, origin, scale, 28.f, 20.f, 10.f, 5.f, mix(main, sf::Color::Black, 0.05f));
         drawPixelRect(target, origin, scale, 29.f, 27.f, 8.f, 6.f, skin);
         drawPixelRect(target, origin, scale, 31.f, 30.f, 2.f, 2.f, outline);
-        drawPixelRect(target, origin, scale, 43.f, 25.f, 3.f, 28.f, bow);
-        drawPixelRect(target, origin, scale, 46.f, 28.f, 1.f, 22.f, sf::Color(238, 224, 174));
-        drawPixelRect(target, origin, scale, 36.f, 36.f, 15.f, 2.f, sf::Color(238, 224, 174));
-        drawPixelRect(target, origin, scale, 49.f, 35.f, 4.f, 4.f, sf::Color(238, 224, 174));
+        drawPixelRect(target, origin, scale, 43.f, 21.f, 5.f, 34.f, outline);
+        drawPixelRect(target, origin, scale, 45.f, 23.f, 3.f, 30.f, bow);
+        drawPixelRect(target, origin, scale, 47.f, 27.f, 1.f, 23.f, sf::Color(246, 236, 191));
+        drawPixelRect(target, origin, scale, 34.f, 35.f, 20.f, 3.f, sf::Color(246, 236, 191));
+        drawPixelRect(target, origin, scale, 52.f, 33.f, 6.f, 7.f, sf::Color(246, 236, 191));
+        drawPixelRect(target, origin, scale, 53.f, 35.f, 8.f, 2.f, sf::Color(255, 249, 211));
         drawPixelRect(target, origin, scale, 18.f, 34.f, 5.f, 16.f, leather);
         drawPixelRect(target, origin, scale, 17.f, 31.f, 7.f, 3.f, sf::Color(232, 220, 165));
+        drawPixelRect(target, origin, scale, 30.f, 28.f, 2.f, 2.f, outline);
     }
 
     void drawCavalryPixel(sf::RenderTarget& target, sf::Vector2f origin, float scale, art::Team team)
@@ -288,9 +296,12 @@ namespace art_internal
         drawPixelOutline(target, origin, scale, 28.f, 25.f, 11.f, 13.f, main, outline);
         drawPixelRect(target, origin, scale, 30.f, 20.f, 8.f, 7.f, metal);
         drawPixelRect(target, origin, scale, 33.f, 16.f, 4.f, 4.f, accent);
-        drawPixelRect(target, origin, scale, 37.f, 20.f, 23.f, 3.f, sf::Color(239, 229, 187));
-        drawPixelRect(target, origin, scale, 57.f, 18.f, 3.f, 6.f, sf::Color(239, 229, 187));
+        drawPixelRect(target, origin, scale, 36.f, 19.f, 26.f, 6.f, outline);
+        drawPixelRect(target, origin, scale, 38.f, 20.f, 22.f, 3.f, sf::Color(239, 229, 187));
+        drawPixelRect(target, origin, scale, 58.f, 17.f, 4.f, 8.f, sf::Color(239, 229, 187));
+        drawPixelRect(target, origin, scale, 60.f, 19.f, 3.f, 4.f, sf::Color(255, 246, 205));
         drawPixelRect(target, origin, scale, 24.f, 39.f, 13.f, 3.f, sf::Color(227, 178, 75));
+        drawPixelRect(target, origin, scale, 47.f, 34.f, 2.f, 2.f, outline);
     }
 
     void drawSiegePixel(sf::RenderTarget& target, sf::Vector2f origin, float scale, art::Team team)
@@ -305,16 +316,19 @@ namespace art_internal
         drawPixelShadow(target, origin, scale, 9.f, 57.f, 48.f, sf::Color(9, 15, 13, 112));
         drawPixelOutline(target, origin, scale, 17.f, 40.f, 32.f, 12.f, wood, outline);
         drawPixelRect(target, origin, scale, 21.f, 43.f, 24.f, 3.f, woodLight);
-        drawPixelRect(target, origin, scale, 20.f, 34.f, 30.f, 7.f, sf::Color(82, 72, 60));
+        drawPixelRect(target, origin, scale, 19.f, 32.f, 35.f, 10.f, outline);
+        drawPixelRect(target, origin, scale, 21.f, 34.f, 29.f, 6.f, sf::Color(82, 72, 60));
+        drawPixelRect(target, origin, scale, 44.f, 27.f, 19.f, 9.f, outline);
         drawPixelRect(target, origin, scale, 46.f, 29.f, 14.f, 5.f, metal);
-        drawPixelRect(target, origin, scale, 56.f, 27.f, 4.f, 9.f, outline);
+        drawPixelRect(target, origin, scale, 57.f, 27.f, 5.f, 9.f, sf::Color(70, 70, 66));
         drawPixelRect(target, origin, scale, 12.f, 51.f, 11.f, 8.f, outline);
         drawPixelRect(target, origin, scale, 16.f, 53.f, 3.f, 3.f, sf::Color(220, 176, 76));
         drawPixelRect(target, origin, scale, 42.f, 50.f, 11.f, 8.f, outline);
         drawPixelRect(target, origin, scale, 46.f, 52.f, 3.f, 3.f, sf::Color(220, 176, 76));
         drawPixelRect(target, origin, scale, 24.f, 31.f, 11.f, 5.f, accent);
-        drawPixelRect(target, origin, scale, 59.f, 26.f, 3.f, 3.f, fire);
-        drawPixelRect(target, origin, scale, 61.f, 24.f, 2.f, 2.f, sf::Color(255, 230, 131));
+        drawPixelRect(target, origin, scale, 59.f, 24.f, 4.f, 5.f, fire);
+        drawPixelRect(target, origin, scale, 61.f, 22.f, 2.f, 2.f, sf::Color(255, 230, 131));
+        drawPixelRect(target, origin, scale, 53.f, 30.f, 5.f, 2.f, sf::Color(231, 228, 190));
     }
 
     void drawGuardianPixel(sf::RenderTarget& target, sf::Vector2f origin, float scale, art::Team team)
@@ -336,9 +350,12 @@ namespace art_internal
         drawPixelRect(target, origin, scale, 29.f, 15.f, 8.f, 8.f, gold);
         drawPixelRect(target, origin, scale, 28.f, 33.f, 11.f, 12.f, accent);
         drawPixelRect(target, origin, scale, 31.f, 36.f, 5.f, 6.f, sf::Color(255, 230, 119));
-        drawPixelRect(target, origin, scale, 49.f, 22.f, 4.f, 30.f, sf::Color(232, 226, 196));
-        drawPixelRect(target, origin, scale, 45.f, 25.f, 12.f, 3.f, gold);
-        drawPixelRect(target, origin, scale, 50.f, 17.f, 2.f, 6.f, sf::Color(255, 246, 204));
+        drawPixelRect(target, origin, scale, 48.f, 17.f, 7.f, 35.f, outline);
+        drawPixelRect(target, origin, scale, 50.f, 18.f, 3.f, 31.f, sf::Color(232, 226, 196));
+        drawPixelRect(target, origin, scale, 45.f, 25.f, 13.f, 4.f, gold);
+        drawPixelRect(target, origin, scale, 49.f, 13.f, 5.f, 7.f, sf::Color(255, 246, 204));
+        drawPixelRect(target, origin, scale, 14.f, 34.f, 9.f, 15.f, outline);
+        drawPixelRect(target, origin, scale, 16.f, 36.f, 5.f, 11.f, gold);
     }
 
     void drawUnitIcon(sf::RenderTarget& target, art::UnitKind kind, art::Team team, sf::Vector2f center, float scale)

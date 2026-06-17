@@ -7,7 +7,7 @@ namespace config
     inline constexpr int MapTilesY = 30;
     inline constexpr int MapWidth = TileSize * MapTilesX;
     inline constexpr int MapHeight = TileSize * MapTilesY;
-    inline constexpr int PanelWidth = 220;
+    inline constexpr int PanelWidth = 260;
     inline constexpr int WindowWidth = MapWidth + PanelWidth;
     inline constexpr int WindowHeight = MapHeight;
     inline constexpr int MaxUnits = 96;
@@ -32,8 +32,8 @@ namespace config
     inline constexpr int MasteryButtonInsetY = 3;
     inline constexpr int UnitButtonWidth = SideButtonWidth - MasteryButtonWidth - 8;
     inline constexpr int MasteryButtonX = ButtonX + UnitButtonWidth + 8;
-    inline constexpr int UnitTextureSize = 64;
-    inline constexpr float UnitSpriteScale = 0.86f;
+    inline constexpr int UnitTextureSize = 96;
+    inline constexpr float UnitSpriteScale = 0.80f;
     inline constexpr int BaseFootprintSize = 2;
 
     inline constexpr int PathStraightCost = 10;
