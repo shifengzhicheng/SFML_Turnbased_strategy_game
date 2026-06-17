@@ -173,6 +173,7 @@ public:
 
     void Draw();
     void DrawSidePanel();
+    void DrawSidePanel(sf::RenderTarget& target);
     void paintLanePathTiles();
     void drawLaneGuides();
     void drawGridOverlay();
@@ -189,7 +190,7 @@ public:
     sf::Vector2f currentShakeOffset() const;
     void handleBuildButtons(sf::Vector2i mousePos, sf::Event event);
     void handleRewardInput(sf::Vector2i mousePos, sf::Event event);
-    void handleLaneInput(sf::Vector2i mousePos, sf::Event event);
+    bool handleLaneInput(sf::Vector2i mousePos, sf::Event event);
     void clearSelection();
     void selectOnly(Unit* unit);
     void syncMazeFromTiles();

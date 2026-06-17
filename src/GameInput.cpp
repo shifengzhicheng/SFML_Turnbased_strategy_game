@@ -4,6 +4,7 @@
 #include "ArtAssets.h"
 #include "AutoCombat.h"
 #include "RealtimeConfig.h"
+#include "SidebarLayout.h"
 
 #include <algorithm>
 #include <cmath>
@@ -198,7 +199,9 @@ void Game::overinput(sf::Vector2i mousePos, sf::Event event) {
 
 void Game::handleBuildButtons(Vector2i mousePos, Event event)
 {
-    handleLaneInput(mousePos, event);
+    if (handleLaneInput(mousePos, event)) {
+        return;
+    }
 
     if (helpBtn.checkMouse(mousePos, event) == RELEASE) {
         tutorialVisible = !tutorialVisible;
@@ -230,12 +233,6 @@ void Game::handleBuildButtons(Vector2i mousePos, Event event)
     }
 
     if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
-        const auto masteryRect = [](int buttonY) {
-            return sf::FloatRect(static_cast<float>(config::MasteryButtonX),
-                                 static_cast<float>(buttonY + config::MasteryButtonInsetY),
-                                 static_cast<float>(config::MasteryButtonWidth),
-                                 static_cast<float>(config::MasteryButtonHeight));
-        };
         const std::pair<int, int> masteryButtons[] = {
             {UName::INFANTARY, config::BuildInfantryY},
             {UName::SHOOTER, config::BuildShooterY},
@@ -244,7 +241,7 @@ void Game::handleBuildButtons(Vector2i mousePos, Event event)
             {UName::GUARDIAN, config::BuildGuardianY},
         };
         for (const auto& entry : masteryButtons) {
-            if (masteryRect(entry.second).contains(static_cast<float>(mousePos.x), static_cast<float>(mousePos.y))) {
+            if (sidebar_layout::masteryButtonRect(entry.second).contains(static_cast<float>(mousePos.x), static_cast<float>(mousePos.y))) {
                 executeOperation(PLAYER, GameOperation(gameop::UpgradeUnitMastery, playerSelectedLane, entry.first));
                 inf.setState(NORMAL);
                 sho.setState(NORMAL);
@@ -278,24 +275,26 @@ void Game::handleBuildButtons(Vector2i mousePos, Event event)
     }
 }
 
-void Game::handleLaneInput(Vector2i mousePos, Event event)
+bool Game::handleLaneInput(Vector2i mousePos, Event event)
 {
-    if (event.type != sf::Event::MouseButtonReleased || event.mouseButton.button != sf::Mouse::Left) {
-        return;
+    const bool isLeftPress = event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left;
+    const bool isLeftRelease = event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left;
+    if (!isLeftPress && !isLeftRelease) {
+        return false;
     }
 
-    const float y = 190.f;
-    const float w = 56.f;
-    const float h = 24.f;
     for (int i = 0; i < lane::Count; ++i) {
-        const sf::FloatRect rect(config::PanelX + 17.f + static_cast<float>(i) * 64.f, y, w, h);
+        const sf::FloatRect rect = sidebar_layout::laneButtonHitRect(i);
         if (rect.contains(static_cast<float>(mousePos.x), static_cast<float>(mousePos.y))) {
-            playerSelectedLane = i;
-            addFloatingText(sf::Vector2f(config::PanelX + 20.f, 146.f),
-                            std::string("Lane: ") + laneName(i), sf::Color(218, 255, 134), 12);
-            return;
+            if (isLeftPress || playerSelectedLane != i) {
+                playerSelectedLane = i;
+                addFloatingText(sf::Vector2f(config::PanelX + 20.f, 146.f),
+                                std::string("Lane: ") + laneName(i), sf::Color(218, 255, 134), 12);
+            }
+            return true;
         }
     }
+    return false;
 }
 
 void Game::handleRewardInput(sf::Vector2i mousePos, sf::Event event)

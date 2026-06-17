@@ -4,6 +4,7 @@
 #include "ArtAssets.h"
 #include "AutoCombat.h"
 #include "RealtimeConfig.h"
+#include "SidebarLayout.h"
 
 #include <algorithm>
 #include <cmath>
@@ -17,6 +18,11 @@ using namespace game_internal;
 
 void Game::DrawSidePanel()
 {
+    DrawSidePanel(window);
+}
+
+void Game::DrawSidePanel(sf::RenderTarget& target)
+{
     helpBtn.setPosition(config::ButtonX, config::HelpButtonY);
     upgradeBtn.setPosition(config::ButtonX, config::EndTurnButtonY);
     economyBtn.setPosition(config::ButtonX, config::EconomyButtonY);
@@ -28,60 +34,85 @@ void Game::DrawSidePanel()
     guardianBtn.setPosition(config::ButtonX, config::BuildGuardianY);
     towerBtn.setPosition(config::ButtonX, config::BuildTowerY);
 
-    window.draw(sidePanel);
+    target.draw(sidePanel);
 
     sf::RectangleShape accentLine(sf::Vector2f(4.f, static_cast<float>(config::WindowHeight)));
     accentLine.setPosition(static_cast<float>(config::PanelX), 0.f);
     accentLine.setFillColor(sf::Color(219, 166, 75));
-    window.draw(accentLine);
+    target.draw(accentLine);
 
     sf::RectangleShape topGlow(sf::Vector2f(static_cast<float>(config::PanelWidth), 120.f));
     topGlow.setPosition(static_cast<float>(config::PanelX), 0.f);
     topGlow.setFillColor(sf::Color(255, 222, 138, 14));
-    window.draw(topGlow);
+    target.draw(topGlow);
 
-    const float panelLeft = static_cast<float>(config::PanelX + 12);
-    const float cardWidth = static_cast<float>(config::PanelWidth - 24);
-    const auto drawPanelCard = [this, panelLeft, cardWidth](float y, float h, sf::Color fill, sf::Color outline, const std::string& title) {
+    const float panelLeft = sidebar_layout::CardLeft;
+    const float cardWidth = sidebar_layout::CardWidth;
+    const auto drawPanelCard = [this, panelLeft, cardWidth, &target](float y, float h, sf::Color fill, sf::Color outline, const std::string& title) {
         sf::RectangleShape shadow(sf::Vector2f(cardWidth, h));
         shadow.setPosition(panelLeft + 2.f, y + 4.f);
         shadow.setFillColor(sf::Color(8, 11, 10, 86));
-        window.draw(shadow);
+        target.draw(shadow);
 
         sf::RectangleShape card(sf::Vector2f(cardWidth, h));
         card.setPosition(panelLeft, y);
         card.setFillColor(fill);
         card.setOutlineColor(outline);
         card.setOutlineThickness(1.4f);
-        window.draw(card);
+        target.draw(card);
 
         if (!title.empty()) {
             sf::RectangleShape titleBar(sf::Vector2f(cardWidth - 16.f, 1.4f));
             titleBar.setPosition(panelLeft + 8.f, y + 21.f);
             titleBar.setFillColor(sf::Color(outline.r, outline.g, outline.b, 120));
-            window.draw(titleBar);
+            target.draw(titleBar);
 
             sf::Text titleText(title, myfont, 10);
             titleText.setFillColor(sf::Color(255, 232, 156));
             titleText.setLetterSpacing(1.18f);
             titleText.setPosition(panelLeft + 10.f, y + 5.f);
-            window.draw(titleText);
+            target.draw(titleText);
         }
     };
 
-    drawPanelCard(8.f, 70.f, sf::Color(47, 58, 51), sf::Color(107, 118, 91), "COMMAND");
-    drawPanelCard(84.f, 136.f, sf::Color(40, 50, 45), sf::Color(84, 99, 78), "STATUS");
-    drawPanelCard(222.f, 96.f, sf::Color(61, 48, 31), sf::Color(205, 156, 70), "");
-    drawPanelCard(322.f, 340.f, sf::Color(42, 49, 44), sf::Color(86, 98, 75), "PRODUCE / MASTERY");
-    drawPanelCard(668.f, 44.f, sf::Color(37, 45, 41), sf::Color(86, 98, 75), "");
+    drawPanelCard(sidebar_layout::HeaderCardY, sidebar_layout::HeaderCardH, sf::Color(47, 58, 51), sf::Color(107, 118, 91), "COMMAND");
+    drawPanelCard(sidebar_layout::StatusCardY, sidebar_layout::StatusCardH, sf::Color(40, 50, 45), sf::Color(84, 99, 78), "STATUS");
+    drawPanelCard(sidebar_layout::ActionCardY, sidebar_layout::ActionCardH, sf::Color(61, 48, 31), sf::Color(205, 156, 70), "");
+    drawPanelCard(sidebar_layout::ProduceCardY, sidebar_layout::ProduceCardH, sf::Color(42, 49, 44), sf::Color(86, 98, 75), "PRODUCE / MASTERY");
+    drawPanelCard(sidebar_layout::HelpCardY, sidebar_layout::HelpCardH, sf::Color(37, 45, 41), sf::Color(86, 98, 75), "");
+
+    const auto guideText = [this]() {
+        if (playerEconomyLevel == 0) {
+            return std::string("Next: ECONOMY first");
+        }
+        if (completedBuildingCount(PLAYER, building::Barracks) == 0) {
+            return std::string("Next: build Barracks");
+        }
+        if (playerUpgradeLevel < 1 && commandForTeam(PLAYER) >= upgradeCostForNextLevel(PLAYER)) {
+            return std::string("Next: Upgrade for cards");
+        }
+        if (totalBuildingCount(AI, building::DefenseTower) > 0 && !isUnitUnlocked(PLAYER, UName::SIEGE)) {
+            return std::string("Enemy tower: tech Siege");
+        }
+        if (myunits.size() + 4 < enemys.size()) {
+            return std::string("Under pressure: queue units");
+        }
+        if (playerEconomyLevel < config::MaxEconomyLevel && commandForTeam(PLAYER) >= economyUpgradeCost(PLAYER)) {
+            return std::string("Float CMD: buy ECONOMY");
+        }
+        return std::string("Pick lane, keep queues busy");
+    };
 
     panelTitle.setCharacterSize(20);
     panelTitle.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 28.f);
-    Globle_text.setCharacterSize(13);
+    Globle_text.setCharacterSize(10);
     Globle_text.setFillColor(sf::Color(221, 211, 177));
-    Globle_text.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 54.f);
-    window.draw(panelTitle);
-    window.draw(Globle_text);
+    Globle_text.setOutlineColor(sf::Color(12, 15, 13, 190));
+    Globle_text.setOutlineThickness(0.8f);
+    Globle_text.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 55.f);
+    Globle_text.setString(guideText());
+    target.draw(panelTitle);
+    target.draw(Globle_text);
 
     const bool inspectingEnemyBase = MosOnUnit == Base_blue.get();
     const int shownTeam = inspectingEnemyBase ? AI : PLAYER;
@@ -113,50 +144,55 @@ void Game::DrawSidePanel()
         return text;
     };
 
-    CommandText.setCharacterSize(11);
+    CommandText.setCharacterSize(10);
     CommandText.setFillColor(sf::Color(255, 226, 128));
-    CommandText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 106.f);
+    CommandText.setOutlineColor(sf::Color(11, 14, 12, 200));
+    CommandText.setOutlineThickness(0.7f);
+    CommandText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 104.f);
     CommandText.setString("CMD " + std::to_string(playerCommand)
         + "   +" + std::to_string(resourceIncome(PLAYER)) + "/tick"
-        + "\nTech P " + std::to_string(playerUpgradeLevel)
+        + "\nTECH P" + std::to_string(playerUpgradeLevel)
         + "/" + std::to_string(config::MaxTechLevel)
-        + "  AI " + std::to_string(aiUpgradeLevel)
+        + "  AI" + std::to_string(aiUpgradeLevel)
         + "/" + std::to_string(config::MaxTechLevel)
-        + "\nEco  P " + std::to_string(playerEconomyLevel)
+        + "\nECON P" + std::to_string(playerEconomyLevel)
         + "/" + std::to_string(config::MaxEconomyLevel)
-        + "  AI " + std::to_string(aiEconomyLevel)
+        + "  AI" + std::to_string(aiEconomyLevel)
         + "/" + std::to_string(config::MaxEconomyLevel)
-        + "\nDrone " + std::to_string(workerCount(PLAYER))
+        + "\nDRN " + std::to_string(workerCount(PLAYER))
         + "/" + std::to_string(realtime::MaxWorkers)
-        + "  Army " + std::to_string(myunits.size())
+        + "  ARMY " + std::to_string(myunits.size())
         + "/" + std::to_string(config::MaxUnits)
         + "\nRax " + std::to_string(completedBuildingCount(PLAYER, building::Barracks))
         + "/" + std::to_string(buildingCap(PLAYER, building::Barracks))
-        + "  Tower " + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower))
+        + "  TWR " + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower))
         + "/" + std::to_string(buildingCap(PLAYER, building::DefenseTower)));
-    window.draw(CommandText);
+    target.draw(CommandText);
 
     sf::Text perkText(std::string(inspectingEnemyBase ? "Enemy" : "Your") + " Lv" + std::to_string(shownLevel)
-        + " buffs: " + clampText(perkLine(), 24), myfont, 10);
+        + " buffs: " + clampText(perkLine(), 24), myfont, 9);
     perkText.setFillColor(inspectingEnemyBase ? sf::Color(149, 203, 255) : sf::Color(255, 226, 142));
-    perkText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 163.f);
-    window.draw(perkText);
+    perkText.setOutlineColor(sf::Color(11, 14, 12, 200));
+    perkText.setOutlineThickness(0.7f);
+    perkText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 164.f);
+    target.draw(perkText);
 
     const auto masteryBonus = [this, shownTeam](int unitName) {
         return static_cast<int>(std::round(static_cast<float>(unitMasteryLevel(shownTeam, unitName))
             * config::MasteryStatBonusPerLevel * 100.f));
     };
-    sf::Text masteryText("Mst I+" + std::to_string(masteryBonus(UName::INFANTARY))
+    sf::Text masteryText("MST I+" + std::to_string(masteryBonus(UName::INFANTARY))
         + " Sh+" + std::to_string(masteryBonus(UName::SHOOTER))
         + " Cv+" + std::to_string(masteryBonus(UName::CAVALRY))
         + " Sg+" + std::to_string(masteryBonus(UName::SIEGE))
         + " Gd+" + std::to_string(masteryBonus(UName::GUARDIAN))
-        + "%", myfont, 9);
+        + "%", myfont, 8);
     masteryText.setFillColor(inspectingEnemyBase ? sf::Color(149, 203, 255) : sf::Color(151, 235, 154));
-    masteryText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 177.f);
-    window.draw(masteryText);
+    masteryText.setOutlineColor(sf::Color(11, 14, 12, 200));
+    masteryText.setOutlineThickness(0.7f);
+    masteryText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 176.f);
+    target.draw(masteryText);
 
-    const float laneY = 190.f;
     int playerLaneCounts[lane::Count] = {};
     int aiLaneCounts[lane::Count] = {};
     for (const auto& unit : myunits) {
@@ -170,65 +206,41 @@ void Game::DrawSidePanel()
         }
     }
     for (int i = 0; i < lane::Count; ++i) {
-        sf::RectangleShape laneButton(sf::Vector2f(56.f, 24.f));
-        laneButton.setPosition(config::PanelX + 17.f + static_cast<float>(i) * 64.f, laneY);
+        const sf::FloatRect laneRect = sidebar_layout::laneButtonRect(i);
+        sf::RectangleShape laneButton(sf::Vector2f(laneRect.width, laneRect.height));
+        laneButton.setPosition(laneRect.left, laneRect.top);
         laneButton.setFillColor(playerSelectedLane == i ? sf::Color(217, 166, 75) : sf::Color(48, 60, 52));
         laneButton.setOutlineColor(playerSelectedLane == i ? sf::Color(255, 236, 164) : sf::Color(111, 128, 99));
         laneButton.setOutlineThickness(playerSelectedLane == i ? 1.8f : 0.9f);
-        window.draw(laneButton);
+        target.draw(laneButton);
 
         sf::Text laneText(laneName(i), myfont, 10);
         laneText.setFillColor(playerSelectedLane == i ? sf::Color(41, 31, 20) : sf::Color(224, 232, 203));
-        laneText.setPosition(laneButton.getPosition() + sf::Vector2f(7.f, 1.f));
-        window.draw(laneText);
+        laneText.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 3.f));
+        target.draw(laneText);
 
         sf::Text laneCount(std::to_string(playerLaneCounts[i]) + "/" + std::to_string(aiLaneCounts[i]), myfont, 8);
         laneCount.setFillColor(playerSelectedLane == i ? sf::Color(64, 45, 23) : sf::Color(205, 214, 188));
-        laneCount.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 14.f));
-        window.draw(laneCount);
+        laneCount.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 18.f));
+        target.draw(laneCount);
     }
-
-    const auto guideText = [this]() {
-        if (playerEconomyLevel == 0) {
-            return std::string("Next: ECONOMY first");
-        }
-        if (completedBuildingCount(PLAYER, building::Barracks) == 0) {
-            return std::string("Next: build Barracks");
-        }
-        if (playerUpgradeLevel < 1 && commandForTeam(PLAYER) >= upgradeCostForNextLevel(PLAYER)) {
-            return std::string("Next: Upgrade for cards");
-        }
-        if (totalBuildingCount(AI, building::DefenseTower) > 0 && !isUnitUnlocked(PLAYER, UName::SIEGE)) {
-            return std::string("Enemy tower: tech Siege");
-        }
-        if (myunits.size() + 4 < enemys.size()) {
-            return std::string("Under pressure: queue units");
-        }
-        if (playerEconomyLevel < config::MaxEconomyLevel && commandForTeam(PLAYER) >= economyUpgradeCost(PLAYER)) {
-            return std::string("Float CMD: buy ECONOMY");
-        }
-        return std::string("Pick lane, keep queues busy");
-    };
-    panelHint.setCharacterSize(10);
-    panelHint.setFillColor(sf::Color(219, 209, 174));
-    panelHint.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 203.f);
-    panelHint.setString(guideText());
-    window.draw(panelHint);
 
     upgradeBtn.setColor(commandForTeam(PLAYER) >= upgradeCostForNextLevel(PLAYER)
         && playerUpgradeLevel < config::MaxTechLevel
         ? sf::Color::White
         : sf::Color(255, 255, 255, 130));
-    window.draw(upgradeBtn);
+    target.draw(upgradeBtn);
 
     economyBtn.setColor(commandForTeam(PLAYER) >= economyUpgradeCost(PLAYER)
         && playerEconomyLevel < config::MaxEconomyLevel
         ? sf::Color::White
         : sf::Color(255, 255, 255, 130));
-    window.draw(economyBtn);
+    target.draw(economyBtn);
 
     economyLabel.setCharacterSize(9);
     economyLabel.setFillColor(sf::Color(244, 221, 150));
+    economyLabel.setOutlineColor(sf::Color(18, 15, 10, 190));
+    economyLabel.setOutlineThickness(0.7f);
     economyLabel.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), config::EconomyButtonY + config::SideButtonHeight - 2.f);
     const auto projectedIncome = [this](int level) {
         const int bonus = level * config::EconomyIncomeStep
@@ -243,12 +255,14 @@ void Game::DrawSidePanel()
         ? ("Cost " + std::to_string(economyUpgradeCost(PLAYER))
             + " | +" + std::to_string(nextEconomyGain) + "/tick +drone")
         : ("Max | " + std::to_string(resourceIncome(PLAYER)) + "/tick"));
-    window.draw(economyLabel);
+    target.draw(economyLabel);
 
     sf::Text upgradeCost("Cost " + std::to_string(upgradeCostForNextLevel(PLAYER)) + " | 3 mechanic cards", myfont, 9);
     upgradeCost.setFillColor(sf::Color(244, 221, 150));
+    upgradeCost.setOutlineColor(sf::Color(18, 15, 10, 190));
+    upgradeCost.setOutlineThickness(0.7f);
     upgradeCost.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), config::EndTurnButtonY + config::SideButtonHeight - 2.f);
-    window.draw(upgradeCost);
+    target.draw(upgradeCost);
 
     const bool canBuildBarracks = commandForTeam(PLAYER) >= buildingCommandCost(building::Barracks)
         && totalBuildingCount(PLAYER, building::Barracks) < buildingCap(PLAYER, building::Barracks);
@@ -264,54 +278,53 @@ void Game::DrawSidePanel()
 
     const auto setLabel = [this](sf::Text& text, const std::string& value, int buttonY) {
         text.setCharacterSize(8);
-        text.setFillColor(sf::Color(221, 211, 177));
+        text.setFillColor(sf::Color(235, 225, 190));
+        text.setOutlineColor(sf::Color(12, 15, 13, 210));
+        text.setOutlineThickness(0.7f);
         text.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), static_cast<float>(buttonY + config::SideButtonHeight - 1));
         text.setString(value);
     };
-    setLabel(barracksLabel, std::to_string(buildingCommandCost(building::Barracks)) + " | cap "
+    setLabel(barracksLabel, std::to_string(buildingCommandCost(building::Barracks)) + " CMD | cap "
         + std::to_string(totalBuildingCount(PLAYER, building::Barracks)) + "/"
-        + std::to_string(buildingCap(PLAYER, building::Barracks)) + " auto near base", config::BuildBarracksY);
+        + std::to_string(buildingCap(PLAYER, building::Barracks)) + " | auto base", config::BuildBarracksY);
     const auto masteryLabel = [this](int unitName, const std::string& role) {
         const int level = unitMasteryLevel(PLAYER, unitName);
         const int bonus = static_cast<int>(std::round(static_cast<float>(level) * config::MasteryStatBonusPerLevel * 100.f));
         if (!isUnitUnlocked(PLAYER, unitName)) {
-            return std::to_string(unitCost(unitName)) + " | locked | " + role;
+            return std::to_string(unitCost(unitName)) + " CMD | locked | " + role;
         }
         return std::to_string(unitCost(unitName))
-            + " | Mastery Lv" + std::to_string(level)
-            + "  DMG/HP +" + std::to_string(bonus) + "%"
-            + "  next " + std::to_string(unitMasteryUpgradeCost(PLAYER, unitName));
+            + " CMD | M" + std::to_string(level)
+            + " +" + std::to_string(bonus) + "%"
+            + " | next " + std::to_string(unitMasteryUpgradeCost(PLAYER, unitName));
     };
     setLabel(infantryLabel, masteryLabel(UName::INFANTARY, "front"), config::BuildInfantryY);
     setLabel(shooterLabel, masteryLabel(UName::SHOOTER, "multi"), config::BuildShooterY);
     setLabel(cavalryLabel, masteryLabel(UName::CAVALRY, "dive"), config::BuildCavalryY);
     setLabel(siegeLabel, masteryLabel(UName::SIEGE, "breach"), config::BuildSiegeY);
     setLabel(guardianLabel, masteryLabel(UName::GUARDIAN, "tank"), config::BuildGuardianY);
-    setLabel(towerLabel, std::to_string(buildingCommandCost(building::DefenseTower)) + " | cap "
+    setLabel(towerLabel, std::to_string(buildingCommandCost(building::DefenseTower)) + " CMD | cap "
         + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower)) + "/"
-        + std::to_string(buildingCap(PLAYER, building::DefenseTower)) + " anti-rush", config::BuildTowerY);
+        + std::to_string(buildingCap(PLAYER, building::DefenseTower)) + " | anti-rush", config::BuildTowerY);
 
-    window.draw(helpBtn);
-    window.draw(barracksBtn);
-    window.draw(barracksLabel);
-    window.draw(inf);
-    window.draw(infantryLabel);
-    window.draw(sho);
-    window.draw(shooterLabel);
-    window.draw(cav);
-    window.draw(cavalryLabel);
-    window.draw(siegeBtn);
-    window.draw(siegeLabel);
-    window.draw(guardianBtn);
-    window.draw(guardianLabel);
-    window.draw(towerBtn);
-    window.draw(towerLabel);
+    target.draw(helpBtn);
+    target.draw(barracksBtn);
+    target.draw(barracksLabel);
+    target.draw(inf);
+    target.draw(infantryLabel);
+    target.draw(sho);
+    target.draw(shooterLabel);
+    target.draw(cav);
+    target.draw(cavalryLabel);
+    target.draw(siegeBtn);
+    target.draw(siegeLabel);
+    target.draw(guardianBtn);
+    target.draw(guardianLabel);
+    target.draw(towerBtn);
+    target.draw(towerLabel);
 
-    const auto drawMasteryButton = [this](int unitName, int buttonY) {
-        const sf::FloatRect rect(static_cast<float>(config::MasteryButtonX),
-                                 static_cast<float>(buttonY + config::MasteryButtonInsetY),
-                                 static_cast<float>(config::MasteryButtonWidth),
-                                 static_cast<float>(config::MasteryButtonHeight));
+    const auto drawMasteryButton = [this, &target](int unitName, int buttonY) {
+        const sf::FloatRect rect = sidebar_layout::masteryButtonRect(buttonY);
         const bool enabled = canUpgradeUnitMastery(PLAYER, unitName);
         const bool locked = !isUnitUnlocked(PLAYER, unitName);
         const int level = unitMasteryLevel(PLAYER, unitName);
@@ -321,7 +334,7 @@ void Game::DrawSidePanel()
         sf::RectangleShape shadow(sf::Vector2f(rect.width, rect.height));
         shadow.setPosition(rect.left + 2.f, rect.top + 3.f);
         shadow.setFillColor(sf::Color(0, 0, 0, 105));
-        window.draw(shadow);
+        target.draw(shadow);
 
         sf::RectangleShape pill(sf::Vector2f(rect.width, rect.height));
         pill.setPosition(rect.left, rect.top);
@@ -330,28 +343,28 @@ void Game::DrawSidePanel()
         pill.setOutlineColor(enabled ? sf::Color(255, 239, 157)
             : (locked ? sf::Color(96, 103, 89) : sf::Color(181, 145, 70)));
         pill.setOutlineThickness(enabled ? 2.f : 1.2f);
-        window.draw(pill);
+        target.draw(pill);
 
         sf::RectangleShape shine(sf::Vector2f(rect.width - 10.f, 4.f));
         shine.setPosition(rect.left + 5.f, rect.top + 5.f);
         shine.setFillColor(enabled ? sf::Color(255, 250, 200, 86) : sf::Color(255, 255, 255, 22));
-        window.draw(shine);
+        target.draw(shine);
 
         sf::Text upText(locked ? "LOCK" : "UP", myfont, locked ? 9 : 11);
         upText.setFillColor(enabled ? sf::Color(45, 29, 12) : sf::Color(212, 199, 158));
         upText.setPosition(rect.left + (locked ? 14.f : 22.f), rect.top + 2.f);
-        window.draw(upText);
+        target.draw(upText);
 
         sf::Text bonusText("+" + std::to_string(bonus) + "%", myfont, 9);
         bonusText.setFillColor(enabled ? sf::Color(46, 31, 17) : sf::Color(190, 184, 154));
         bonusText.setPosition(rect.left + 15.f, rect.top + 17.f);
-        window.draw(bonusText);
+        target.draw(bonusText);
 
         if (!locked) {
             sf::Text levelText("M" + std::to_string(level), myfont, 8);
             levelText.setFillColor(enabled ? sf::Color(66, 42, 18) : sf::Color(175, 162, 126));
             levelText.setPosition(rect.left + 4.f, rect.top + 17.f);
-            window.draw(levelText);
+            target.draw(levelText);
         }
     };
     drawMasteryButton(UName::INFANTARY, config::BuildInfantryY);

@@ -2,6 +2,7 @@
 #include "AutoCombat.h"
 #include "BuildingDefinition.h"
 #include "RealtimeConfig.h"
+#include "SidebarLayout.h"
 #include "UnitDefinition.h"
 
 #include <cmath>
@@ -29,6 +30,24 @@ int main()
     game.externalAIControl = true;
     game.gameSceneState = SCENE_GAME;
     game.clear();
+
+    sf::Event lanePress{};
+    lanePress.type = sf::Event::MouseButtonPressed;
+    lanePress.mouseButton.button = sf::Mouse::Left;
+    for (int laneIndex = 0; laneIndex < lane::Count; ++laneIndex) {
+        const sf::FloatRect rect = sidebar_layout::laneButtonRect(laneIndex);
+        const sf::Vector2i edgeClick(static_cast<int>(rect.left + rect.width - 1.f),
+                                     static_cast<int>(rect.top + rect.height - 1.f));
+        lanePress.mouseButton.x = edgeClick.x;
+        lanePress.mouseButton.y = edgeClick.y;
+        require(game.handleLaneInput(edgeClick, lanePress),
+                "lane button edge clicks should land inside the shared hitbox");
+        require(game.playerSelectedLane == laneIndex,
+                "lane button clicks should select the matching lane");
+    }
+    const sf::FloatRect lastLaneHit = sidebar_layout::laneButtonHitRect(lane::Bot);
+    require(lastLaneHit.top + lastLaneHit.height < static_cast<float>(config::EconomyButtonY),
+            "lane hitboxes must not overlap the economy action button");
 
     require(!game.canQueueUnit(PLAYER, UName::INFANTARY),
             "infantry should require a completed barracks");
