@@ -15,6 +15,23 @@ namespace
     {
         return team == PLAYER ? game.playerMastery : game.aiMastery;
     }
+
+    int masteryButtonYForUnit(int unitName)
+    {
+        switch (unitName) {
+        case UName::SHOOTER:
+            return config::BuildShooterY;
+        case UName::CAVALRY:
+            return config::BuildCavalryY;
+        case UName::SIEGE:
+            return config::BuildSiegeY;
+        case UName::GUARDIAN:
+            return config::BuildGuardianY;
+        case UName::INFANTARY:
+        default:
+            return config::BuildInfantryY;
+        }
+    }
 }
 
 bool Game::upgradeUnitMastery(int team, int unitName)
@@ -26,7 +43,7 @@ bool Game::upgradeUnitMastery(int team, int unitName)
     const int cost = unitMasteryUpgradeCost(team, unitName);
     if (!isUnitUnlocked(team, unitName) || commandForTeam(team) < cost) {
         if (team == PLAYER) {
-            addFloatingText(sf::Vector2f(config::PanelX + 18.f, static_cast<float>(config::BuildInfantryY) - 18.f),
+            addFloatingText(sf::Vector2f(config::PanelX + 18.f, static_cast<float>(masteryButtonYForUnit(unitName)) - 18.f),
                             !isUnitUnlocked(team, unitName) ? "Locked" : "Need CMD",
                             sf::Color(255, 214, 96), 12);
         }
@@ -57,8 +74,14 @@ bool Game::upgradeUnitMastery(int team, int unitName)
     Unit* base = team == PLAYER ? static_cast<Unit*>(Base_red.get()) : static_cast<Unit*>(Base_blue.get());
     if (base != nullptr) {
         addFloatingText(sf::Vector2f(base->x * SqureSize + SqureSize, base->y * SqureSize - 54.f),
-                        std::string(unitDebugName(unitName)) + " Mastery " + std::to_string(nextLevel),
+                        std::string(unitDebugName(unitName)) + " M" + std::to_string(nextLevel) + " +"
+                            + std::to_string(static_cast<int>(std::round(nextLevel * config::MasteryStatBonusPerLevel * 100.f))) + "%",
                         team == PLAYER ? sf::Color(255, 226, 112) : sf::Color(145, 196, 255), 13);
+    }
+    if (team == PLAYER) {
+        addFloatingText(sf::Vector2f(config::PanelX + 18.f, static_cast<float>(masteryButtonYForUnit(unitName)) - 18.f),
+                        std::string(unitDebugName(unitName)) + " +10% DMG/HP",
+                        sf::Color(151, 235, 154), 13);
     }
     logEvent(std::string(team == PLAYER ? "player" : "ai")
         + " mastery unit=" + std::to_string(unitName)
@@ -66,4 +89,3 @@ bool Game::upgradeUnitMastery(int team, int unitName)
         + " cost=" + std::to_string(cost));
     return true;
 }
-

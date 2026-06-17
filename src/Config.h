@@ -25,6 +25,9 @@ namespace config
     inline constexpr int BuildTowerY = 610;
     inline constexpr int SideButtonWidth = PanelWidth - 36;
     inline constexpr int SideButtonHeight = 38;
+    inline constexpr int MasteryButtonWidth = 62;
+    inline constexpr int MasteryButtonHeight = 32;
+    inline constexpr int MasteryButtonInsetY = 3;
     inline constexpr int UnitTextureSize = 44;
     inline constexpr float UnitSpriteScale = 0.66f;
     inline constexpr int BaseFootprintSize = 2;

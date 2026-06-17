@@ -154,9 +154,15 @@ void Game::GameInput(Vector2i mousePos, Event event) {
 void Game::Input()
 {
     sf::Event event;
-    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
     while (window.pollEvent(event))
     {
+        sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+        if (event.type == Event::MouseButtonPressed || event.type == Event::MouseButtonReleased) {
+            mousePos = sf::Vector2i(event.mouseButton.x, event.mouseButton.y);
+        }
+        else if (event.type == Event::MouseMoved) {
+            mousePos = sf::Vector2i(event.mouseMove.x, event.mouseMove.y);
+        }
         if (event.type == Event::Closed) {
             window.close();
         }
@@ -225,8 +231,10 @@ void Game::handleBuildButtons(Vector2i mousePos, Event event)
 
     if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
         const auto masteryRect = [](int buttonY) {
-            return sf::FloatRect(static_cast<float>(config::PanelX + config::PanelWidth - 50),
-                                 static_cast<float>(buttonY + 6), 32.f, 26.f);
+            return sf::FloatRect(static_cast<float>(config::ButtonX + config::SideButtonWidth - config::MasteryButtonWidth),
+                                 static_cast<float>(buttonY + config::MasteryButtonInsetY),
+                                 static_cast<float>(config::MasteryButtonWidth),
+                                 static_cast<float>(config::MasteryButtonHeight));
         };
         const std::pair<int, int> masteryButtons[] = {
             {UName::INFANTARY, config::BuildInfantryY},

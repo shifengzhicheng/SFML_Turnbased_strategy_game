@@ -72,7 +72,7 @@ void Game::DrawSidePanel()
     drawPanelCard(8.f, 70.f, sf::Color(47, 58, 51), sf::Color(107, 118, 91), "COMMAND");
     drawPanelCard(84.f, 136.f, sf::Color(40, 50, 45), sf::Color(84, 99, 78), "STATUS");
     drawPanelCard(222.f, 96.f, sf::Color(61, 48, 31), sf::Color(205, 156, 70), "");
-    drawPanelCard(322.f, 340.f, sf::Color(42, 49, 44), sf::Color(86, 98, 75), "");
+    drawPanelCard(322.f, 340.f, sf::Color(42, 49, 44), sf::Color(86, 98, 75), "PRODUCE / MASTERY");
     drawPanelCard(668.f, 44.f, sf::Color(37, 45, 41), sf::Color(86, 98, 75), "");
 
     panelTitle.setCharacterSize(20);
@@ -139,8 +139,22 @@ void Game::DrawSidePanel()
     sf::Text perkText(std::string(inspectingEnemyBase ? "Enemy" : "Your") + " Lv" + std::to_string(shownLevel)
         + " buffs: " + clampText(perkLine(), 24), myfont, 10);
     perkText.setFillColor(inspectingEnemyBase ? sf::Color(149, 203, 255) : sf::Color(255, 226, 142));
-    perkText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 169.f);
+    perkText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 163.f);
     window.draw(perkText);
+
+    const auto masteryBonus = [this, shownTeam](int unitName) {
+        return static_cast<int>(std::round(static_cast<float>(unitMasteryLevel(shownTeam, unitName))
+            * config::MasteryStatBonusPerLevel * 100.f));
+    };
+    sf::Text masteryText("Mst I+" + std::to_string(masteryBonus(UName::INFANTARY))
+        + " Sh+" + std::to_string(masteryBonus(UName::SHOOTER))
+        + " Cv+" + std::to_string(masteryBonus(UName::CAVALRY))
+        + " Sg+" + std::to_string(masteryBonus(UName::SIEGE))
+        + " Gd+" + std::to_string(masteryBonus(UName::GUARDIAN))
+        + "%", myfont, 9);
+    masteryText.setFillColor(inspectingEnemyBase ? sf::Color(149, 203, 255) : sf::Color(151, 235, 154));
+    masteryText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 177.f);
+    window.draw(masteryText);
 
     const float laneY = 190.f;
     int playerLaneCounts[lane::Count] = {};
@@ -264,9 +278,9 @@ void Game::DrawSidePanel()
             return std::to_string(unitCost(unitName)) + " | locked | " + role;
         }
         return std::to_string(unitCost(unitName))
-            + " | M" + std::to_string(level)
-            + " +" + std::to_string(bonus) + "%"
-            + " next " + std::to_string(unitMasteryUpgradeCost(PLAYER, unitName));
+            + " | Mastery Lv" + std::to_string(level)
+            + "  DMG/HP +" + std::to_string(bonus) + "%"
+            + "  next " + std::to_string(unitMasteryUpgradeCost(PLAYER, unitName));
     };
     setLabel(infantryLabel, masteryLabel(UName::INFANTARY, "front"), config::BuildInfantryY);
     setLabel(shooterLabel, masteryLabel(UName::SHOOTER, "multi"), config::BuildShooterY);
@@ -294,20 +308,51 @@ void Game::DrawSidePanel()
     window.draw(towerLabel);
 
     const auto drawMasteryButton = [this](int unitName, int buttonY) {
-        const sf::FloatRect rect(static_cast<float>(config::PanelX + config::PanelWidth - 50),
-                                 static_cast<float>(buttonY + 6), 32.f, 26.f);
+        const sf::FloatRect rect(static_cast<float>(config::ButtonX + config::SideButtonWidth - config::MasteryButtonWidth),
+                                 static_cast<float>(buttonY + config::MasteryButtonInsetY),
+                                 static_cast<float>(config::MasteryButtonWidth),
+                                 static_cast<float>(config::MasteryButtonHeight));
         const bool enabled = canUpgradeUnitMastery(PLAYER, unitName);
-        sf::RectangleShape plus(sf::Vector2f(rect.width, rect.height));
-        plus.setPosition(rect.left, rect.top);
-        plus.setFillColor(enabled ? sf::Color(202, 149, 53, 235) : sf::Color(66, 67, 58, 210));
-        plus.setOutlineColor(enabled ? sf::Color(255, 235, 152) : sf::Color(113, 117, 96));
-        plus.setOutlineThickness(1.2f);
-        window.draw(plus);
+        const bool locked = !isUnitUnlocked(PLAYER, unitName);
+        const int level = unitMasteryLevel(PLAYER, unitName);
+        const int bonus = static_cast<int>(std::round(static_cast<float>(level)
+            * config::MasteryStatBonusPerLevel * 100.f));
 
-        sf::Text text("+", myfont, 18);
-        text.setFillColor(enabled ? sf::Color(45, 31, 15) : sf::Color(178, 181, 158));
-        text.setPosition(rect.left + 9.f, rect.top - 1.f);
-        window.draw(text);
+        sf::RectangleShape shadow(sf::Vector2f(rect.width, rect.height));
+        shadow.setPosition(rect.left + 2.f, rect.top + 3.f);
+        shadow.setFillColor(sf::Color(0, 0, 0, 105));
+        window.draw(shadow);
+
+        sf::RectangleShape pill(sf::Vector2f(rect.width, rect.height));
+        pill.setPosition(rect.left, rect.top);
+        pill.setFillColor(enabled ? sf::Color(198, 137, 37, 246)
+            : (locked ? sf::Color(50, 53, 48, 232) : sf::Color(84, 72, 49, 232)));
+        pill.setOutlineColor(enabled ? sf::Color(255, 239, 157)
+            : (locked ? sf::Color(96, 103, 89) : sf::Color(181, 145, 70)));
+        pill.setOutlineThickness(enabled ? 2.f : 1.2f);
+        window.draw(pill);
+
+        sf::RectangleShape shine(sf::Vector2f(rect.width - 10.f, 4.f));
+        shine.setPosition(rect.left + 5.f, rect.top + 5.f);
+        shine.setFillColor(enabled ? sf::Color(255, 250, 200, 86) : sf::Color(255, 255, 255, 22));
+        window.draw(shine);
+
+        sf::Text upText(locked ? "LOCK" : "UP", myfont, locked ? 9 : 11);
+        upText.setFillColor(enabled ? sf::Color(45, 29, 12) : sf::Color(212, 199, 158));
+        upText.setPosition(rect.left + (locked ? 14.f : 22.f), rect.top + 2.f);
+        window.draw(upText);
+
+        sf::Text bonusText("+" + std::to_string(bonus) + "%", myfont, 9);
+        bonusText.setFillColor(enabled ? sf::Color(46, 31, 17) : sf::Color(190, 184, 154));
+        bonusText.setPosition(rect.left + 15.f, rect.top + 17.f);
+        window.draw(bonusText);
+
+        if (!locked) {
+            sf::Text levelText("M" + std::to_string(level), myfont, 8);
+            levelText.setFillColor(enabled ? sf::Color(66, 42, 18) : sf::Color(175, 162, 126));
+            levelText.setPosition(rect.left + 4.f, rect.top + 17.f);
+            window.draw(levelText);
+        }
     };
     drawMasteryButton(UName::INFANTARY, config::BuildInfantryY);
     drawMasteryButton(UName::SHOOTER, config::BuildShooterY);
