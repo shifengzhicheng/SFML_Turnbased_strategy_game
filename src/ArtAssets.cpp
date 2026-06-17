@@ -12,9 +12,9 @@ namespace art
     {
         switch (team) {
         case Team::Player:
-            return sf::Color(222, 75, 59);
+            return sf::Color(214, 54, 43);
         case Team::Enemy:
-            return sf::Color(63, 122, 201);
+            return sf::Color(49, 105, 190);
         case Team::Neutral:
         default:
             return sf::Color(222, 179, 91);
@@ -25,9 +25,9 @@ namespace art
     {
         switch (team) {
         case Team::Player:
-            return sf::Color(110, 32, 30);
+            return sf::Color(111, 27, 24);
         case Team::Enemy:
-            return sf::Color(26, 58, 111);
+            return sf::Color(23, 49, 101);
         case Team::Neutral:
         default:
             return sf::Color(88, 68, 38);
@@ -117,83 +117,92 @@ namespace art
 
         const bool pressed = state == ButtonState::Pressed;
         const bool hover = state == ButtonState::Hover;
-        const float inset = pressed ? 4.f : 2.f;
-        const sf::Color deep = sf::Color(17, 22, 20);
-        const sf::Color frameColor = pressed ? sf::Color(54, 47, 35) : (hover ? sf::Color(70, 92, 68) : sf::Color(50, 64, 55));
-        const sf::Color brass = hover ? sf::Color(255, 224, 126) : sf::Color(218, 167, 78);
-        const sf::Color faceColor = pressed ? sf::Color(36, 42, 37) : (hover ? sf::Color(60, 82, 62) : sf::Color(43, 55, 49));
-        const sf::Color textColor = hover ? sf::Color(255, 238, 174) : sf::Color(231, 224, 195);
+        const float shift = pressed ? 2.f : 0.f;
+        const sf::Color ink(13, 17, 15);
+        const sf::Color brass = hover ? sf::Color(255, 224, 122) : sf::Color(218, 167, 78);
+        const sf::Color brassDark = pressed ? sf::Color(130, 91, 45) : sf::Color(176, 122, 54);
+        const sf::Color face = pressed ? sf::Color(33, 38, 34) : (hover ? sf::Color(48, 62, 54) : sf::Color(38, 47, 42));
+        const sf::Color faceTop = hover ? sf::Color(69, 86, 71) : sf::Color(51, 62, 53);
+        const sf::Color textColor = hover ? sf::Color(255, 240, 184) : sf::Color(232, 226, 199);
 
-        sf::RectangleShape shadow(sf::Vector2f(static_cast<float>(size.x) - inset * 2.f - 4.f,
-                                               static_cast<float>(size.y) - inset * 2.f - 5.f));
-        shadow.setPosition(inset + 4.f, inset + 7.f);
-        shadow.setFillColor(sf::Color(10, 13, 12, 92));
+        sf::RectangleShape shadow(sf::Vector2f(static_cast<float>(size.x) - 8.f, static_cast<float>(size.y) - 8.f));
+        shadow.setPosition(6.f + shift, 8.f + shift);
+        shadow.setFillColor(sf::Color(0, 0, 0, 104));
         canvas.draw(shadow);
 
-        sf::RectangleShape border(sf::Vector2f(static_cast<float>(size.x) - inset * 2.f,
-                                               static_cast<float>(size.y) - inset * 2.f - 4.f));
-        border.setPosition(inset, inset);
-        border.setFillColor(deep);
-        canvas.draw(border);
+        sf::RectangleShape outer(sf::Vector2f(static_cast<float>(size.x) - 6.f, static_cast<float>(size.y) - 6.f));
+        outer.setPosition(3.f + shift, 2.f + shift);
+        outer.setFillColor(ink);
+        canvas.draw(outer);
 
-        sf::RectangleShape frame(sf::Vector2f(border.getSize().x - 4.f, border.getSize().y - 4.f));
-        frame.setPosition(inset + 2.f, inset + 2.f);
-        frame.setFillColor(brass);
-        canvas.draw(frame);
+        sf::RectangleShape rail(sf::Vector2f(outer.getSize().x - 4.f, outer.getSize().y - 4.f));
+        rail.setPosition(outer.getPosition() + sf::Vector2f(2.f, 2.f));
+        rail.setFillColor(brass);
+        canvas.draw(rail);
 
-        sf::RectangleShape face(sf::Vector2f(static_cast<float>(size.x) - inset * 2.f - 10.f, static_cast<float>(size.y) - inset * 2.f - 14.f));
-        face.setPosition(inset + 5.f, inset + 5.f);
-        face.setFillColor(faceColor);
-        canvas.draw(face);
+        sf::RectangleShape faceRect(sf::Vector2f(rail.getSize().x - 8.f, rail.getSize().y - 8.f));
+        faceRect.setPosition(rail.getPosition() + sf::Vector2f(4.f, 4.f));
+        faceRect.setFillColor(face);
+        canvas.draw(faceRect);
 
-        sf::RectangleShape lower(sf::Vector2f(face.getSize().x, 3.f));
-        lower.setPosition(face.getPosition() + sf::Vector2f(0.f, face.getSize().y - 3.f));
-        lower.setFillColor(frameColor);
-        canvas.draw(lower);
+        sf::RectangleShape topBand(sf::Vector2f(faceRect.getSize().x, 8.f));
+        topBand.setPosition(faceRect.getPosition());
+        topBand.setFillColor(faceTop);
+        canvas.draw(topBand);
 
-        sf::RectangleShape topGlow(sf::Vector2f(static_cast<float>(size.x) - inset * 2.f - 24.f, 4.f));
-        topGlow.setPosition(inset + 12.f, inset + 10.f);
-        topGlow.setFillColor(sf::Color(255, 238, 166, hover ? 92 : 42));
-        canvas.draw(topGlow);
+        sf::RectangleShape lowerRail(sf::Vector2f(faceRect.getSize().x, 3.f));
+        lowerRail.setPosition(faceRect.getPosition() + sf::Vector2f(0.f, faceRect.getSize().y - 3.f));
+        lowerRail.setFillColor(brassDark);
+        canvas.draw(lowerRail);
 
-        sf::VertexArray slash(sf::Triangles, 3);
-        slash[0].position = sf::Vector2f(static_cast<float>(size.x) - 40.f, inset + 5.f);
-        slash[1].position = sf::Vector2f(static_cast<float>(size.x) - 5.f, inset + 5.f);
-        slash[2].position = sf::Vector2f(static_cast<float>(size.x) - 5.f, static_cast<float>(size.y) - 12.f);
-        slash[0].color = sf::Color(255, 248, 205, hover ? 36 : 24);
-        slash[1].color = sf::Color(255, 248, 205, hover ? 14 : 8);
-        slash[2].color = sf::Color(255, 248, 205, 0);
-        canvas.draw(slash);
+        sf::RectangleShape highlight(sf::Vector2f(std::max(10.f, faceRect.getSize().x - 18.f), 2.f));
+        highlight.setPosition(faceRect.getPosition() + sf::Vector2f(9.f, 5.f));
+        highlight.setFillColor(sf::Color(255, 246, 191, hover ? 90 : 42));
+        canvas.draw(highlight);
 
-        float textLeft = 12.f;
+        float textLeft = 13.f;
+        float textRightPad = 12.f;
         if (icon != UnitKind::None) {
-            sf::RectangleShape medallion(sf::Vector2f(36.f, 30.f));
-            medallion.setPosition(10.f, static_cast<float>(size.y) / 2.f - 18.f + inset * 0.45f);
-            medallion.setFillColor(sf::Color(30, 39, 35));
-            medallion.setOutlineColor(brass);
-            medallion.setOutlineThickness(2.f);
-            canvas.draw(medallion);
-            drawUnitIcon(canvas, icon, team, medallion.getPosition() + sf::Vector2f(18.f, 15.f), 0.48f);
+            sf::RectangleShape iconWell(sf::Vector2f(38.f, 30.f));
+            iconWell.setPosition(8.f + shift, static_cast<float>(size.y) / 2.f - 15.f + shift);
+            iconWell.setFillColor(sf::Color(22, 28, 25));
+            iconWell.setOutlineColor(brassDark);
+            iconWell.setOutlineThickness(1.4f);
+            canvas.draw(iconWell);
+
+            sf::RectangleShape iconLight(sf::Vector2f(30.f, 2.f));
+            iconLight.setPosition(iconWell.getPosition() + sf::Vector2f(4.f, 4.f));
+            iconLight.setFillColor(sf::Color(255, 239, 178, 38));
+            canvas.draw(iconLight);
+            drawUnitIcon(canvas, icon, team, iconWell.getPosition() + sf::Vector2f(19.f, 16.f), 0.52f);
             textLeft = 52.f;
 
             const std::string cost = costForIcon(icon);
-            sf::RectangleShape costChip(sf::Vector2f(22.f, 18.f));
-            costChip.setPosition(static_cast<float>(size.x) - 30.f, 7.f + inset * 0.35f);
-            costChip.setFillColor(sf::Color(77, 59, 31));
+            sf::RectangleShape costChip(sf::Vector2f(25.f, 19.f));
+            costChip.setPosition(static_cast<float>(size.x) - 31.f + shift, static_cast<float>(size.y) / 2.f - 9.5f + shift);
+            costChip.setFillColor(sf::Color(78, 56, 28));
             costChip.setOutlineColor(sf::Color(255, 219, 93));
-            costChip.setOutlineThickness(1.5f);
+            costChip.setOutlineThickness(1.3f);
             canvas.draw(costChip);
-            drawTextCentered(canvas, font, cost, 13, sf::Color(255, 232, 124),
-                             sf::FloatRect(static_cast<float>(size.x) - 30.f, 6.f + inset * 0.35f, 22.f, 18.f));
+            drawTextCentered(canvas, font, cost, cost.size() > 2 ? 11 : 12, sf::Color(255, 233, 127),
+                             sf::FloatRect(costChip.getPosition().x, costChip.getPosition().y - 1.f, costChip.getSize().x, costChip.getSize().y));
+            textRightPad = 34.f;
         }
 
-        const unsigned int textSize = size.y >= 64 ? 24 : (icon == UnitKind::None ? 15 : 14);
-        drawTextCentered(canvas, font, label, textSize, textColor,
-                         sf::FloatRect(textLeft, 8.f + inset * 0.4f, static_cast<float>(size.x) - textLeft - 14.f, static_cast<float>(size.y) - 18.f));
+        const unsigned int textSize = size.y >= 64 ? 25 : (icon == UnitKind::None ? 15 : 14);
+        sf::Text text(label, font, textSize);
+        text.setFillColor(textColor);
+        text.setOutlineColor(sf::Color(8, 10, 9, 130));
+        text.setOutlineThickness(size.y >= 64 ? 0.8f : 0.5f);
+        const auto bounds = text.getLocalBounds();
+        const float boxWidth = static_cast<float>(size.x) - textLeft - textRightPad;
+        text.setOrigin(bounds.left + bounds.width * 0.5f, bounds.top + bounds.height * 0.5f);
+        text.setPosition(textLeft + boxWidth * 0.5f + shift, static_cast<float>(size.y) * 0.52f + shift);
+        canvas.draw(text);
 
         if (pressed) {
             sf::RectangleShape veil(sf::Vector2f(static_cast<float>(size.x), static_cast<float>(size.y)));
-            veil.setFillColor(sf::Color(30, 18, 10, 38));
+            veil.setFillColor(sf::Color(15, 12, 8, 42));
             canvas.draw(veil);
         }
 

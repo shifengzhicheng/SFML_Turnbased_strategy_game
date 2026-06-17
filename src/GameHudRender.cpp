@@ -36,14 +36,14 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
 
     target.draw(sidePanel);
 
-    sf::RectangleShape accentLine(sf::Vector2f(4.f, static_cast<float>(config::WindowHeight)));
+    sf::RectangleShape accentLine(sf::Vector2f(3.f, static_cast<float>(config::WindowHeight)));
     accentLine.setPosition(static_cast<float>(config::PanelX), 0.f);
-    accentLine.setFillColor(sf::Color(219, 166, 75));
+    accentLine.setFillColor(sf::Color(226, 172, 81));
     target.draw(accentLine);
 
     sf::RectangleShape topGlow(sf::Vector2f(static_cast<float>(config::PanelWidth), 120.f));
     topGlow.setPosition(static_cast<float>(config::PanelX), 0.f);
-    topGlow.setFillColor(sf::Color(255, 222, 138, 14));
+    topGlow.setFillColor(sf::Color(255, 222, 138, 10));
     target.draw(topGlow);
 
     const float panelLeft = sidebar_layout::CardLeft;
@@ -58,8 +58,15 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         card.setPosition(panelLeft, y);
         card.setFillColor(fill);
         card.setOutlineColor(outline);
-        card.setOutlineThickness(1.4f);
+        card.setOutlineThickness(1.2f);
         target.draw(card);
+
+        sf::RectangleShape inner(sf::Vector2f(cardWidth - 10.f, h - 10.f));
+        inner.setPosition(panelLeft + 5.f, y + 5.f);
+        inner.setFillColor(sf::Color::Transparent);
+        inner.setOutlineColor(sf::Color(255, 246, 200, 18));
+        inner.setOutlineThickness(1.f);
+        target.draw(inner);
 
         if (!title.empty()) {
             sf::RectangleShape titleBar(sf::Vector2f(cardWidth - 16.f, 1.4f));
@@ -75,11 +82,11 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         }
     };
 
-    drawPanelCard(sidebar_layout::HeaderCardY, sidebar_layout::HeaderCardH, sf::Color(47, 58, 51), sf::Color(107, 118, 91), "COMMAND");
-    drawPanelCard(sidebar_layout::StatusCardY, sidebar_layout::StatusCardH, sf::Color(40, 50, 45), sf::Color(84, 99, 78), "STATUS");
-    drawPanelCard(sidebar_layout::ActionCardY, sidebar_layout::ActionCardH, sf::Color(61, 48, 31), sf::Color(205, 156, 70), "");
-    drawPanelCard(sidebar_layout::ProduceCardY, sidebar_layout::ProduceCardH, sf::Color(42, 49, 44), sf::Color(86, 98, 75), "PRODUCE / MASTERY");
-    drawPanelCard(sidebar_layout::HelpCardY, sidebar_layout::HelpCardH, sf::Color(37, 45, 41), sf::Color(86, 98, 75), "");
+    drawPanelCard(sidebar_layout::HeaderCardY, sidebar_layout::HeaderCardH, sf::Color(42, 51, 45), sf::Color(104, 120, 89), "COMMAND");
+    drawPanelCard(sidebar_layout::StatusCardY, sidebar_layout::StatusCardH, sf::Color(33, 42, 38), sf::Color(80, 96, 73), "STATUS");
+    drawPanelCard(sidebar_layout::ActionCardY, sidebar_layout::ActionCardH, sf::Color(55, 44, 29), sf::Color(211, 158, 69), "");
+    drawPanelCard(sidebar_layout::ProduceCardY, sidebar_layout::ProduceCardH, sf::Color(35, 42, 38), sf::Color(82, 95, 70), "PRODUCE / MASTERY");
+    drawPanelCard(sidebar_layout::HelpCardY, sidebar_layout::HelpCardH, sf::Color(32, 39, 36), sf::Color(80, 96, 73), "");
 
     const auto guideText = [this]() {
         if (playerEconomyLevel == 0) {
@@ -103,8 +110,13 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         return std::string("Pick lane, keep queues busy");
     };
 
+    panelTitle.setString("WAR ROOM");
     panelTitle.setCharacterSize(20);
-    panelTitle.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 28.f);
+    panelTitle.setFillColor(sf::Color(255, 242, 188));
+    panelTitle.setOutlineColor(sf::Color(12, 15, 13, 220));
+    panelTitle.setOutlineThickness(0.8f);
+    panelTitle.setLetterSpacing(1.18f);
+    panelTitle.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 27.f);
     Globle_text.setCharacterSize(10);
     Globle_text.setFillColor(sf::Color(221, 211, 177));
     Globle_text.setOutlineColor(sf::Color(12, 15, 13, 190));
@@ -148,25 +160,22 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
     CommandText.setFillColor(sf::Color(255, 226, 128));
     CommandText.setOutlineColor(sf::Color(11, 14, 12, 200));
     CommandText.setOutlineThickness(0.7f);
-    CommandText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 104.f);
+    CommandText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 101.f);
     CommandText.setString("CMD " + std::to_string(playerCommand)
         + "   +" + std::to_string(resourceIncome(PLAYER)) + "/tick"
-        + "\nTECH P" + std::to_string(playerUpgradeLevel)
+        + "\nTECH " + std::to_string(playerUpgradeLevel)
         + "/" + std::to_string(config::MaxTechLevel)
-        + "  AI" + std::to_string(aiUpgradeLevel)
+        + "   AI " + std::to_string(aiUpgradeLevel)
         + "/" + std::to_string(config::MaxTechLevel)
-        + "\nECON P" + std::to_string(playerEconomyLevel)
+        + "\nECON " + std::to_string(playerEconomyLevel)
         + "/" + std::to_string(config::MaxEconomyLevel)
-        + "  AI" + std::to_string(aiEconomyLevel)
-        + "/" + std::to_string(config::MaxEconomyLevel)
-        + "\nDRN " + std::to_string(workerCount(PLAYER))
-        + "/" + std::to_string(realtime::MaxWorkers)
-        + "  ARMY " + std::to_string(myunits.size())
-        + "/" + std::to_string(config::MaxUnits)
-        + "\nRax " + std::to_string(completedBuildingCount(PLAYER, building::Barracks))
+        + "   DRN " + std::to_string(workerCount(PLAYER))
+        + "\nRAX " + std::to_string(completedBuildingCount(PLAYER, building::Barracks))
         + "/" + std::to_string(buildingCap(PLAYER, building::Barracks))
         + "  TWR " + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower))
-        + "/" + std::to_string(buildingCap(PLAYER, building::DefenseTower)));
+        + "/" + std::to_string(buildingCap(PLAYER, building::DefenseTower))
+        + "  ARMY " + std::to_string(myunits.size())
+        + "/" + std::to_string(config::MaxUnits));
     target.draw(CommandText);
 
     sf::Text perkText(std::string(inspectingEnemyBase ? "Enemy" : "Your") + " Lv" + std::to_string(shownLevel)
@@ -174,7 +183,7 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
     perkText.setFillColor(inspectingEnemyBase ? sf::Color(149, 203, 255) : sf::Color(255, 226, 142));
     perkText.setOutlineColor(sf::Color(11, 14, 12, 200));
     perkText.setOutlineThickness(0.7f);
-    perkText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 164.f);
+    perkText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 153.f);
     target.draw(perkText);
 
     const auto masteryBonus = [this, shownTeam](int unitName) {
@@ -190,7 +199,7 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
     masteryText.setFillColor(inspectingEnemyBase ? sf::Color(149, 203, 255) : sf::Color(151, 235, 154));
     masteryText.setOutlineColor(sf::Color(11, 14, 12, 200));
     masteryText.setOutlineThickness(0.7f);
-    masteryText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 176.f);
+    masteryText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 164.f);
     target.draw(masteryText);
 
     int playerLaneCounts[lane::Count] = {};
@@ -209,19 +218,25 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         const sf::FloatRect laneRect = sidebar_layout::laneButtonRect(i);
         sf::RectangleShape laneButton(sf::Vector2f(laneRect.width, laneRect.height));
         laneButton.setPosition(laneRect.left, laneRect.top);
-        laneButton.setFillColor(playerSelectedLane == i ? sf::Color(217, 166, 75) : sf::Color(48, 60, 52));
-        laneButton.setOutlineColor(playerSelectedLane == i ? sf::Color(255, 236, 164) : sf::Color(111, 128, 99));
-        laneButton.setOutlineThickness(playerSelectedLane == i ? 1.8f : 0.9f);
+        laneButton.setFillColor(playerSelectedLane == i ? sf::Color(222, 169, 77) : sf::Color(39, 50, 45));
+        laneButton.setOutlineColor(playerSelectedLane == i ? sf::Color(255, 239, 158) : sf::Color(92, 109, 82));
+        laneButton.setOutlineThickness(playerSelectedLane == i ? 1.8f : 1.f);
         target.draw(laneButton);
+
+        sf::RectangleShape laneTop(sf::Vector2f(laneRect.width - 8.f, 3.f));
+        laneTop.setPosition(laneRect.left + 4.f, laneRect.top + 4.f);
+        laneTop.setFillColor(playerSelectedLane == i ? sf::Color(255, 239, 166, 135) : sf::Color(255, 255, 255, 22));
+        target.draw(laneTop);
 
         sf::Text laneText(laneName(i), myfont, 10);
         laneText.setFillColor(playerSelectedLane == i ? sf::Color(41, 31, 20) : sf::Color(224, 232, 203));
-        laneText.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 3.f));
+        laneText.setLetterSpacing(1.12f);
+        laneText.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 7.f));
         target.draw(laneText);
 
         sf::Text laneCount(std::to_string(playerLaneCounts[i]) + "/" + std::to_string(aiLaneCounts[i]), myfont, 8);
         laneCount.setFillColor(playerSelectedLane == i ? sf::Color(64, 45, 23) : sf::Color(205, 214, 188));
-        laneCount.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 18.f));
+        laneCount.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 22.f));
         target.draw(laneCount);
     }
 
@@ -284,17 +299,16 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         text.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), static_cast<float>(buttonY + config::SideButtonHeight - 1));
         text.setString(value);
     };
-    setLabel(barracksLabel, std::to_string(buildingCommandCost(building::Barracks)) + " CMD | cap "
+    setLabel(barracksLabel, "cap "
         + std::to_string(totalBuildingCount(PLAYER, building::Barracks)) + "/"
         + std::to_string(buildingCap(PLAYER, building::Barracks)) + " | auto base", config::BuildBarracksY);
     const auto masteryLabel = [this](int unitName, const std::string& role) {
         const int level = unitMasteryLevel(PLAYER, unitName);
         const int bonus = static_cast<int>(std::round(static_cast<float>(level) * config::MasteryStatBonusPerLevel * 100.f));
         if (!isUnitUnlocked(PLAYER, unitName)) {
-            return std::to_string(unitCost(unitName)) + " CMD | locked | " + role;
+            return "locked | " + role;
         }
-        return std::to_string(unitCost(unitName))
-            + " CMD | M" + std::to_string(level)
+        return "M" + std::to_string(level)
             + " +" + std::to_string(bonus) + "%"
             + " | next " + std::to_string(unitMasteryUpgradeCost(PLAYER, unitName));
     };
@@ -303,25 +317,18 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
     setLabel(cavalryLabel, masteryLabel(UName::CAVALRY, "dive"), config::BuildCavalryY);
     setLabel(siegeLabel, masteryLabel(UName::SIEGE, "breach"), config::BuildSiegeY);
     setLabel(guardianLabel, masteryLabel(UName::GUARDIAN, "tank"), config::BuildGuardianY);
-    setLabel(towerLabel, std::to_string(buildingCommandCost(building::DefenseTower)) + " CMD | cap "
+    setLabel(towerLabel, "cap "
         + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower)) + "/"
         + std::to_string(buildingCap(PLAYER, building::DefenseTower)) + " | anti-rush", config::BuildTowerY);
 
     target.draw(helpBtn);
     target.draw(barracksBtn);
-    target.draw(barracksLabel);
     target.draw(inf);
-    target.draw(infantryLabel);
     target.draw(sho);
-    target.draw(shooterLabel);
     target.draw(cav);
-    target.draw(cavalryLabel);
     target.draw(siegeBtn);
-    target.draw(siegeLabel);
     target.draw(guardianBtn);
-    target.draw(guardianLabel);
     target.draw(towerBtn);
-    target.draw(towerLabel);
 
     const auto drawMasteryButton = [this, &target](int unitName, int buttonY) {
         const sf::FloatRect rect = sidebar_layout::masteryButtonRect(buttonY);
@@ -338,10 +345,10 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
 
         sf::RectangleShape pill(sf::Vector2f(rect.width, rect.height));
         pill.setPosition(rect.left, rect.top);
-        pill.setFillColor(enabled ? sf::Color(198, 137, 37, 246)
-            : (locked ? sf::Color(50, 53, 48, 232) : sf::Color(84, 72, 49, 232)));
-        pill.setOutlineColor(enabled ? sf::Color(255, 239, 157)
-            : (locked ? sf::Color(96, 103, 89) : sf::Color(181, 145, 70)));
+        pill.setFillColor(enabled ? sf::Color(210, 147, 44, 246)
+            : (locked ? sf::Color(46, 50, 46, 232) : sf::Color(71, 62, 43, 232)));
+        pill.setOutlineColor(enabled ? sf::Color(255, 240, 158)
+            : (locked ? sf::Color(86, 96, 84) : sf::Color(161, 124, 61)));
         pill.setOutlineThickness(enabled ? 2.f : 1.2f);
         target.draw(pill);
 
@@ -350,7 +357,7 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         shine.setFillColor(enabled ? sf::Color(255, 250, 200, 86) : sf::Color(255, 255, 255, 22));
         target.draw(shine);
 
-        sf::Text upText(locked ? "LOCK" : "UP", myfont, locked ? 9 : 11);
+        sf::Text upText(locked ? "LOCK" : ("M" + std::to_string(level)), myfont, locked ? 9 : 11);
         upText.setFillColor(enabled ? sf::Color(45, 29, 12) : sf::Color(212, 199, 158));
         upText.setPosition(rect.left + (locked ? 14.f : 22.f), rect.top + 2.f);
         target.draw(upText);
@@ -360,11 +367,11 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         bonusText.setPosition(rect.left + 15.f, rect.top + 17.f);
         target.draw(bonusText);
 
-        if (!locked) {
-            sf::Text levelText("M" + std::to_string(level), myfont, 8);
-            levelText.setFillColor(enabled ? sf::Color(66, 42, 18) : sf::Color(175, 162, 126));
-            levelText.setPosition(rect.left + 4.f, rect.top + 17.f);
-            target.draw(levelText);
+        if (enabled) {
+            sf::Text plusText("+", myfont, 11);
+            plusText.setFillColor(sf::Color(63, 40, 18));
+            plusText.setPosition(rect.left + 5.f, rect.top + 2.f);
+            target.draw(plusText);
         }
     };
     drawMasteryButton(UName::INFANTARY, config::BuildInfantryY);

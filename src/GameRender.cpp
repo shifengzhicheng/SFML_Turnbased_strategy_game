@@ -51,10 +51,31 @@ void Game::Draw()
 
         sf::RectangleShape hero(sf::Vector2f(720.f, 360.f));
         hero.setPosition(300.f, 112.f);
-        hero.setFillColor(sf::Color(45, 58, 50, 232));
-        hero.setOutlineColor(sf::Color(224, 171, 82, 210));
+        hero.setFillColor(sf::Color(37, 48, 43, 236));
+        hero.setOutlineColor(sf::Color(224, 171, 82, 226));
         hero.setOutlineThickness(2.2f);
         window.draw(hero);
+
+        sf::VertexArray heroGrid(sf::Lines);
+        for (int x = 324; x <= 996; x += 48) {
+            heroGrid.append(sf::Vertex(sf::Vector2f(static_cast<float>(x), 250.f), sf::Color(164, 184, 132, 34)));
+            heroGrid.append(sf::Vertex(sf::Vector2f(static_cast<float>(x), 446.f), sf::Color(164, 184, 132, 14)));
+        }
+        for (int y = 250; y <= 446; y += 32) {
+            heroGrid.append(sf::Vertex(sf::Vector2f(324.f, static_cast<float>(y)), sf::Color(164, 184, 132, 22)));
+            heroGrid.append(sf::Vertex(sf::Vector2f(996.f, static_cast<float>(y)), sf::Color(164, 184, 132, 10)));
+        }
+        window.draw(heroGrid);
+
+        const sf::Color laneGold(255, 218, 112, 92);
+        for (int i = 0; i < 3; ++i) {
+            sf::RectangleShape laneMark(sf::Vector2f(520.f, 5.f));
+            laneMark.setOrigin(260.f, 2.5f);
+            laneMark.setPosition(660.f, 308.f + static_cast<float>(i) * 45.f);
+            laneMark.setRotation(i == 0 ? -7.f : (i == 2 ? 7.f : 0.f));
+            laneMark.setFillColor(i == 1 ? laneGold : sf::Color(122, 184, 111, 70));
+            window.draw(laneMark);
+        }
 
         sf::Text title("COMMAND LINES", myfont, 48);
         title.setFillColor(sf::Color(255, 236, 176));

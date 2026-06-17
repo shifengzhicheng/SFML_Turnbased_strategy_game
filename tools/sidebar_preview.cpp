@@ -96,6 +96,8 @@ int main(int argc, char** argv)
     game.aiCommand = 930;
     game.playerEconomyLevel = 6;
     game.aiEconomyLevel = 7;
+    game.syncWorkersForEconomy(PLAYER);
+    game.syncWorkersForEconomy(AI);
     game.playerUpgradeLevel = 8;
     game.aiUpgradeLevel = 9;
     game.playerSelectedLane = lane::Bot;

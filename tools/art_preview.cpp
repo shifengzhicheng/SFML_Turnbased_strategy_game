@@ -176,16 +176,16 @@ int main(int argc, char** argv)
 
     sf::RectangleShape panel(sf::Vector2f(176.f, 500.f));
     panel.setPosition(642.f, 40.f);
-    panel.setFillColor(sf::Color(35, 43, 39));
+    panel.setFillColor(sf::Color(24, 31, 28));
     panel.setOutlineColor(sf::Color(219, 166, 75));
     panel.setOutlineThickness(2.f);
     canvas.draw(panel);
     drawLabel(canvas, font, "WAR ROOM", 660.f, 58.f);
-    drawLabel(canvas, font, "CMD: 12/24", 660.f, 96.f);
-    drawLabel(canvas, font, "Gold: 2/5", 660.f, 116.f);
-    drawLabel(canvas, font, "Income: +8", 660.f, 136.f);
-    drawLabel(canvas, font, "Click again:", 660.f, 170.f);
-    drawLabel(canvas, font, "build more", 660.f, 190.f);
+    drawLabel(canvas, font, "CMD 760  +38/t", 660.f, 96.f);
+    drawLabel(canvas, font, "TECH 8/15", 660.f, 116.f);
+    drawLabel(canvas, font, "LANE: BOT", 660.f, 136.f);
+    drawLabel(canvas, font, "Queue units,", 660.f, 170.f);
+    drawLabel(canvas, font, "mastery spikes", 660.f, 190.f);
 
     sf::Sprite b1(endTurn), b2(infButton), b3(shoButton), b4(cavButton), b5(siegeButton), b6(guardianButton);
     b1.setPosition(666.f, 226.f);

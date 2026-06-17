@@ -99,7 +99,7 @@ void Game::Initial()
     const float panelTextX = static_cast<float>(config::PanelX + config::PanelPadding);
     setupText(Globle_text, myfont, 17, sf::Color(229, 221, 189), "GameStart", panelTextX, 48.f);
     setupText(CommandText, myfont, 14, sf::Color(255, 218, 112), "", panelTextX, 176.f);
-    setupText(panelTitle, myfont, 19, sf::Color(255, 246, 208), "AUTO WAR", panelTextX, 16.f);
+    setupText(panelTitle, myfont, 19, sf::Color(255, 246, 208), "WAR ROOM", panelTextX, 16.f);
     setupText(panelHint, myfont, 12, sf::Color(211, 199, 165), "Pick lane, queue units", panelTextX, 184.f);
     setupText(economyLabel, myfont, 10, sf::Color(228, 218, 185), "natural CMD", panelTextX, config::EconomyButtonY - 12.f);
     setupText(barracksLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(buildingCommandCost(building::Barracks)) + " auto near base", panelTextX, config::BuildBarracksY + 43.f);
@@ -112,8 +112,8 @@ void Game::Initial()
 
     sidePanel.setSize(sf::Vector2f(config::PanelWidth, config::WindowHeight));
     sidePanel.setPosition(config::PanelX, 0.f);
-    sidePanel.setFillColor(sf::Color(35, 43, 39));
-    sidePanel.setOutlineColor(sf::Color(19, 24, 22));
+    sidePanel.setFillColor(sf::Color(24, 31, 28));
+    sidePanel.setOutlineColor(sf::Color(10, 14, 12));
     sidePanel.setOutlineThickness(2.f);
 
     helpBtn.setPosition(config::ButtonX, config::HelpButtonY);
