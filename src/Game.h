@@ -173,6 +173,7 @@ public:
 
     void Draw();
     void DrawSidePanel();
+    void paintLanePathTiles();
     void drawLaneGuides();
     void drawGridOverlay();
     void drawResourceNodes();

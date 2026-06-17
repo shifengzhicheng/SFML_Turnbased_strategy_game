@@ -3,6 +3,7 @@
 #include "AllUnit.h"
 #include "ArtAssets.h"
 #include "AutoCombat.h"
+#include "LaneGeometry.h"
 #include "RealtimeConfig.h"
 
 #include <algorithm>
@@ -37,34 +38,62 @@ void Game::drawGridOverlay()
 
 void Game::drawLaneGuides()
 {
+    const int mapW = width / SqureSize;
     const int mapH = height / SqureSize;
-    const int laneYs[] = {
-        std::max(4, mapH / 4),
-        mapH / 2,
-        std::min(mapH - 5, mapH * 3 / 4)
-    };
     const char* labels[] = {"TOP", "MID", "BOT"};
 
-    for (int i = 0; i < lane::Count; ++i) {
-        const float y = static_cast<float>(laneYs[i] * SqureSize + SqureSize / 2);
-        sf::RectangleShape ribbon(sf::Vector2f(static_cast<float>(width), 5.f));
-        ribbon.setOrigin(0.f, 2.5f);
-        ribbon.setPosition(0.f, y);
-        ribbon.setFillColor(i == playerSelectedLane ? sf::Color(255, 218, 112, 72) : sf::Color(205, 220, 190, 34));
-        window.draw(ribbon);
+    const auto drawSegment = [this](Point a, Point b, sf::Color fill, sf::Color outline, bool active) {
+        const int steps = std::max(std::abs(b.x - a.x), std::abs(b.y - a.y)) * 2 + 1;
+        const float markerSize = active ? SqureSize * 0.58f : SqureSize * 0.42f;
+        for (int i = 0; i <= steps; ++i) {
+            const float t = static_cast<float>(i) / static_cast<float>(steps);
+            const float gx = static_cast<float>(a.x) + static_cast<float>(b.x - a.x) * t;
+            const float gy = static_cast<float>(a.y) + static_cast<float>(b.y - a.y) * t;
+            const sf::Vector2f center((gx + 0.5f) * SqureSize, (gy + 0.5f) * SqureSize);
 
-        sf::CircleShape arrow(7.f, 3);
-        arrow.setOrigin(7.f, 7.f);
-        arrow.setPosition(static_cast<float>(Red_baseP.x * SqureSize + 95), y);
-        arrow.setRotation(90.f);
-        arrow.setFillColor(i == playerSelectedLane ? sf::Color(255, 218, 112, 150) : sf::Color(220, 230, 196, 90));
-        window.draw(arrow);
+            sf::RectangleShape marker(sf::Vector2f(markerSize, markerSize * 0.34f));
+            marker.setOrigin(marker.getSize() * 0.5f);
+            marker.setPosition(center);
+            marker.setFillColor(fill);
+            marker.setOutlineColor(outline);
+            marker.setOutlineThickness(active ? 1.f : 0.f);
+            window.draw(marker);
+        }
+    };
+
+    for (int i = 0; i < lane::Count; ++i) {
+        const bool active = i == playerSelectedLane;
+        const auto route = lane_geometry::laneRoute(mapW, mapH, i);
+        const sf::Color fill = active
+            ? sf::Color(255, 218, 112, 118)
+            : sf::Color(142, 198, 132, 58);
+        const sf::Color outline = active
+            ? sf::Color(255, 242, 170, 160)
+            : sf::Color(73, 111, 72, 86);
+
+        for (std::size_t p = 1; p < route.size(); ++p) {
+            drawSegment(route[p - 1], route[p], fill, outline, active);
+        }
+
+        for (std::size_t p = 1; p + 1 < route.size(); ++p) {
+            const sf::Vector2f center(
+                (static_cast<float>(route[p].x) + 0.5f) * SqureSize,
+                (static_cast<float>(route[p].y) + 0.5f) * SqureSize);
+            sf::RectangleShape flag(sf::Vector2f(active ? 13.f : 9.f, active ? 13.f : 9.f));
+            flag.setOrigin(flag.getSize() * 0.5f);
+            flag.setPosition(center + sf::Vector2f(0.f, active ? -2.f : 0.f));
+            flag.setFillColor(active ? sf::Color(255, 231, 125, 210) : sf::Color(173, 211, 141, 132));
+            flag.setOutlineColor(sf::Color(46, 60, 42, 160));
+            flag.setOutlineThickness(1.f);
+            window.draw(flag);
+        }
 
         sf::Text laneText(labels[i], myfont, 11);
-        laneText.setFillColor(i == playerSelectedLane ? sf::Color(255, 236, 168, 190) : sf::Color(213, 225, 198, 110));
-        laneText.setOutlineColor(sf::Color(24, 29, 23, 140));
+        laneText.setFillColor(active ? sf::Color(255, 236, 168, 220) : sf::Color(213, 225, 198, 138));
+        laneText.setOutlineColor(sf::Color(24, 29, 23, 170));
         laneText.setOutlineThickness(1.f);
-        laneText.setPosition(static_cast<float>(Red_baseP.x * SqureSize + 18), y - 18.f);
+        const Point labelPoint = route[1];
+        laneText.setPosition((labelPoint.x - 1) * SqureSize, (labelPoint.y - 1.25f) * SqureSize);
         window.draw(laneText);
     }
 }

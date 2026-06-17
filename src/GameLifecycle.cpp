@@ -3,6 +3,7 @@
 #include "AllUnit.h"
 #include "ArtAssets.h"
 #include "AutoCombat.h"
+#include "LaneGeometry.h"
 #include "RealtimeConfig.h"
 
 #include <algorithm>
@@ -206,12 +207,52 @@ void Game::clear()
             tiles.push_back(t);
         }
     }
+    paintLanePathTiles();
     setBase();
     placeResourceNodes();
     createStartingWorkers();
 
     astar = Astar(maze);
 
+}
+
+void Game::paintLanePathTiles()
+{
+    const int mapW = width / SqureSize;
+    const int mapH = height / SqureSize;
+
+    const auto stamp = [this](Point point, int radius) {
+        for (int y = point.y - radius; y <= point.y + radius; ++y) {
+            for (int x = point.x - radius; x <= point.x + radius; ++x) {
+                if (!isMapCell(x, y)) {
+                    continue;
+                }
+                const int dx = x - point.x;
+                const int dy = y - point.y;
+                if (dx * dx + dy * dy <= radius * radius) {
+                    setTileID(x, y, tile::Path);
+                }
+            }
+        }
+    };
+
+    const auto stampSegment = [stamp](Point a, Point b, int radius) {
+        const int steps = std::max(std::abs(b.x - a.x), std::abs(b.y - a.y)) * 2 + 1;
+        for (int i = 0; i <= steps; ++i) {
+            const float t = static_cast<float>(i) / static_cast<float>(steps);
+            const int x = static_cast<int>(std::round(static_cast<float>(a.x) + static_cast<float>(b.x - a.x) * t));
+            const int y = static_cast<int>(std::round(static_cast<float>(a.y) + static_cast<float>(b.y - a.y) * t));
+            stamp(Point(x, y), radius);
+        }
+    };
+
+    for (int laneIndex = 0; laneIndex < lane::Count; ++laneIndex) {
+        const auto route = lane_geometry::laneRoute(mapW, mapH, laneIndex);
+        const int radius = laneIndex == lane::Mid ? 0 : 1;
+        for (std::size_t i = 1; i < route.size(); ++i) {
+            stampSegment(route[i - 1], route[i], radius);
+        }
+    }
 }
 
 void Game::setBase()
@@ -261,13 +302,13 @@ void Game::placeResourceNodes()
         Point point;
     };
     const std::vector<ResourceTarget> targets = {
-        {Point(Red_baseP.x + 8, Red_baseP.y + 4)},
-        {Point(Blue_baseP.x - 8, Blue_baseP.y - 4)},
-        {Point(mapW / 2, mapH / 2)},
-        {Point(mapW / 2, mapH / 4)},
-        {Point(mapW / 2, mapH * 3 / 4)},
-        {Point(mapW / 3, mapH / 2)},
-        {Point(mapW * 2 / 3, mapH / 2)}
+        {Point(Red_baseP.x + 7, Red_baseP.y + 4)},
+        {Point(Blue_baseP.x - 7, Blue_baseP.y - 4)},
+        {lane_geometry::laneWaypoint(mapW, mapH, lane::Mid, 1, false)},
+        {lane_geometry::laneWaypoint(mapW, mapH, lane::Top, 1, false)},
+        {lane_geometry::laneWaypoint(mapW, mapH, lane::Bot, 1, false)},
+        {lane_geometry::laneWaypoint(mapW, mapH, lane::Mid, 0, false)},
+        {lane_geometry::laneWaypoint(mapW, mapH, lane::Mid, 2, false)}
     };
 
     for (const auto& target : targets) {

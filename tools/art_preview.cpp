@@ -1,8 +1,11 @@
 #include "ArtAssets.h"
 #include "Config.h"
+#include "LaneGeometry.h"
 #include "Tile.h"
 
 #include <SFML/Graphics.hpp>
+#include <algorithm>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 
@@ -24,6 +27,30 @@ namespace
         label.setFillColor(sf::Color(233, 224, 194));
         label.setPosition(x, y);
         canvas.draw(label);
+    }
+
+    void drawPreviewLane(sf::RenderTexture& canvas, sf::Vector2f boardOrigin, int laneIndex, bool active)
+    {
+        constexpr int previewCols = 23;
+        constexpr int previewRows = 15;
+        const auto route = lane_geometry::laneRoute(previewCols, previewRows, laneIndex);
+        const sf::Color fill = active ? sf::Color(255, 218, 112, 116) : sf::Color(128, 190, 124, 58);
+        for (std::size_t p = 1; p < route.size(); ++p) {
+            const Point a = route[p - 1];
+            const Point b = route[p];
+            const int steps = std::max(std::abs(b.x - a.x), std::abs(b.y - a.y)) * 2 + 1;
+            for (int i = 0; i <= steps; ++i) {
+                const float t = static_cast<float>(i) / static_cast<float>(steps);
+                const float gx = static_cast<float>(a.x) + static_cast<float>(b.x - a.x) * t;
+                const float gy = static_cast<float>(a.y) + static_cast<float>(b.y - a.y) * t;
+                sf::RectangleShape marker(sf::Vector2f(active ? 14.f : 10.f, active ? 5.f : 4.f));
+                marker.setOrigin(marker.getSize() * 0.5f);
+                marker.setPosition(boardOrigin + sf::Vector2f((gx + 0.5f) * config::TileSize,
+                                                              (gy + 0.5f) * config::TileSize));
+                marker.setFillColor(fill);
+                canvas.draw(marker);
+            }
+        }
     }
 }
 
@@ -69,6 +96,10 @@ int main(int argc, char** argv)
         grid.append(sf::Vertex(sf::Vector2f(584.f, static_cast<float>(y)), sf::Color(53, 74, 58, 62)));
     }
     canvas.draw(grid);
+
+    drawPreviewLane(canvas, sf::Vector2f(24.f, 72.f), lane::Top, false);
+    drawPreviewLane(canvas, sf::Vector2f(24.f, 72.f), lane::Mid, true);
+    drawPreviewLane(canvas, sf::Vector2f(24.f, 72.f), lane::Bot, false);
 
     const tile::ID samples[] = {
         tile::Empty,

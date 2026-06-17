@@ -1,5 +1,7 @@
 #include "Map.h"
 
+#include "LaneGeometry.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -15,6 +17,11 @@ namespace
         int x = 0;
         int y = 0;
     };
+
+    GridPoint toGrid(Point point)
+    {
+        return GridPoint{point.x, point.y};
+    }
 
     bool inside(int x, int y, int cols, int lines)
     {
@@ -318,19 +325,15 @@ namespace
     {
         const int lines = static_cast<int>(map.size());
         const int cols = static_cast<int>(map.front().size());
-        const int laneY[] = {
-            std::max(4, lines / 4),
-            lines / 2,
-            std::min(lines - 5, lines * 3 / 4)
-        };
         std::uniform_int_distribution<int> jitter(-1, 1);
 
         for (int lane = 0; lane < 3; ++lane) {
             for (int x = 8; x < cols / 2 - 2; x += 6) {
                 const int side = ((x / 6 + lane) % 2 == 0) ? -1 : 1;
+                const int laneY = static_cast<int>(std::round(lane_geometry::laneYAtX(cols, lines, lane, x)));
                 const GridPoint center{
                     std::clamp(x + jitter(rng), 3, cols - 4),
-                    std::clamp(laneY[lane] + side * (4 + lane % 2) + jitter(rng), 3, lines - 4)
+                    std::clamp(laneY + side * (4 + lane % 2) + jitter(rng), 3, lines - 4)
                 };
                 const int value = lane == 1 ? 3 : ((x / 6) % 2 == 0 ? 1 : 3);
                 placeCluster(map, routeMask, center, 2, value, red, blue, rng);
@@ -416,32 +419,23 @@ void mapgenerator::gmap(std::vector<std::vector<int>>& initMap, int cols, int li
     std::uniform_int_distribution<int> forestRadius(2, 5);
 
     std::vector<std::vector<bool>> routeMask(lines, std::vector<bool>(cols, false));
-    carveMainRoute(initMap, routeMask, red, blue, rng);
-    const GridPoint center{cols / 2, lines / 2};
-    const GridPoint upper{cols / 2, std::max(4, lines / 4)};
-    const GridPoint lower{cols / 2, std::min(lines - 5, lines * 3 / 4)};
-    const GridPoint redUpper{std::max(4, cols / 5), upper.y};
-    const GridPoint blueUpper{std::min(cols - 5, cols * 4 / 5), upper.y};
-    const GridPoint redLower{std::max(4, cols / 5), lower.y};
-    const GridPoint blueLower{std::min(cols - 5, cols * 4 / 5), lower.y};
-    carveMainRoute(initMap, routeMask, red, redUpper, rng);
-    carveMainRoute(initMap, routeMask, redUpper, upper, rng);
-    carveMainRoute(initMap, routeMask, upper, blueUpper, rng);
-    carveMainRoute(initMap, routeMask, blueUpper, blue, rng);
-    carveMainRoute(initMap, routeMask, red, redLower, rng);
-    carveMainRoute(initMap, routeMask, redLower, lower, rng);
-    carveMainRoute(initMap, routeMask, lower, blueLower, rng);
-    carveMainRoute(initMap, routeMask, blueLower, blue, rng);
+    std::vector<GridPoint> plazas;
+    for (int laneIndex = 0; laneIndex < lane::Count; ++laneIndex) {
+        const auto route = lane_geometry::laneRoute(cols, lines, laneIndex);
+        for (std::size_t i = 1; i < route.size(); ++i) {
+            carveMainRoute(initMap, routeMask, toGrid(route[i - 1]), toGrid(route[i]), rng);
+        }
+        plazas.push_back(toGrid(route[2]));
+        if (laneIndex != lane::Mid) {
+            plazas.push_back(toGrid(route[1]));
+            plazas.push_back(toGrid(route[3]));
+        }
+    }
 
-    const std::vector<GridPoint> plazas = {
-        center,
-        upper,
-        lower,
-        GridPoint{cols / 3, lines / 2},
-        GridPoint{cols * 2 / 3, lines / 2},
-        GridPoint{std::min(cols - 4, red.x + 8), std::min(lines - 4, red.y + 4)},
-        GridPoint{std::max(3, blue.x - 8), std::max(3, blue.y - 4)}
-    };
+    plazas.push_back(GridPoint{cols / 3, lines / 2});
+    plazas.push_back(GridPoint{cols * 2 / 3, lines / 2});
+    plazas.push_back(GridPoint{std::min(cols - 4, red.x + 8), std::min(lines - 4, red.y + 4)});
+    plazas.push_back(GridPoint{std::max(3, blue.x - 8), std::max(3, blue.y - 4)});
     for (const auto& plaza : plazas) {
         // Resource fights need readable open ground; mark these pockets as
         // route-safe so later obstacle passes do not seal them off.
@@ -458,7 +452,7 @@ void mapgenerator::gmap(std::vector<std::vector<int>>& initMap, int cols, int li
         placeCluster(initMap, routeMask, GridPoint{xDist(rng), yDist(rng)}, mountainRadius(rng), 1, red, blue, rng);
     }
 
-    const int forestClusters = std::max(12, cols * lines / 190);
+    const int forestClusters = std::max(17, cols * lines / 135);
     for (int i = 0; i < forestClusters; ++i) {
         placeCluster(initMap, routeMask, GridPoint{xDist(rng), yDist(rng)}, forestRadius(rng), 3, red, blue, rng);
     }

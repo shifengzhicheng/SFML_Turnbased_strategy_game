@@ -1,5 +1,8 @@
 #include "Map.h"
 
+#include "Config.h"
+#include "LaneGeometry.h"
+
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
@@ -106,8 +109,8 @@ namespace
 
 int main()
 {
-    constexpr int cols = 56;
-    constexpr int lines = 36;
+    constexpr int cols = config::MapTilesX;
+    constexpr int lines = config::MapTilesY;
     mapgenerator generator;
 
     for (int i = 0; i < 20; ++i) {
@@ -132,19 +135,24 @@ int main()
         if (countInArea(map, cols - 7, lines / 2, 3, 0) <= 35) {
             return failMapCheck("blue base plaza too cramped", map, cols, lines);
         }
-        if (!hasPath(map, 5, lines / 2, cols - 7, lines / 2)) {
+        const auto midRoute = lane_geometry::laneRoute(cols, lines, lane::Mid);
+        const auto topRoute = lane_geometry::laneRoute(cols, lines, lane::Top);
+        const auto botRoute = lane_geometry::laneRoute(cols, lines, lane::Bot);
+
+        if (!hasPath(map, midRoute.front().x, midRoute.front().y, midRoute.back().x, midRoute.back().y)) {
             return failMapCheck("main lane disconnected", map, cols, lines);
         }
-        if (!hasPath(map, 5, lines / 2, cols / 2, lines / 2)
-            || !hasPath(map, cols - 7, lines / 2, cols / 2, lines / 2)
-            || !hasPath(map, 5, lines / 2, cols / 2, lines / 4)
-            || !hasPath(map, 5, lines / 2, cols / 2, lines * 3 / 4)) {
+        if (!hasPath(map, midRoute.front().x, midRoute.front().y, midRoute[2].x, midRoute[2].y)
+            || !hasPath(map, midRoute.back().x, midRoute.back().y, midRoute[2].x, midRoute[2].y)
+            || !hasPath(map, topRoute.front().x, topRoute.front().y, topRoute[2].x, topRoute[2].y)
+            || !hasPath(map, botRoute.front().x, botRoute.front().y, botRoute[2].x, botRoute[2].y)) {
             return failMapCheck("lane network disconnected", map, cols, lines);
         }
         if (countInArea(map, cols / 2, lines / 2, 2, 0) <= 20) {
             return failMapCheck("center plaza too cramped", map, cols, lines);
         }
-        if (countValue(map, 1) < 90 || countValue(map, 2) < 20 || countValue(map, 3) < 95) {
+        const int area = cols * lines;
+        if (countValue(map, 1) < area / 25 || countValue(map, 2) < area / 110 || countValue(map, 3) < area / 22) {
             return failMapCheck("terrain lacks visual variety", map, cols, lines);
         }
         if (std::abs(countBlockersInHalf(map, true) - countBlockersInHalf(map, false)) > 18) {

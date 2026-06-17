@@ -3,6 +3,7 @@
 #include "AllUnit.h"
 #include "ArtAssets.h"
 #include "AutoCombat.h"
+#include "LaneGeometry.h"
 #include "RealtimeConfig.h"
 
 #include <algorithm>
@@ -169,29 +170,14 @@ Point Game::laneWaypoint(int team, int laneIndex, int stage) const
 {
     const int mapW = width / SqureSize;
     const int mapH = height / SqureSize;
-    const int laneY[] = {
-        std::max(4, mapH / 4),
-        mapH / 2,
-        std::min(mapH - 5, mapH * 3 / 4)
-    };
-    const int safeLane = std::clamp(laneIndex, 0, lane::Count - 1);
-    const int playerX[] = {mapW / 4, mapW / 2, mapW * 3 / 4};
-    const int aiX[] = {mapW * 3 / 4, mapW / 2, mapW / 4};
-    const int safeStage = std::clamp(stage, 0, 2);
-    return Point(team == PLAYER ? playerX[safeStage] : aiX[safeStage], laneY[safeLane]);
+    return lane_geometry::laneWaypoint(mapW, mapH, laneIndex, stage, team == AI);
 }
 
 Point Game::laneDefensePoint(int team, int laneIndex) const
 {
     const int mapW = width / SqureSize;
     const int mapH = height / SqureSize;
-    const int laneY[] = {
-        std::max(5, mapH / 4),
-        mapH / 2,
-        std::min(mapH - 6, mapH * 3 / 4)
-    };
-    const int safeLane = std::clamp(laneIndex, 0, lane::Count - 1);
-    return Point(team == PLAYER ? mapW / 5 : mapW * 4 / 5, laneY[safeLane]);
+    return lane_geometry::laneWaypoint(mapW, mapH, laneIndex, 0, team == AI);
 }
 
 int Game::unitsNearPoint(int team, Point point, int radius) const
