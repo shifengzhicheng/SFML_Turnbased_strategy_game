@@ -97,6 +97,7 @@ int main()
             "lane hitboxes must not overlap the economy action button");
 
     const int mapW = config::MapTilesX;
+    const int mapH = config::MapTilesY;
     for (int laneIndex = 0; laneIndex < lane::Count; ++laneIndex) {
         for (int stage = 0; stage < lane_geometry::RallyStageCount; ++stage) {
             const Point playerRally = game.laneRallyPoint(PLAYER, laneIndex, stage);
@@ -124,6 +125,15 @@ int main()
         require(distanceSquared(playerBarracks, game.Red_baseP) <= 36
                     && distanceSquared(aiBarracks, game.Blue_baseP) <= 36,
                 "automatic barracks should stay in the protected base pocket");
+    }
+    for (int x = 15; x < mapW - 15; x += 4) {
+        const int midY = static_cast<int>(std::round(lane_geometry::laneYAtX(mapW, mapH, lane::Mid, x)));
+        require(game.isCellWalkableForUnit(x, midY - 2)
+                    && game.isCellWalkableForUnit(x, midY - 1)
+                    && game.isCellWalkableForUnit(x, midY)
+                    && game.isCellWalkableForUnit(x, midY + 1)
+                    && game.isCellWalkableForUnit(x, midY + 2),
+                "middle lane should keep a five-tile playable corridor");
     }
     const int baseTowerCap = game.buildingCap(PLAYER, building::DefenseTower);
     require(baseTowerCap >= 2,

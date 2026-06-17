@@ -133,6 +133,7 @@ namespace
     std::vector<GridPoint> carveMainRoute(std::vector<std::vector<int>>& map,
                                           std::vector<std::vector<bool>>& routeMask,
                                           GridPoint start, GridPoint end,
+                                          int corridorRadius,
                                           std::mt19937& rng)
     {
         std::vector<GridPoint> route;
@@ -141,8 +142,8 @@ namespace
         std::uniform_int_distribution<int> chance(0, 99);
 
         route.push_back(p);
-        markDisc(routeMask, p.x, p.y, 2);
-        clearDisc(map, p.x, p.y, 2);
+        markDisc(routeMask, p.x, p.y, corridorRadius + 1);
+        clearDisc(map, p.x, p.y, corridorRadius + 1);
 
         int guard = 0;
         while ((p.x != end.x || p.y != end.y) && guard++ < 4096) {
@@ -174,8 +175,8 @@ namespace
             p.x = std::clamp(p.x, 2, static_cast<int>(map.front().size()) - 3);
             p.y = std::clamp(p.y, 2, static_cast<int>(map.size()) - 3);
             route.push_back(p);
-            markDisc(routeMask, p.x, p.y, 1);
-            clearDisc(map, p.x, p.y, 1);
+            markDisc(routeMask, p.x, p.y, corridorRadius);
+            clearDisc(map, p.x, p.y, corridorRadius);
         }
 
         return route;
@@ -341,6 +342,146 @@ namespace
         }
     }
 
+    bool placeDividerTile(std::vector<std::vector<int>>& map, const std::vector<std::vector<bool>>& routeMask,
+                          int x, int y, int value, GridPoint red, GridPoint blue)
+    {
+        const int lines = static_cast<int>(map.size());
+        const int cols = static_cast<int>(map.front().size());
+        if (!inside(x, y, cols, lines) || map[y][x] != 0) {
+            return false;
+        }
+        if (nearMask(routeMask, x, y, 0) || nearBase(GridPoint{x, y}, red, blue, 8)) {
+            return false;
+        }
+        map[y][x] = value;
+        return true;
+    }
+
+    void placeDividerPatch(std::vector<std::vector<int>>& map, const std::vector<std::vector<bool>>& routeMask,
+                           GridPoint center, int value, int slope, bool dense,
+                           GridPoint red, GridPoint blue, std::mt19937& rng)
+    {
+        std::uniform_int_distribution<int> chance(0, 99);
+        const GridPoint offsets[] = {
+            GridPoint{0, 0},
+            GridPoint{1, 0},
+            GridPoint{-1, 0},
+            GridPoint{0, slope},
+            GridPoint{1, slope},
+            GridPoint{-1, -slope},
+            GridPoint{2, 0},
+            GridPoint{2, slope},
+        };
+        const int required = dense ? 8 : 5;
+
+        for (int i = 0; i < required; ++i) {
+            if (!dense && i > 2 && chance(rng) < 25) {
+                continue;
+            }
+            const int patchValue = (i % 3 == 0) ? value : (value == 1 ? 3 : value);
+            placeDividerTile(map, routeMask, center.x + offsets[i].x, center.y + offsets[i].y,
+                             patchValue, red, blue);
+        }
+    }
+
+    int findDividerY(const std::vector<std::vector<bool>>& routeMask, int x, int upperY, int lowerY, int preferredY)
+    {
+        const int beginY = std::min(upperY, lowerY) + 1;
+        const int endY = std::max(upperY, lowerY) - 1;
+        // Narrow lane gaps may have only one safe row after route carving; find
+        // that row instead of letting jitter drop divider tiles onto the road.
+        for (int delta = 0; delta <= std::max(1, endY - beginY); ++delta) {
+            const int candidates[] = {preferredY - delta, preferredY + delta};
+            for (int y : candidates) {
+                if (y >= beginY && y <= endY && !nearMask(routeMask, x, y, 0)) {
+                    return y;
+                }
+            }
+        }
+        return preferredY;
+    }
+
+    void placeLaneDividerBelts(std::vector<std::vector<int>>& map, const std::vector<std::vector<bool>>& routeMask,
+                               GridPoint red, GridPoint blue, std::mt19937& rng)
+    {
+        const int lines = static_cast<int>(map.size());
+        const int cols = static_cast<int>(map.front().size());
+        std::uniform_int_distribution<int> jitter(-1, 1);
+        std::uniform_int_distribution<int> chance(0, 99);
+
+        // Broken forests/ridges between lanes make TOP/MID/BOT read as three
+        // spaces, not one empty field. The gaps are intentional flank windows.
+        for (int band = 0; band < 2; ++band) {
+            const int upperLane = band == 0 ? lane::Top : lane::Mid;
+            const int lowerLane = band == 0 ? lane::Mid : lane::Bot;
+            for (int x = 6; x < cols / 2 - 1; x += 3) {
+                if ((x / 3 + band) % 7 == 4) {
+                    continue;
+                }
+                const float upperY = lane_geometry::laneYAtX(cols, lines, upperLane, x);
+                const float lowerY = lane_geometry::laneYAtX(cols, lines, lowerLane, x);
+                const float gap = lowerY - upperY;
+                const int centerX = std::clamp(x + jitter(rng), 3, cols - 4);
+                const int preferredY = std::clamp(static_cast<int>(std::round(upperY + gap * 0.5f)),
+                                                  3, lines - 4);
+                const int centerY = findDividerY(routeMask, centerX,
+                                                 static_cast<int>(std::round(upperY)),
+                                                 static_cast<int>(std::round(lowerY)),
+                                                 preferredY);
+                const int value = (x / 3 + band) % 3 == 0 ? 1 : 3;
+                const int slope = ((x / 3 + band) % 2 == 0) ? 1 : -1;
+                placeDividerPatch(map, routeMask, GridPoint{centerX, centerY}, value, slope, true, red, blue, rng);
+                if (std::abs(gap) >= 7.f) {
+                    const float secondaryT = band == 0 ? 0.68f : 0.32f;
+                    const int secondaryPreferredY = std::clamp(static_cast<int>(std::round(upperY + gap * secondaryT)),
+                                                               3, lines - 4);
+                    const int secondaryY = findDividerY(routeMask, centerX + 1,
+                                                        static_cast<int>(std::round(upperY)),
+                                                        static_cast<int>(std::round(lowerY)),
+                                                        secondaryPreferredY);
+                    if (std::abs(secondaryY - centerY) >= 2) {
+                        placeDividerPatch(map, routeMask, GridPoint{centerX + 1, secondaryY},
+                                          value == 1 ? 3 : value, -slope, false, red, blue, rng);
+                    }
+                }
+                if (chance(rng) < 70) {
+                    placeDividerPatch(map, routeMask, GridPoint{centerX + 3, centerY + slope},
+                                      value == 1 ? 3 : 1, -slope, false, red, blue, rng);
+                }
+            }
+        }
+
+        for (int band = 0; band < 2; ++band) {
+            const int upperLane = band == 0 ? lane::Top : lane::Mid;
+            const int lowerLane = band == 0 ? lane::Mid : lane::Bot;
+            for (int x = 8; x < cols / 2 - 2; x += 2) {
+                if ((x / 2 + band) % 6 == 3) {
+                    continue;
+                }
+                const float upperY = lane_geometry::laneYAtX(cols, lines, upperLane, x);
+                const float lowerY = lane_geometry::laneYAtX(cols, lines, lowerLane, x);
+                const float gap = lowerY - upperY;
+                const int preferredY = std::clamp(static_cast<int>(std::round(upperY + gap * 0.5f)),
+                                                  3, lines - 4);
+                const int y = findDividerY(routeMask, x,
+                                           static_cast<int>(std::round(upperY)),
+                                           static_cast<int>(std::round(lowerY)),
+                                           preferredY);
+                const int value = (x / 4 + band) % 2 == 0 ? 3 : 1;
+                const int dyAttempts[] = {0, -1, 1, -2, 2, -3, 3};
+                int placed = 0;
+                for (int dy : dyAttempts) {
+                    if (placeDividerTile(map, routeMask, x, y + dy, value, red, blue)) {
+                        ++placed;
+                    }
+                    if (placed >= 2) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     void placePonds(std::vector<std::vector<int>>& map, const std::vector<std::vector<bool>>& routeMask,
                     GridPoint red, GridPoint blue, std::mt19937& rng)
     {
@@ -422,8 +563,9 @@ void mapgenerator::gmap(std::vector<std::vector<int>>& initMap, int cols, int li
     std::vector<GridPoint> plazas;
     for (int laneIndex = 0; laneIndex < lane::Count; ++laneIndex) {
         const auto route = lane_geometry::laneRoute(cols, lines, laneIndex);
+        const int corridorRadius = laneIndex == lane::Mid ? 2 : 1;
         for (std::size_t i = 1; i < route.size(); ++i) {
-            carveMainRoute(initMap, routeMask, toGrid(route[i - 1]), toGrid(route[i]), rng);
+            carveMainRoute(initMap, routeMask, toGrid(route[i - 1]), toGrid(route[i]), corridorRadius, rng);
         }
         plazas.push_back(toGrid(route[2]));
         if (laneIndex != lane::Mid) {
@@ -447,17 +589,18 @@ void mapgenerator::gmap(std::vector<std::vector<int>>& initMap, int cols, int li
     placeRiver(initMap, routeMask, red, blue, rng);
     placeTributary(initMap, routeMask, red, blue, rng);
 
-    const int mountainClusters = std::max(7, cols * lines / 320);
+    const int mountainClusters = std::max(9, cols * lines / 260);
     for (int i = 0; i < mountainClusters; ++i) {
         placeCluster(initMap, routeMask, GridPoint{xDist(rng), yDist(rng)}, mountainRadius(rng), 1, red, blue, rng);
     }
 
-    const int forestClusters = std::max(17, cols * lines / 135);
+    const int forestClusters = std::max(21, cols * lines / 112);
     for (int i = 0; i < forestClusters; ++i) {
         placeCluster(initMap, routeMask, GridPoint{xDist(rng), yDist(rng)}, forestRadius(rng), 3, red, blue, rng);
     }
     placeRidgeFingers(initMap, routeMask, red, blue, rng);
     placeLaneShoulders(initMap, routeMask, red, blue, rng);
+    placeLaneDividerBelts(initMap, routeMask, red, blue, rng);
     placePonds(initMap, routeMask, red, blue, rng);
     placeResourceCover(initMap, routeMask, plazas, red, blue, rng);
     mirrorTerrainHorizontally(initMap, routeMask, red, blue);

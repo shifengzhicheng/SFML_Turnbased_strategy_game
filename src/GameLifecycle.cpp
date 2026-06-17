@@ -248,7 +248,7 @@ void Game::paintLanePathTiles()
 
     for (int laneIndex = 0; laneIndex < lane::Count; ++laneIndex) {
         const auto route = lane_geometry::laneRoute(mapW, mapH, laneIndex);
-        const int radius = laneIndex == lane::Mid ? 0 : 1;
+        const int radius = laneIndex == lane::Mid ? 2 : 1;
         for (std::size_t i = 1; i < route.size(); ++i) {
             stampSegment(route[i - 1], route[i], radius);
         }

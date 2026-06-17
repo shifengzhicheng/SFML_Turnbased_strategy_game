@@ -4,6 +4,7 @@
 #include "LaneGeometry.h"
 
 #include <cassert>
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <queue>
@@ -91,6 +92,29 @@ namespace
         return count;
     }
 
+    int countLaneDividerBlockers(const std::vector<std::vector<int>>& map)
+    {
+        const int cols = static_cast<int>(map.front().size());
+        const int lines = static_cast<int>(map.size());
+        int count = 0;
+        for (int band = 0; band < 2; ++band) {
+            const int upperLane = band == 0 ? lane::Top : lane::Mid;
+            const int lowerLane = band == 0 ? lane::Mid : lane::Bot;
+            for (int x = 5; x < cols - 5; ++x) {
+                const int upperY = static_cast<int>(std::round(lane_geometry::laneYAtX(cols, lines, upperLane, x)));
+                const int lowerY = static_cast<int>(std::round(lane_geometry::laneYAtX(cols, lines, lowerLane, x)));
+                const int beginY = std::min(upperY, lowerY) + 1;
+                const int endY = std::max(upperY, lowerY) - 1;
+                for (int y = beginY; y <= endY; ++y) {
+                    if (y > 0 && y < lines - 1 && map[y][x] != 0) {
+                        ++count;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
     int failMapCheck(const std::string& reason, const std::vector<std::vector<int>>& map, int cols, int lines)
     {
         std::cerr << "map_tests: " << reason
@@ -99,6 +123,7 @@ namespace
                   << " forest=" << countValue(map, 3)
                   << " half=" << countBlockersInHalf(map, true)
                   << "/" << countBlockersInHalf(map, false)
+                  << " divider=" << countLaneDividerBlockers(map)
                   << " baseOpen=" << countInArea(map, 5, lines / 2, 3, 0)
                   << "/" << countInArea(map, cols - 7, lines / 2, 3, 0)
                   << " centerOpen=" << countInArea(map, cols / 2, lines / 2, 2, 0)
@@ -154,6 +179,9 @@ int main()
         const int area = cols * lines;
         if (countValue(map, 1) < area / 25 || countValue(map, 2) < area / 110 || countValue(map, 3) < area / 22) {
             return failMapCheck("terrain lacks visual variety", map, cols, lines);
+        }
+        if (countLaneDividerBlockers(map) < 16) {
+            return failMapCheck("lane divider blockers too sparse", map, cols, lines);
         }
         if (std::abs(countBlockersInHalf(map, true) - countBlockersInHalf(map, false)) > 18) {
             return failMapCheck("terrain halves are unfair", map, cols, lines);
