@@ -20,7 +20,8 @@ struct UnitMechanics
 struct TowerMechanics
 {
     bool prioritizesSiege = false;
-    float maxHealthDamagePercent = 0.f;
+    int splashDamage = 0;
+    int splashRadius = 0;
 };
 
 UnitMechanics unitMechanicsFor(int unitName, const std::array<int, perk::Count>& perkLevels);

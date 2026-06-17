@@ -173,6 +173,13 @@ Point Game::laneWaypoint(int team, int laneIndex, int stage) const
     return lane_geometry::laneWaypoint(mapW, mapH, laneIndex, stage, team == AI);
 }
 
+Point Game::laneRallyPoint(int team, int laneIndex, int stage) const
+{
+    const int mapW = width / SqureSize;
+    const int mapH = height / SqureSize;
+    return lane_geometry::laneRallyWaypoint(mapW, mapH, laneIndex, stage, team == AI);
+}
+
 Point Game::laneDefensePoint(int team, int laneIndex) const
 {
     const int mapW = width / SqureSize;

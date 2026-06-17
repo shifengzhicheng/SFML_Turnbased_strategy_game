@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "AutoCombat.h"
 #include "BuildingDefinition.h"
+#include "LaneGeometry.h"
 #include "RealtimeConfig.h"
 #include "SidebarLayout.h"
 #include "UnitDefinition.h"
@@ -29,6 +30,13 @@ namespace
                 }
             }
         }
+    }
+
+    int distanceSquared(Point a, Point b)
+    {
+        const int dx = a.x - b.x;
+        const int dy = a.y - b.y;
+        return dx * dx + dy * dy;
     }
 }
 
@@ -71,15 +79,21 @@ int main()
 
     const int mapW = config::MapTilesX;
     for (int laneIndex = 0; laneIndex < lane::Count; ++laneIndex) {
+        for (int stage = 0; stage < lane_geometry::RallyStageCount; ++stage) {
+            const Point playerRally = game.laneRallyPoint(PLAYER, laneIndex, stage);
+            const Point aiRally = game.laneRallyPoint(AI, laneIndex, stage);
+            require(playerRally.x + aiRally.x == mapW - 1 && playerRally.y == aiRally.y,
+                    "unit rally anchors should be mirrored for both teams");
+        }
         for (int stage = 0; stage <= 2; ++stage) {
             const Point playerAnchor = game.laneWaypoint(PLAYER, laneIndex, stage);
             const Point aiAnchor = game.laneWaypoint(AI, laneIndex, stage);
             require(playerAnchor.x + aiAnchor.x == mapW - 1 && playerAnchor.y == aiAnchor.y,
-                    "lane rally anchors should be mirrored for both teams");
+                    "lane objective anchors should be mirrored for both teams");
         }
 
-        const Point playerAnchor = game.laneWaypoint(PLAYER, laneIndex, 0);
-        const Point aiAnchor = game.laneWaypoint(AI, laneIndex, 0);
+        const Point playerAnchor = game.laneRallyPoint(PLAYER, laneIndex, 0);
+        const Point aiAnchor = game.laneRallyPoint(AI, laneIndex, 0);
         clearArea(game, playerAnchor, 1);
         clearArea(game, aiAnchor, 1);
         const Point playerBarracks = game.findAutoBuildSite(PLAYER, building::Barracks, laneIndex);
@@ -88,7 +102,22 @@ int main()
                 "both teams should find an automatic barracks site on each lane");
         require(playerBarracks.x + aiBarracks.x == mapW - 1 && playerBarracks.y == aiBarracks.y,
                 "automatic barracks placement should mirror across the map center");
+        require(distanceSquared(playerBarracks, game.Red_baseP) <= 36
+                    && distanceSquared(aiBarracks, game.Blue_baseP) <= 36,
+                "automatic barracks should stay in the protected base pocket");
     }
+    const int baseTowerCap = game.buildingCap(PLAYER, building::DefenseTower);
+    require(baseTowerCap >= 2,
+            "players should have room for multiple early defensive towers");
+    game.playerUpgradeLevel = 8;
+    game.playerEconomyLevel = 6;
+    game.playerPerkLevels[static_cast<std::size_t>(perk::TowerCraft)] = 4;
+    require(game.buildingCap(PLAYER, building::DefenseTower) > baseTowerCap
+                && game.buildingCap(PLAYER, building::DefenseTower) <= config::TowerCap,
+            "tower cap should scale up through tech, economy, and tower perks");
+    game.playerUpgradeLevel = 0;
+    game.playerEconomyLevel = 0;
+    game.playerPerkLevels.fill(0);
 
     require(!game.canQueueUnit(PLAYER, UName::INFANTARY),
             "infantry should require a completed barracks");
@@ -327,13 +356,22 @@ int main()
     tower.attackTimer = realtime::DefenseTowerAttackCooldown;
     game.buildings.push_back(tower);
     require(game.createUnit(AI, UName::GUARDIAN, 15, 10, lane::Mid),
-            "tower percent damage target should spawn");
+            "tower fixed-splash primary target should spawn");
     MoveableUnit* towerTarget = game.enemys.back().get();
+    require(game.createUnit(AI, UName::INFANTARY, 16, 10, lane::Mid),
+            "tower fixed-splash secondary target should spawn");
+    MoveableUnit* splashTarget = game.enemys.back().get();
     const int towerTargetBefore = towerTarget->Health;
+    const int splashTargetBefore = splashTarget->Health;
     game.updateDefenseTowers(0.25f);
     const int towerDamage = towerTargetBefore - towerTarget->Health;
-    require(towerDamage >= config::DefenseTowerDamage + config::GuardianHealth / 10,
-            "defense towers should include max-health percent damage");
+    const int splashDamage = splashTargetBefore - splashTarget->Health;
+    require(towerDamage == config::DefenseTowerDamage + config::DefenseTowerSplashDamage,
+            "defense tower primary hits should combine flat damage with fixed splash");
+    require(splashDamage == config::DefenseTowerSplashDamage,
+            "defense tower splash should use a fixed value on nearby units");
+    require(towerDamage < config::GuardianHealth / 10,
+            "defense tower splash should not scale from tank max health");
 
     game.clear();
     game.playerCommand = 1000;
@@ -443,9 +481,9 @@ int main()
             "guardian tanks should resist siege instead of being countered by it");
 
     game.clear();
-    const Point topExit = game.laneWaypoint(PLAYER, lane::Top, 0);
-    const Point topMid = game.laneWaypoint(PLAYER, lane::Top, 1);
-    const Point offLaneSpawn(topExit.x + 2, game.Red_baseP.y);
+    const Point topExit = game.laneRallyPoint(PLAYER, lane::Top, 0);
+    const Point topMid = game.laneRallyPoint(PLAYER, lane::Top, 1);
+    const Point offLaneSpawn(topExit.x + 4, game.Red_baseP.y + 3);
     clearArea(game, topExit, 2);
     clearArea(game, offLaneSpawn, 1);
     require(game.createUnit(PLAYER, UName::INFANTARY, offLaneSpawn.x, offLaneSpawn.y, lane::Top),
@@ -463,16 +501,16 @@ int main()
             "reaching the lane exit should advance to the central lane anchor");
 
     game.clear();
-    const Point botEnemyRally = game.laneWaypoint(PLAYER, lane::Bot, 2);
+    const Point botEnemyRally = game.laneRallyPoint(PLAYER, lane::Bot, lane_geometry::RallyStageCount - 1);
     for (int x = botEnemyRally.x - 6; x <= botEnemyRally.x + 2; ++x) {
         game.setTileID(x, botEnemyRally.y, tile::Empty);
     }
     require(game.createUnit(PLAYER, UName::INFANTARY, botEnemyRally.x - 2, botEnemyRally.y, lane::Bot),
             "bot-lane test unit should spawn near the enemy-side rally");
     MoveableUnit* botLaneUnit = game.myunits.back().get();
-    botLaneUnit->nextRallyStage = 2;
+    botLaneUnit->nextRallyStage = lane_geometry::RallyStageCount - 1;
     Point rallyAfterArrival = game.chooseStrategicRallyPoint(*botLaneUnit);
-    require(rallyAfterArrival.x < 0 && botLaneUnit->nextRallyStage > 2,
+    require(rallyAfterArrival.x < 0 && botLaneUnit->nextRallyStage >= lane_geometry::RallyStageCount,
             "reaching the bot enemy-side rally should commit the unit to assault");
     botLaneUnit->x = botEnemyRally.x - 5;
     botLaneUnit->y = botEnemyRally.y;
@@ -481,22 +519,24 @@ int main()
             "committed bot-lane units should not re-request old rally points after a detour");
 
     game.clear();
-    for (int y = 9; y <= 11; ++y) {
+    for (int y = 14; y <= 16; ++y) {
         for (int x = 9; x <= 12; ++x) {
             game.setTileID(x, y, tile::Empty);
         }
     }
-    require(game.createUnit(PLAYER, UName::INFANTARY, 10, 10, lane::Mid),
+    require(game.createUnit(PLAYER, UName::INFANTARY, 10, 15, lane::Mid),
             "moving test unit should spawn");
-    require(game.createUnit(PLAYER, UName::INFANTARY, 11, 10, lane::Mid),
+    require(game.createUnit(PLAYER, UName::INFANTARY, 11, 15, lane::Mid),
             "blocking test unit should spawn");
     MoveableUnit* crowdedMover = game.myunits.front().get();
+    crowdedMover->nextRallyStage = 1;
+    crowdedMover->pendingPathGoal = game.laneRallyPoint(PLAYER, lane::Mid, 1);
     crowdedMover->mypath.clear();
-    crowdedMover->mypath.push_back(Point(11, 10));
+    crowdedMover->mypath.push_back(Point(11, 15));
     realtime::updateAutoCombat(game, 1.0f);
-    require(crowdedMover->x == 11 && crowdedMover->y == 10,
+    require(crowdedMover->x == 11 && crowdedMover->y == 15,
             "combat movement should ignore other unit bodies and allow stacking");
-    require(game.myunits.back()->x == 11 && game.myunits.back()->y == 10,
+    require(game.myunits.back()->x == 11 && game.myunits.back()->y == 15,
             "the blocking unit should remain stacked on the same cell");
 
     game.gameOver = true;

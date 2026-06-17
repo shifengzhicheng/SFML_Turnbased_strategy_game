@@ -45,7 +45,7 @@ namespace game_internal
         case perk::SiegeCraft:
             return "Siege splash chips escorts.\nHigher levels improve breach pressure.";
         case perk::TowerCraft:
-            return "Towers focus siege threats.\nEvery shot adds max-HP pressure.";
+            return "Towers focus siege threats.\nShots deal fixed splash damage.";
         case perk::Logistics:
             return "Barracks train 12% faster.\nTurns economy into tempo.";
         case perk::Mining:

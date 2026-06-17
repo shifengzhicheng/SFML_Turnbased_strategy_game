@@ -99,9 +99,18 @@ Point Game::findAutoBuildSite(int team, int type, int laneIndex) const
 {
     const Point base = team == PLAYER ? Red_baseP : Blue_baseP;
     const int safeLane = std::clamp(laneIndex, 0, lane::Count - 1);
+    const int mapW = width / SqureSize;
+    const int mapH = height / SqureSize;
+    const auto protectedBarracksAnchor = [this, team, safeLane, mapW, mapH]() {
+        const int laneOffset = safeLane == lane::Top ? -3 : (safeLane == lane::Bot ? 4 : 1);
+        const int playerAnchorX = std::clamp(Red_baseP.x + 3, 2, mapW - 3);
+        const int anchorX = team == PLAYER ? playerAnchorX : mapW - 1 - playerAnchorX;
+        const int anchorY = std::clamp(Red_baseP.y + laneOffset, 2, mapH - 3);
+        return Point(anchorX, anchorY);
+    };
     const Point anchor = type == building::DefenseTower
         ? laneDefensePoint(team, safeLane)
-        : laneWaypoint(team, safeLane, 0);
+        : protectedBarracksAnchor();
 
     const int mirrorX = team == PLAYER ? 1 : -1;
     const auto findNearAnchor = [this, team, type, mirrorX](Point center, int maxRadius) {
@@ -121,12 +130,11 @@ Point Game::findAutoBuildSite(int team, int type, int laneIndex) const
         return Point(-1, -1);
     };
 
-    // Both sides use the same lane-exit anchor and mirrored scan order. This
-    // keeps AI barracks from drifting into the far-right edge while player
-    // barracks sit naturally beside their selected lane.
-    const Point laneSite = findNearAnchor(anchor, 9);
-    if (laneSite.x >= 0) {
-        return laneSite;
+    // Barracks are production lifelines, so they stay in the protected base
+    // pocket instead of auto-placing near the first contested lane anchor.
+    const Point primarySite = findNearAnchor(anchor, type == building::Barracks ? 7 : 9);
+    if (primarySite.x >= 0) {
+        return primarySite;
     }
 
     const Point baseSite = findNearAnchor(base, 12);

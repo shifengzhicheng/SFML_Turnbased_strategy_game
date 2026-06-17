@@ -55,6 +55,7 @@ TowerMechanics towerMechanicsFor(const std::array<int, perk::Count>& perkLevels)
     TowerMechanics mechanics;
     const int towerCraft = perkLevels[static_cast<std::size_t>(perk::TowerCraft)];
     mechanics.prioritizesSiege = towerCraft >= 1;
-    mechanics.maxHealthDamagePercent = config::DefenseTowerMaxHealthDamagePercent;
+    mechanics.splashDamage = config::DefenseTowerSplashDamage + towerCraft * 2;
+    mechanics.splashRadius = config::DefenseTowerSplashRadius;
     return mechanics;
 }

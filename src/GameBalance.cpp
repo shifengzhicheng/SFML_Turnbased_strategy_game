@@ -62,7 +62,8 @@ int Game::buildingCap(int team, int type) const
         return std::min(config::BarracksCap, config::BarracksBaseCap + tech / 4 + economy / 2);
     }
     if (type == building::DefenseTower) {
-        return std::min(config::TowerCap, config::TowerBaseCap + tech / 5 + perkLevel(team, perk::TowerCraft) / 3);
+        return std::min(config::TowerCap,
+                        config::TowerBaseCap + tech / 4 + economy / 3 + perkLevel(team, perk::TowerCraft) / 2);
     }
     return static_cast<int>(resources.size());
 }

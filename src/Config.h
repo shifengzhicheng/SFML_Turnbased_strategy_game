@@ -59,8 +59,8 @@ namespace config
     inline constexpr int EmergencyTowerRepair = 170;
     inline constexpr int BarracksBaseCap = 1;
     inline constexpr int BarracksCap = 7;
-    inline constexpr int TowerBaseCap = 1;
-    inline constexpr int TowerCap = 4;
+    inline constexpr int TowerBaseCap = 2;
+    inline constexpr int TowerCap = 8;
     inline constexpr int MaxTechLevel = 15;
     inline constexpr float TechDamageBonus = 0.06f;
     inline constexpr float TechHealthBonus = 0.045f;
@@ -85,7 +85,8 @@ namespace config
     inline constexpr int DefenseTowerHealth = 980;
     inline constexpr int DefenseTowerDamage = 24;
     inline constexpr int DefenseTowerRange = 7;
-    inline constexpr float DefenseTowerMaxHealthDamagePercent = 0.10f;
+    inline constexpr int DefenseTowerSplashDamage = 10;
+    inline constexpr int DefenseTowerSplashRadius = 2;
     inline constexpr int BaseDefenseDamage = 34;
     inline constexpr int BaseDefenseRange = 8;
     inline constexpr int BuildInfluenceRadius = 13;

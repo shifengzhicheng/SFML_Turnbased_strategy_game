@@ -248,6 +248,7 @@ public:
     int defenseTowerRange(int team) const;
     int selectedLaneForTeam(int team) const;
     Point laneWaypoint(int team, int laneIndex, int stage) const;
+    Point laneRallyPoint(int team, int laneIndex, int stage) const;
     Point laneDefensePoint(int team, int laneIndex) const;
     bool hasUnitCapacity(int team) const;
     bool hasSpawnTile(int team) const;

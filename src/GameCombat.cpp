@@ -3,9 +3,9 @@
 #include "AllUnit.h"
 #include "ArtAssets.h"
 #include "AutoCombat.h"
+#include "LaneGeometry.h"
 #include "RealtimeConfig.h"
 #include "PerkMechanics.h"
-#include "UnitDefinition.h"
 
 #include <algorithm>
 #include <cmath>
@@ -77,15 +77,9 @@ void Game::updateDefenseTowers(float dt)
 
         building.attackTimer = 0.f;
         const float towerMultiplier = damageMultiplier(building.team);
-        const int targetMaxHealth = target->unitName == UName::BASE ? 4000
-            : (isTrainableUnit(target->unitName)
-                ? static_cast<int>(std::round(static_cast<float>(unitDefinition(target->unitName).maxHealth)
-                    * unitHealthMultiplier(target->myteam, target->unitName)))
-                : std::max(1, target->Health));
         const int flatDamage = std::max(1, static_cast<int>(std::round(static_cast<float>(config::DefenseTowerDamage) * towerMultiplier)));
-        const int percentDamage = std::max(1, static_cast<int>(std::round(
-            static_cast<float>(targetMaxHealth) * towerMechanics.maxHealthDamagePercent)));
-        const int damage = flatDamage + percentDamage;
+        const int splashDamage = std::max(0, towerMechanics.splashDamage);
+        const int damage = flatDamage + splashDamage;
         target->Health -= damage;
 
         const sf::Vector2f towerCenter(
@@ -95,6 +89,27 @@ void Game::updateDefenseTowers(float dt)
         target->playFlash(sf::Color(255, 146, 112, 255), 0.18f);
         addFloatingText(unitCenter(*target) + sf::Vector2f(0.f, -14.f),
                         "-" + std::to_string(damage), sf::Color(255, 218, 112), 13);
+
+        if (splashDamage > 0 && towerMechanics.splashRadius > 0) {
+            const Point impact(target->x, target->y);
+            const int splashRadiusSquared = towerMechanics.splashRadius * towerMechanics.splashRadius;
+            auto applySplash = [&](MoveableUnit& candidate) {
+                if (&candidate == target || candidate.Health <= 0 || candidate.myteam == building.team) {
+                    return;
+                }
+                if (distanceSquared(impact, Point(candidate.x, candidate.y)) > splashRadiusSquared) {
+                    return;
+                }
+                candidate.Health -= splashDamage;
+                candidate.playFlash(sf::Color(255, 190, 105, 230), 0.12f);
+                addFloatingText(unitCenter(candidate) + sf::Vector2f(0.f, -10.f),
+                                "-" + std::to_string(splashDamage), sf::Color(255, 195, 110), 11);
+            };
+            auto& victims = building.team == PLAYER ? enemys : myunits;
+            for (auto& victim : victims) {
+                applySplash(*victim);
+            }
+        }
     }
 }
 
@@ -202,15 +217,16 @@ Point Game::chooseStrategicRallyPoint(MoveableUnit& unit)
     // anchor just because their barracks spawned slightly ahead of it. The
     // final gate stays x-based: once a unit has crossed the enemy-side anchor,
     // it should commit to the base instead of walking backward after a detour.
-    while (unit.nextRallyStage <= 2) {
+    while (unit.nextRallyStage < lane_geometry::RallyStageCount) {
         const int stage = unit.nextRallyStage;
-        const Point laneGoal = laneWaypoint(unit.myteam, unit.laneIndex, stage);
+        const Point laneGoal = laneRallyPoint(unit.myteam, unit.laneIndex, stage);
+        const bool finalStage = stage == lane_geometry::RallyStageCount - 1;
         const bool crossedStage = unit.myteam == PLAYER
             ? current.x >= laneGoal.x - 1
             : current.x <= laneGoal.x + 1;
         const bool alignedWithGate = std::abs(current.y - laneGoal.y) <= (stage == 0 ? 4 : 3);
-        const bool passedStage = crossedStage && (stage == 2 || alignedWithGate);
-        if (nearPoint(current, laneGoal, stage == 2 ? 2 : 3) || passedStage) {
+        const bool passedStage = crossedStage && (finalStage || alignedWithGate);
+        if (nearPoint(current, laneGoal, finalStage ? 2 : 3) || passedStage) {
             ++unit.nextRallyStage;
             continue;
         }

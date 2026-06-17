@@ -170,8 +170,11 @@ namespace
         }
 
         unit.realtimePathTimer = 0.f;
-        // Refresh immediately when the tactical goal changes; otherwise a unit
-        // can keep following an old BOT-lane waypoint and appear to pace.
+        // Drop stale steps as soon as the tactical anchor changes; otherwise a
+        // unit can keep walking toward an old BOT-lane point and appear to pace.
+        if (!sameGoal) {
+            unit.mypath.clear();
+        }
         game.requestPathForUnit(unit, goal);
     }
 

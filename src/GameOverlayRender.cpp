@@ -66,7 +66,7 @@ void Game::drawTutorialOverlay()
         "  CMD comes from natural income and kill bounties based on enemy unit cost.",
         "  Drones are your economy/readability meter and auto-build nearby structures.",
         "  Combat units auto-path down highlighted lanes, fight enemies, then raid buildings.",
-        "  Towers outrange Siege and add max-HP damage; send units to escort siege pushes.",
+        "  Towers prioritize siege and splash nearby escorts; send units to break tower lines.",
         "  Main bases have a timed shield; siege pushes are the clean finisher.",
         "  If all Barracks fall, the base slowly drafts emergency troops.",
         "  Lost structures refund CMD and trigger a short HQ shield so you can rebuild.",
