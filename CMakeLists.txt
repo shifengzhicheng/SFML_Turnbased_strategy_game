@@ -46,6 +46,7 @@ set(SFML_TBS_GAME_SOURCES
     src/GamePathing.cpp
     src/GameRewards.cpp
     src/GameSelection.cpp
+    src/GameUnitMastery.cpp
     src/GameLifecycle.cpp
     src/GameEffectsFacade.cpp
     src/GameHudRender.cpp
@@ -67,11 +68,14 @@ set(SFML_TBS_GAME_SOURCES
     src/Map.cpp
     src/MoveableUnit.cpp
     src/PathfindingService.cpp
+    src/PerkMechanics.cpp
     src/PolicyModel.cpp
     src/Tile.cpp
     src/UnitDefinition.cpp
     src/UnitFactory.cpp
+    src/UnitStatsResolver.cpp
     src/UnitTypes.cpp
+    src/UnitUpgradeDefinition.cpp
     src/UnitVisual.cpp
     src/Worker.cpp
 )

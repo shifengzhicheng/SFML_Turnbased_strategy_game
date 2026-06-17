@@ -117,7 +117,6 @@ void Game::DrawSidePanel()
     CommandText.setFillColor(sf::Color(255, 226, 128));
     CommandText.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 106.f);
     CommandText.setString("CMD " + std::to_string(playerCommand)
-        + "/" + std::to_string(config::MaxCommand)
         + "   +" + std::to_string(resourceIncome(PLAYER)) + "/tick"
         + "\nTech P " + std::to_string(playerUpgradeLevel)
         + "/" + std::to_string(config::MaxTechLevel)
@@ -232,7 +231,7 @@ void Game::DrawSidePanel()
         : ("Max | " + std::to_string(resourceIncome(PLAYER)) + "/tick"));
     window.draw(economyLabel);
 
-    sf::Text upgradeCost("Cost " + std::to_string(upgradeCostForNextLevel(PLAYER)) + " | Level gives 3 cards", myfont, 9);
+    sf::Text upgradeCost("Cost " + std::to_string(upgradeCostForNextLevel(PLAYER)) + " | 3 mechanic cards", myfont, 9);
     upgradeCost.setFillColor(sf::Color(244, 221, 150));
     upgradeCost.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), config::EndTurnButtonY + config::SideButtonHeight - 2.f);
     window.draw(upgradeCost);
@@ -258,11 +257,22 @@ void Game::DrawSidePanel()
     setLabel(barracksLabel, std::to_string(buildingCommandCost(building::Barracks)) + " | cap "
         + std::to_string(totalBuildingCount(PLAYER, building::Barracks)) + "/"
         + std::to_string(buildingCap(PLAYER, building::Barracks)) + " auto near base", config::BuildBarracksY);
-    setLabel(infantryLabel, std::to_string(unitCost(UName::INFANTARY)) + " | steady frontline", config::BuildInfantryY);
-    setLabel(shooterLabel, std::to_string(unitCost(UName::SHOOTER)) + " | ranged, slower", config::BuildShooterY);
-    setLabel(cavalryLabel, std::to_string(unitCost(UName::CAVALRY)) + " | fastest dive", config::BuildCavalryY);
-    setLabel(siegeLabel, std::to_string(unitCost(UName::SIEGE)) + " | very slow tower-breaker", config::BuildSiegeY);
-    setLabel(guardianLabel, std::to_string(unitCost(UName::GUARDIAN)) + " | slow heavy tank", config::BuildGuardianY);
+    const auto masteryLabel = [this](int unitName, const std::string& role) {
+        const int level = unitMasteryLevel(PLAYER, unitName);
+        const int bonus = static_cast<int>(std::round(static_cast<float>(level) * config::MasteryStatBonusPerLevel * 100.f));
+        if (!isUnitUnlocked(PLAYER, unitName)) {
+            return std::to_string(unitCost(unitName)) + " | locked | " + role;
+        }
+        return std::to_string(unitCost(unitName))
+            + " | M" + std::to_string(level)
+            + " +" + std::to_string(bonus) + "%"
+            + " next " + std::to_string(unitMasteryUpgradeCost(PLAYER, unitName));
+    };
+    setLabel(infantryLabel, masteryLabel(UName::INFANTARY, "front"), config::BuildInfantryY);
+    setLabel(shooterLabel, masteryLabel(UName::SHOOTER, "multi"), config::BuildShooterY);
+    setLabel(cavalryLabel, masteryLabel(UName::CAVALRY, "dive"), config::BuildCavalryY);
+    setLabel(siegeLabel, masteryLabel(UName::SIEGE, "breach"), config::BuildSiegeY);
+    setLabel(guardianLabel, masteryLabel(UName::GUARDIAN, "tank"), config::BuildGuardianY);
     setLabel(towerLabel, std::to_string(buildingCommandCost(building::DefenseTower)) + " | cap "
         + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower)) + "/"
         + std::to_string(buildingCap(PLAYER, building::DefenseTower)) + " anti-rush", config::BuildTowerY);
@@ -282,4 +292,26 @@ void Game::DrawSidePanel()
     window.draw(guardianLabel);
     window.draw(towerBtn);
     window.draw(towerLabel);
+
+    const auto drawMasteryButton = [this](int unitName, int buttonY) {
+        const sf::FloatRect rect(static_cast<float>(config::PanelX + config::PanelWidth - 50),
+                                 static_cast<float>(buttonY + 6), 32.f, 26.f);
+        const bool enabled = canUpgradeUnitMastery(PLAYER, unitName);
+        sf::RectangleShape plus(sf::Vector2f(rect.width, rect.height));
+        plus.setPosition(rect.left, rect.top);
+        plus.setFillColor(enabled ? sf::Color(202, 149, 53, 235) : sf::Color(66, 67, 58, 210));
+        plus.setOutlineColor(enabled ? sf::Color(255, 235, 152) : sf::Color(113, 117, 96));
+        plus.setOutlineThickness(1.2f);
+        window.draw(plus);
+
+        sf::Text text("+", myfont, 18);
+        text.setFillColor(enabled ? sf::Color(45, 31, 15) : sf::Color(178, 181, 158));
+        text.setPosition(rect.left + 9.f, rect.top - 1.f);
+        window.draw(text);
+    };
+    drawMasteryButton(UName::INFANTARY, config::BuildInfantryY);
+    drawMasteryButton(UName::SHOOTER, config::BuildShooterY);
+    drawMasteryButton(UName::CAVALRY, config::BuildCavalryY);
+    drawMasteryButton(UName::SIEGE, config::BuildSiegeY);
+    drawMasteryButton(UName::GUARDIAN, config::BuildGuardianY);
 }

@@ -50,3 +50,18 @@ const UnitDefinition& unitDefinition(int unitName)
     }
     throw std::out_of_range("unknown unit definition");
 }
+
+std::size_t trainableUnitIndex(int unitName)
+{
+    for (std::size_t i = 0; i < Definitions.size(); ++i) {
+        if (Definitions[i].unitName == unitName) {
+            return i;
+        }
+    }
+    throw std::out_of_range("unknown trainable unit index");
+}
+
+bool isTrainableUnit(int unitName)
+{
+    return findUnitDefinition(unitName) != nullptr;
+}

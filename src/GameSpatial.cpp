@@ -107,14 +107,7 @@ Point Game::findAttackStandPoint(const MoveableUnit& unit, const Building& build
                 continue;
             }
 
-            int score = distanceSquared(current, candidate);
-            if (building.type == building::DefenseTower && unit.unitName == UName::SIEGE) {
-                const int towerRange = defenseTowerRange(building.team);
-                const int towerRangeSquared = towerRange * towerRange;
-                // Siege engines should naturally set up just outside tower
-                // range, forcing the defender to send units instead of turtling.
-                score += toTarget > towerRangeSquared ? -1200 - toTarget : 1800;
-            }
+            const int score = distanceSquared(current, candidate);
             if (score < bestScore) {
                 bestScore = score;
                 best = candidate;

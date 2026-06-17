@@ -30,6 +30,8 @@ namespace policy
             return "siege";
         case Action::Guardian:
             return "guard";
+        case Action::Mastery:
+            return "mastery";
         case Action::Wait:
             return "wait";
         case Action::Count:
@@ -69,6 +71,7 @@ namespace policy
         return action == Action::Economy
             || action == Action::Tech
             || action == Action::Barracks
-            || action == Action::Tower;
+            || action == Action::Tower
+            || action == Action::Mastery;
     }
 }

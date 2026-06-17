@@ -32,7 +32,8 @@ namespace config
     inline constexpr int PathStraightCost = 10;
     inline constexpr int PathDiagonalCost = 14;
     inline constexpr int StartingCommand = 72;
-    inline constexpr int MaxCommand = 1600;
+    inline constexpr int MaxCommand = 50000;
+    inline constexpr int CommandFeatureScale = 1600;
     inline constexpr int BaseCommandIncome = 5;
     inline constexpr int EconomyIncomeStep = 3;
     inline constexpr int EconomyIncomeQuadraticDivisor = 6;
@@ -56,18 +57,7 @@ namespace config
     inline constexpr int MaxTechLevel = 15;
     inline constexpr float TechDamageBonus = 0.06f;
     inline constexpr float TechHealthBonus = 0.045f;
-    inline constexpr float DrillInfantryDamageBonus = 0.30f;
-    inline constexpr float DrillGuardianDamageBonus = 0.24f;
-    inline constexpr float FortitudeHealthBonus = 0.32f;
-    inline constexpr float VolleyDamageBonus = 0.30f;
-    inline constexpr float VolleyCooldownReduction = 0.10f;
-    inline constexpr float ChargeDamageBonus = 0.28f;
-    inline constexpr float ChargeHealthBonus = 0.18f;
-    inline constexpr float ChargeCooldownReduction = 0.075f;
-    inline constexpr float SiegeDamageBonus = 0.32f;
-    inline constexpr float SiegeHealthBonus = 0.16f;
-    inline constexpr float SiegeBuildingDamageBonus = 0.24f;
-    inline constexpr float TowerDamageBonus = 0.16f;
+    inline constexpr float MasteryStatBonusPerLevel = 0.10f;
     inline constexpr float LogisticsTrainTimeReduction = 0.12f;
     inline constexpr float LogisticsTrainTimeFloor = 0.48f;
     inline constexpr float MiningIncomeBonus = 0.18f;
@@ -86,8 +76,9 @@ namespace config
     inline constexpr float BuildingDamageFactor = 0.62f;
     inline constexpr int BarracksHealth = 1220;
     inline constexpr int DefenseTowerHealth = 980;
-    inline constexpr int DefenseTowerDamage = 44;
+    inline constexpr int DefenseTowerDamage = 24;
     inline constexpr int DefenseTowerRange = 7;
+    inline constexpr float DefenseTowerMaxHealthDamagePercent = 0.10f;
     inline constexpr int BaseDefenseDamage = 34;
     inline constexpr int BaseDefenseRange = 8;
     inline constexpr int BuildInfluenceRadius = 13;
@@ -106,11 +97,12 @@ namespace config
     inline constexpr int CavalryDamage = 68;
     inline constexpr int SiegeDamage = 56;
     inline constexpr int GuardianDamage = 88;
-    inline constexpr int InfantryRange = 2;
-    inline constexpr int ShooterRange = 5;
-    inline constexpr int CavalryRange = 2;
-    inline constexpr int SiegeRange = 9;
-    inline constexpr int GuardianRange = 2;
+    inline constexpr int InfantryRange = 1;
+    inline constexpr int ShooterRange = 3;
+    inline constexpr int ShooterMaxRange = 5;
+    inline constexpr int CavalryRange = 1;
+    inline constexpr int SiegeRange = 5;
+    inline constexpr int GuardianRange = 1;
     inline constexpr double Pi = 3.14159265358979323846;
 }
 

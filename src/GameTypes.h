@@ -45,6 +45,7 @@ namespace gameop
         BuildBarracks,
         BuildTower,
         QueueUnit,
+        UpgradeUnitMastery,
         Count
     };
 }

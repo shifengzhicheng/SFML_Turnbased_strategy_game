@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <limits>
 #include <utility>
+#include <vector>
 
 using namespace sf;
 using namespace std;
@@ -24,20 +25,6 @@ namespace
             + (safeLevel * safeLevel) / config::EconomyIncomeQuadraticDivisor;
     }
 
-    float perkHealthBonusForUnit(const Game& game, int team, int unitName)
-    {
-        float bonus = 0.f;
-        if (unitName == UName::INFANTARY || unitName == UName::GUARDIAN) {
-            bonus += static_cast<float>(game.perkLevel(team, perk::Fortitude)) * config::FortitudeHealthBonus;
-        }
-        if (unitName == UName::CAVALRY) {
-            bonus += static_cast<float>(game.perkLevel(team, perk::Charge)) * config::ChargeHealthBonus;
-        }
-        if (unitName == UName::SIEGE) {
-            bonus += static_cast<float>(game.perkLevel(team, perk::SiegeCraft)) * config::SiegeHealthBonus;
-        }
-        return bonus;
-    }
 }
 
 int Game::upgradeCostForNextLevel(int team) const
@@ -77,7 +64,7 @@ int Game::resourceIncome(int team) const
     if (team == AI) {
         // A mild difficulty stipend keeps heuristic AI competitive without
         // adding hidden resource types for the player to understand.
-        income += 1 + static_cast<int>(gameTimeSeconds / 300.f);
+        income += (gameTimeSeconds > 360.f ? 1 : 0) + static_cast<int>(gameTimeSeconds / 520.f);
     }
     return income;
 }
@@ -123,17 +110,22 @@ bool Game::upgradeTeam(int team)
         return false;
     }
 
-    commandPool(*this, team) -= cost;
-    const int previousLevel = level;
-    ++level;
     auto& units = team == PLAYER ? myunits : enemys;
+    std::vector<std::pair<MoveableUnit*, float>> oldHealthMultipliers;
+    oldHealthMultipliers.reserve(units.size());
     for (auto& unit : units) {
-        const float perkBonus = perkHealthBonusForUnit(*this, team, unit->unitName);
-        const float oldMultiplier = 1.f + static_cast<float>(previousLevel) * config::TechHealthBonus + perkBonus;
-        const float newMultiplier = 1.f + static_cast<float>(level) * config::TechHealthBonus + perkBonus;
-        // Use the same additive tech formula as freshly spawned units, so old
-        // and new soldiers share identical max health at a given LEVEL.
-        unit->scaleMaxHealth(newMultiplier / oldMultiplier);
+        oldHealthMultipliers.push_back({unit.get(), unitHealthMultiplier(team, unit->unitName)});
+    }
+
+    commandPool(*this, team) -= cost;
+    ++level;
+    for (auto& entry : oldHealthMultipliers) {
+        const float newMultiplier = unitHealthMultiplier(team, entry.first->unitName);
+        if (entry.second > 0.f) {
+            // Use the same baseline-derived stat resolver as fresh units, so
+            // veterans and recruits stay in sync after LEVEL upgrades.
+            entry.first->scaleMaxHealth(newMultiplier / entry.second);
+        }
     }
     if (team == PLAYER) {
         addFloatingText(sf::Vector2f(config::PanelX + 18.f, static_cast<float>(config::EndTurnButtonY) - 18.f),

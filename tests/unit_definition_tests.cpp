@@ -3,6 +3,7 @@
 #include "Config.h"
 #include "RealtimeConfig.h"
 #include "UnitDefinition.h"
+#include "UnitUpgradeDefinition.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -61,6 +62,14 @@ int main()
             "cavalry should be a meaningful mid-tier investment");
     require(unitDefinition(UName::SIEGE).attackRange == config::SiegeRange,
             "siege range should stay sourced from Config");
+    require(config::InfantryRange == 1
+            && config::CavalryRange == 1
+            && config::GuardianRange == 1
+            && config::ShooterRange == 3
+            && config::SiegeRange == 5,
+            "baseline ranges should match the readable melee/shooter/siege contract");
+    require(config::ShooterMaxRange == 5,
+            "shooter range perks should have a clear hard cap");
     require(unitDefinition(UName::SIEGE).commandCost >= unitDefinition(UName::SHOOTER).commandCost * 3,
             "siege should not be cheap enough to spam behind towers");
     require(!unitDefinition(UName::SIEGE).unlockByEconomyOrTech,
@@ -81,6 +90,12 @@ int main()
             "cavalry should peel toward nearby fights before over-diving alone");
     require(config::SiegeSeekRange >= config::SiegeRange + 3,
             "siege should look far enough ahead to escort itself near towers");
+    require(unitMasteryUpgradeCost(UName::INFANTARY, 1) > unitMasteryUpgradeCost(UName::INFANTARY, 0),
+            "unit mastery costs should grow forever");
+    require(unitMasteryStatMultiplier(UName::SIEGE, 7) >= 1.f + 7.f * config::MasteryStatBonusPerLevel - 0.001f,
+            "unit mastery should expose the expected +10 percent per level multiplier");
+    require(config::MaxCommand > unitMasteryUpgradeCost(UName::INFANTARY, 20),
+            "CMD bank should not create a practical hard cap for late mastery");
 
     bool threw = false;
     try {

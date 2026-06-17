@@ -5,6 +5,9 @@
 #include "AutoCombat.h"
 #include "RealtimeConfig.h"
 #include "UnitDefinition.h"
+#include "PerkMechanics.h"
+#include "UnitStatsResolver.h"
+#include "UnitUpgradeDefinition.h"
 
 #include <algorithm>
 #include <cmath>
@@ -15,6 +18,41 @@
 using namespace sf;
 using namespace std;
 using namespace game_internal;
+
+namespace
+{
+    const std::array<int, perk::Count>& perkLevelsForTeam(const Game& game, int team)
+    {
+        return team == PLAYER ? game.playerPerkLevels : game.aiPerkLevels;
+    }
+
+    const UnitMasteryState& masteryForTeam(const Game& game, int team)
+    {
+        return team == PLAYER ? game.playerMastery : game.aiMastery;
+    }
+
+    TeamStatContext statContextForTeam(const Game& game, int team)
+    {
+        return TeamStatContext{
+            team == PLAYER ? game.playerUpgradeLevel : game.aiUpgradeLevel,
+            &masteryForTeam(game, team),
+            &perkLevelsForTeam(game, team)
+        };
+    }
+
+    UnitComputedStats resolvedStatsForTeam(const Game& game, int team, int unitName)
+    {
+        return resolveUnitStats(unitDefinition(unitName), statContextForTeam(game, team));
+    }
+
+    bool baseCounter(int attacker, int defender)
+    {
+        return (attacker == UName::SHOOTER && defender == UName::INFANTARY)
+            || (attacker == UName::INFANTARY && defender == UName::CAVALRY)
+            || (attacker == UName::CAVALRY && (defender == UName::SHOOTER || defender == UName::SIEGE))
+            || (attacker == UName::GUARDIAN && defender == UName::CAVALRY);
+    }
+}
 
 int Game::buildingCap(int team, int type) const
 {
@@ -37,54 +75,106 @@ float Game::damageMultiplier(int team) const
 
 float Game::unitDamageMultiplier(int team, int unitName) const
 {
-    float multiplier = damageMultiplier(team);
-    switch (unitName) {
-    case UName::INFANTARY:
-        multiplier += static_cast<float>(perkLevel(team, perk::Drill)) * config::DrillInfantryDamageBonus;
-        break;
-    case UName::GUARDIAN:
-        multiplier += static_cast<float>(perkLevel(team, perk::Drill)) * config::DrillGuardianDamageBonus;
-        break;
-    case UName::SHOOTER:
-        multiplier += static_cast<float>(perkLevel(team, perk::Volley)) * config::VolleyDamageBonus;
-        break;
-    case UName::CAVALRY:
-        multiplier += static_cast<float>(perkLevel(team, perk::Charge)) * config::ChargeDamageBonus;
-        break;
-    case UName::SIEGE:
-        multiplier += static_cast<float>(perkLevel(team, perk::SiegeCraft)) * config::SiegeDamageBonus;
-        break;
-    default:
-        break;
+    if (!isTrainableUnit(unitName)) {
+        return damageMultiplier(team);
     }
-    return multiplier;
+    return resolvedStatsForTeam(*this, team, unitName).damageMultiplier;
 }
 
 float Game::unitHealthMultiplier(int team, int unitName) const
 {
-    float multiplier = 1.f + static_cast<float>(team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel) * config::TechHealthBonus;
-    if (unitName == UName::INFANTARY || unitName == UName::GUARDIAN) {
-        multiplier += static_cast<float>(perkLevel(team, perk::Fortitude)) * config::FortitudeHealthBonus;
+    if (!isTrainableUnit(unitName)) {
+        return 1.f;
     }
-    if (unitName == UName::CAVALRY) {
-        multiplier += static_cast<float>(perkLevel(team, perk::Charge)) * config::ChargeHealthBonus;
-    }
-    if (unitName == UName::SIEGE) {
-        multiplier += static_cast<float>(perkLevel(team, perk::SiegeCraft)) * config::SiegeHealthBonus;
-    }
-    return multiplier;
+    return resolvedStatsForTeam(*this, team, unitName).healthMultiplier;
 }
 
 float Game::unitAttackCooldownMultiplier(int team, int unitName) const
 {
-    float multiplier = 1.f;
-    if (unitName == UName::SHOOTER) {
-        multiplier -= static_cast<float>(perkLevel(team, perk::Volley)) * config::VolleyCooldownReduction;
+    if (!isTrainableUnit(unitName)) {
+        return 1.f;
     }
-    if (unitName == UName::CAVALRY) {
-        multiplier -= static_cast<float>(perkLevel(team, perk::Charge)) * config::ChargeCooldownReduction;
+    return std::clamp(resolvedStatsForTeam(*this, team, unitName).attackCooldownMultiplier,
+                      config::AttackCooldownFloor, 1.f);
+}
+
+float Game::unitBuildingDamageMultiplier(int team, int unitName) const
+{
+    if (!isTrainableUnit(unitName)) {
+        return 1.f;
     }
-    return std::clamp(multiplier, config::AttackCooldownFloor, 1.f);
+    return resolvedStatsForTeam(*this, team, unitName).buildingDamageMultiplier;
+}
+
+int Game::unitAttackRange(int team, int unitName) const
+{
+    if (!isTrainableUnit(unitName)) {
+        return 1;
+    }
+    return resolvedStatsForTeam(*this, team, unitName).attackRange;
+}
+
+int Game::unitMasteryLevel(int team, int unitName) const
+{
+    if (!isTrainableUnit(unitName)) {
+        return 0;
+    }
+    return ::unitMasteryLevel(masteryForTeam(*this, team), unitName);
+}
+
+int Game::unitMasteryUpgradeCost(int team, int unitName) const
+{
+    if (!isTrainableUnit(unitName)) {
+        return 0;
+    }
+    return ::unitMasteryUpgradeCost(unitName, unitMasteryLevel(team, unitName));
+}
+
+bool Game::canUpgradeUnitMastery(int team, int unitName) const
+{
+    const int cost = unitMasteryUpgradeCost(team, unitName);
+    return cost > 0 && isUnitUnlocked(team, unitName) && commandForTeam(team) >= cost;
+}
+
+bool Game::counterApplies(int attackerTeam, int attackerUnitName, int defenderTeam, int defenderUnitName) const
+{
+    if (!baseCounter(attackerUnitName, defenderUnitName)) {
+        return false;
+    }
+    if (defenderUnitName == UName::CAVALRY) {
+        const UnitMechanics cavalry = unitMechanicsFor(UName::CAVALRY, perkLevelsForTeam(*this, defenderTeam));
+        if (cavalry.ignoresInfantryCounter && attackerUnitName == UName::INFANTARY) {
+            return false;
+        }
+    }
+    if (defenderUnitName == UName::INFANTARY) {
+        const UnitMechanics infantry = unitMechanicsFor(UName::INFANTARY, perkLevelsForTeam(*this, defenderTeam));
+        if (infantry.ignoresShooterCounter && attackerUnitName == UName::SHOOTER) {
+            return false;
+        }
+    }
+    (void)attackerTeam;
+    return true;
+}
+
+int Game::additionalAttackTargets(int team, int unitName) const
+{
+    return unitMechanicsFor(unitName, perkLevelsForTeam(*this, team)).additionalAttackTargets;
+}
+
+float Game::additionalTargetDamageMultiplier(int team, int unitName) const
+{
+    return unitMechanicsFor(unitName, perkLevelsForTeam(*this, team)).additionalTargetDamageMultiplier;
+}
+
+bool Game::unitTauntsNearbyEnemies(int team, int unitName) const
+{
+    return unitMechanicsFor(unitName, perkLevelsForTeam(*this, team)).tauntsNearbyEnemies;
+}
+
+float Game::siegeDamageTakenMultiplier(int team, int unitName) const
+{
+    return unitMechanicsFor(unitName, perkLevelsForTeam(*this, team)).siegeDamageTakenMultiplier;
 }
 
 float Game::baseDamageTakenMultiplier(int attackerUnitName, int defenderTeam) const
@@ -132,7 +222,8 @@ float Game::miningIncomeMultiplier(int team) const
 
 int Game::defenseTowerRange(int team) const
 {
-    return config::DefenseTowerRange + std::min(1, perkLevel(team, perk::TowerCraft) / 3);
+    (void)team;
+    return config::DefenseTowerRange;
 }
 
 int Game::unitCost(int name) const

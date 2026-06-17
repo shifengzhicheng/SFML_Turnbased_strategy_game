@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "AutoCombat.h"
 #include "BuildingDefinition.h"
+#include "RealtimeConfig.h"
 #include "UnitDefinition.h"
 
 #include <cmath>
@@ -104,13 +105,21 @@ int main()
     game.applyPerk(PLAYER, perk::Mining);
     require(game.resourceIncome(PLAYER) >= incomeBeforeMining + 6,
             "Mining perk should make economy upgrades visibly stronger");
-    const float shooterDamageBefore = game.unitDamageMultiplier(PLAYER, UName::SHOOTER);
-    const float shooterCooldownBefore = game.unitAttackCooldownMultiplier(PLAYER, UName::SHOOTER);
     game.applyPerk(PLAYER, perk::Volley);
-    require(game.unitDamageMultiplier(PLAYER, UName::SHOOTER) >= shooterDamageBefore + 0.29f,
-            "Volley should be a chunky shooter damage upgrade");
-    require(game.unitAttackCooldownMultiplier(PLAYER, UName::SHOOTER) <= shooterCooldownBefore - 0.09f,
-            "Volley should noticeably speed up shooter attacks");
+    require(game.additionalAttackTargets(PLAYER, UName::SHOOTER) == 1,
+            "Volley should change shooter mechanics by adding a secondary target");
+    require(game.unitAttackRange(PLAYER, UName::SHOOTER) == config::ShooterRange,
+            "Volley level 1 should not silently inflate shooter range");
+    game.applyPerk(PLAYER, perk::Volley);
+    require(game.unitAttackRange(PLAYER, UName::SHOOTER) == config::ShooterRange + 1,
+            "Volley level 2 should add shooter range");
+    game.applyPerk(PLAYER, perk::Volley);
+    game.applyPerk(PLAYER, perk::Volley);
+    game.applyPerk(PLAYER, perk::Volley);
+    require(game.unitAttackRange(PLAYER, UName::SHOOTER) == config::ShooterMaxRange,
+            "Shooter range perks should respect the cap");
+    require(game.additionalAttackTargets(PLAYER, UName::SHOOTER) == 2,
+            "high Volley should upgrade into a second splash target");
     const float trainBefore = game.teamTrainTimeMultiplier(PLAYER);
     game.applyPerk(PLAYER, perk::Logistics);
     require(game.teamTrainTimeMultiplier(PLAYER) <= trainBefore - 0.11f,
@@ -130,6 +139,103 @@ int main()
             "reward refresh should consume the free reroll");
     require(game.perkChoices.front().type != firstRewardType,
             "reward refresh should produce a different tactic rotation");
+
+    game.clear();
+    game.playerCommand = 1000;
+    require(game.executeOperation(PLAYER, GameOperation(gameop::BuildBarracks, lane::Mid)),
+            "mastery test should build a barracks to unlock infantry");
+    game.buildings.back().complete = true;
+    const int infantryMasteryCost = game.unitMasteryUpgradeCost(PLAYER, UName::INFANTARY);
+    const float infantryDamageBeforeMastery = game.unitDamageMultiplier(PLAYER, UName::INFANTARY);
+    const Point masterySpawn = game.findSpawnPointAround(game.Red_baseP);
+    require(game.createUnit(PLAYER, UName::INFANTARY, masterySpawn.x, masterySpawn.y, lane::Mid),
+            "mastery test infantry should spawn");
+    MoveableUnit* masteryInfantry = game.myunits.back().get();
+    const int masteryHealthBefore = masteryInfantry->Health;
+    require(game.executeOperation(PLAYER, GameOperation(gameop::UpgradeUnitMastery, lane::Mid, UName::INFANTARY)),
+            "unit mastery upgrade should succeed with enough CMD and unlocks");
+    require(game.unitMasteryLevel(PLAYER, UName::INFANTARY) == 1,
+            "unit mastery should advance independently per unit type");
+    require(game.playerCommand == 1000 - buildingDefinition(building::Barracks).commandCost - infantryMasteryCost,
+            "unit mastery should spend its displayed cost");
+    require(game.unitDamageMultiplier(PLAYER, UName::INFANTARY) >= infantryDamageBeforeMastery + config::MasteryStatBonusPerLevel - 0.001f,
+            "unit mastery should add 10 percent baseline damage scaling");
+    require(masteryInfantry->Health > masteryHealthBefore,
+            "existing units should receive mastery health scaling");
+
+    game.clear();
+    for (int x = 10; x <= 14; ++x) {
+        game.setTileID(x, 10, tile::Empty);
+    }
+    game.applyPerk(PLAYER, perk::Volley);
+    require(game.createUnit(PLAYER, UName::SHOOTER, 10, 10, lane::Mid),
+            "volley shooter should spawn");
+    require(game.createUnit(AI, UName::INFANTARY, 13, 10, lane::Mid),
+            "primary volley target should spawn");
+    require(game.createUnit(AI, UName::INFANTARY, 12, 10, lane::Mid),
+            "secondary volley target should spawn");
+    MoveableUnit* volleyShooter = game.myunits.back().get();
+    MoveableUnit* primaryVolleyTarget = game.enemys.front().get();
+    MoveableUnit* secondaryVolleyTarget = game.enemys.back().get();
+    const int secondaryBefore = secondaryVolleyTarget->Health;
+    volleyShooter->autoAttack(primaryVolleyTarget);
+    require(secondaryVolleyTarget->Health < secondaryBefore,
+            "Volley mechanic should damage an additional target in range");
+
+    game.clear();
+    for (int x = 10; x <= 12; ++x) {
+        game.setTileID(x, 10, tile::Empty);
+    }
+    require(game.createUnit(AI, UName::INFANTARY, 10, 10, lane::Mid),
+            "counter test infantry should spawn");
+    require(game.createUnit(PLAYER, UName::CAVALRY, 11, 10, lane::Mid),
+            "counter test cavalry should spawn");
+    MoveableUnit* counterInfantry = game.enemys.back().get();
+    MoveableUnit* counterCavalry = game.myunits.back().get();
+    const int cavalryBeforeCounter = counterCavalry->Health;
+    counterInfantry->autoAttack(counterCavalry);
+    const int counteredDamage = cavalryBeforeCounter - counterCavalry->Health;
+
+    game.clear();
+    for (int x = 10; x <= 12; ++x) {
+        game.setTileID(x, 10, tile::Empty);
+    }
+    game.applyPerk(PLAYER, perk::Charge);
+    game.applyPerk(PLAYER, perk::Charge);
+    require(game.createUnit(AI, UName::INFANTARY, 10, 10, lane::Mid),
+            "immune counter test infantry should spawn");
+    require(game.createUnit(PLAYER, UName::CAVALRY, 11, 10, lane::Mid),
+            "immune counter test cavalry should spawn");
+    counterInfantry = game.enemys.back().get();
+    counterCavalry = game.myunits.back().get();
+    const int cavalryBeforeImmuneHit = counterCavalry->Health;
+    counterInfantry->autoAttack(counterCavalry);
+    const int immuneDamage = cavalryBeforeImmuneHit - counterCavalry->Health;
+    require(immuneDamage > 0 && immuneDamage < counteredDamage,
+            "Charge level 2 should stop Infantry from countering Cavalry");
+
+    game.clear();
+    for (int x = 10; x <= 16; ++x) {
+        game.setTileID(x, 10, tile::Empty);
+    }
+    Building tower;
+    tower.id = 999;
+    tower.team = PLAYER;
+    tower.type = building::DefenseTower;
+    tower.point = Point(10, 10);
+    tower.complete = true;
+    tower.maxHealth = buildingDefinition(building::DefenseTower).maxHealth;
+    tower.health = tower.maxHealth;
+    tower.attackTimer = realtime::DefenseTowerAttackCooldown;
+    game.buildings.push_back(tower);
+    require(game.createUnit(AI, UName::GUARDIAN, 15, 10, lane::Mid),
+            "tower percent damage target should spawn");
+    MoveableUnit* towerTarget = game.enemys.back().get();
+    const int towerTargetBefore = towerTarget->Health;
+    game.updateDefenseTowers(0.25f);
+    const int towerDamage = towerTargetBefore - towerTarget->Health;
+    require(towerDamage >= config::DefenseTowerDamage + config::GuardianHealth / 10,
+            "defense towers should include max-health percent damage");
 
     game.clear();
     game.playerCommand = 1000;
@@ -183,12 +289,12 @@ int main()
             "base range checks should use the whole 2x2 footprint, not only the top-left tile");
 
     game.clear();
-    for (int x = 10; x <= 14; ++x) {
+    for (int x = 10; x <= 13; ++x) {
         game.setTileID(x, 10, tile::Empty);
     }
     require(game.createUnit(PLAYER, UName::SHOOTER, 10, 10, lane::Mid),
             "test shooter should spawn for line-of-sight checks");
-    require(game.createUnit(AI, UName::INFANTARY, 14, 10, lane::Mid),
+    require(game.createUnit(AI, UName::INFANTARY, 13, 10, lane::Mid),
             "test infantry target should spawn for line-of-sight checks");
     game.setTileID(12, 10, tile::Tree);
     require(!game.myunits.back()->canAutoAttack(game.enemys.back().get()),
@@ -207,7 +313,7 @@ int main()
     require(game.createUnit(AI, UName::INFANTARY, 12, 10, lane::Mid),
             "test defender should spawn for aggro checks");
     MoveableUnit* defender = game.enemys.back().get();
-    require(game.createUnit(PLAYER, UName::SHOOTER, 14, 10, lane::Mid),
+    require(game.createUnit(PLAYER, UName::SHOOTER, 13, 10, lane::Mid),
             "test attacker should spawn for aggro checks");
     MoveableUnit* provokingShooter = game.myunits.back().get();
     provokingShooter->autoAttack(defender);
@@ -223,12 +329,12 @@ int main()
             "aggro should outrank an even closer unrelated target");
 
     game.clear();
-    for (int x = 10; x <= 19; ++x) {
+    for (int x = 10; x <= 15; ++x) {
         game.setTileID(x, 12, tile::Empty);
     }
     require(game.createUnit(PLAYER, UName::SIEGE, 10, 12, lane::Mid),
             "test siege should spawn for tank resistance checks");
-    require(game.createUnit(AI, UName::GUARDIAN, 19, 12, lane::Mid),
+    require(game.createUnit(AI, UName::GUARDIAN, 15, 12, lane::Mid),
             "test guardian should spawn in siege range");
     MoveableUnit* testSiege = game.myunits.back().get();
     MoveableUnit* testGuardian = game.enemys.back().get();

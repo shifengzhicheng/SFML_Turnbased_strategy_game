@@ -91,6 +91,8 @@ bool Game::executeOperation(int team, const GameOperation& operation)
     case gameop::QueueUnit:
         selectedLane = safeLane;
         return enqueueUnit(team, operation.unitName);
+    case gameop::UpgradeUnitMastery:
+        return upgradeUnitMastery(team, operation.unitName);
     default:
         return false;
     }
@@ -123,6 +125,10 @@ std::string Game::describeOperation(const GameOperation& operation) const
         label += "]";
     }
     if (operation.type == gameop::QueueUnit) {
+        label += ":";
+        label += unitDebugName(operation.unitName);
+    }
+    if (operation.type == gameop::UpgradeUnitMastery) {
         label += ":";
         label += unitDebugName(operation.unitName);
     }

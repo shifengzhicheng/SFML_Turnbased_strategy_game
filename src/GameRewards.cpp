@@ -15,23 +15,6 @@ using namespace sf;
 using namespace std;
 using namespace game_internal;
 
-namespace
-{
-    float perkHealthBonusForUnit(int type, int unitName, int level)
-    {
-        if (type == perk::Fortitude && (unitName == UName::INFANTARY || unitName == UName::GUARDIAN)) {
-            return static_cast<float>(level) * config::FortitudeHealthBonus;
-        }
-        if (type == perk::Charge && unitName == UName::CAVALRY) {
-            return static_cast<float>(level) * config::ChargeHealthBonus;
-        }
-        if (type == perk::SiegeCraft && unitName == UName::SIEGE) {
-            return static_cast<float>(level) * config::SiegeHealthBonus;
-        }
-        return 0.f;
-    }
-}
-
 int Game::perkLevel(int team, int type) const
 {
     if (type < 0 || type >= perk::Count) {
@@ -119,19 +102,7 @@ void Game::applyPerk(int team, int type)
     if (level >= maxPerkLevel(type)) {
         return;
     }
-    const int previousLevel = level;
     ++level;
-
-    auto& units = team == PLAYER ? myunits : enemys;
-    for (auto& unit : units) {
-        const float oldBonus = perkHealthBonusForUnit(type, unit->unitName, previousLevel);
-        const float newBonus = perkHealthBonusForUnit(type, unit->unitName, level);
-        if (newBonus > oldBonus) {
-            const int techLevel = team == PLAYER ? playerUpgradeLevel : aiUpgradeLevel;
-            const float techMultiplier = 1.f + static_cast<float>(techLevel) * config::TechHealthBonus;
-            unit->scaleMaxHealth((techMultiplier + newBonus) / (techMultiplier + oldBonus));
-        }
-    }
 
     Unit* base = team == PLAYER ? static_cast<Unit*>(Base_red.get()) : static_cast<Unit*>(Base_blue.get());
     if (base != nullptr) {

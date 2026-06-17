@@ -121,7 +121,7 @@ int MoveableUnit::myattack()
 
 int MoveableUnit::myAttackRange() const
 {
-	return attackmethod ? attackmethod->range : 0;
+	return mygame != nullptr ? mygame->unitAttackRange(myteam, unitName) : (attackmethod ? attackmethod->range : 0);
 }
 
 void MoveableUnit::scaleMaxHealth(float multiplier)

@@ -58,6 +58,7 @@ void Game::drawTutorialOverlay()
         "Core controls",
         "  Click ECONOMY: improve accelerating CMD income and add one visible drone.",
         "  Click Top / Mid / Bot, then click unit buttons to send new troops to that lane.",
+        "  Click the small + on a unit row, or Shift+1..5, to buy infinite CMD Mastery.",
         "  Barracks and Tower buttons auto-place buildings near your base or lane defense.",
         "  Click Upgrade: spend CMD to gain a LEVEL and choose one rogue tactic card.",
         "",
@@ -65,15 +66,16 @@ void Game::drawTutorialOverlay()
         "  CMD comes from natural income and kill bounties based on enemy unit cost.",
         "  Drones are your economy/readability meter and auto-build nearby structures.",
         "  Combat units auto-path down highlighted lanes, fight enemies, then raid buildings.",
-        "  Towers beat basic attacks, but Siege outranges towers and forces a response.",
+        "  Towers outrange Siege and add max-HP damage; send units to escort siege pushes.",
         "  Main bases have a timed shield; siege pushes are the clean finisher.",
         "  If all Barracks fall, the base slowly drafts emergency troops.",
         "  Lost structures refund CMD and trigger a short HQ shield so you can rebuild.",
         "",
         "Tactics and counters",
-        "  Every tech upgrade gives 3 tactic cards. Max tech is LEVEL 15.",
+        "  Every tech upgrade gives 3 mechanism tactic cards. Max tech is LEVEL 15.",
         "  Press R on the tactic screen to refresh once if the 3 cards miss your build.",
-        "  Perks are huge and stack, so late builds can bend the soft counter rules.",
+        "  Unit Mastery is numeric: each level adds +10% baseline damage and HP forever.",
+        "  Perks are build-changing: multi-shot, range caps, taunt, counter immunity.",
         "  Shooter > Infantry, Infantry > Cavalry, Cavalry > Shooter/Siege.",
         "  Cavalry rotates almost twice as fast as infantry; Siege crawls and needs escorts.",
         "  Siege cracks buildings; Guardians are heavy tanks that resist siege splash.",
@@ -82,11 +84,11 @@ void Game::drawTutorialOverlay()
         "  Infantry: " + std::to_string(unitCost(UName::INFANTARY)) + " CMD, needs 1 Barracks.",
         "  Shooter: " + std::to_string(unitCost(UName::SHOOTER)) + " CMD, needs 1 Barracks and Economy 1 or LEVEL 1.",
         "  Cavalry: " + std::to_string(unitCost(UName::CAVALRY)) + " CMD, needs 2 Barracks and Economy 2 or LEVEL 3.",
-        "  Siege: " + std::to_string(unitCost(UName::SIEGE)) + " CMD, needs LEVEL 5, 2 Barracks, Economy 3; outranges towers.",
+        "  Siege: " + std::to_string(unitCost(UName::SIEGE)) + " CMD, needs LEVEL 5, 2 Barracks, Economy 3; outranges units.",
         "  Guardian: " + std::to_string(unitCost(UName::GUARDIAN)) + " CMD, needs LEVEL 7, 3 Barracks, Economy 4; anchors pushes.",
         "",
         "Hotkeys",
-        "  H: show / hide this guide.  C: restart map.  Esc: back to menu."
+        "  1-5: queue units.  Shift+1-5: buy Mastery.  H: guide.  C: restart."
     };
 
     float y = 126.f;

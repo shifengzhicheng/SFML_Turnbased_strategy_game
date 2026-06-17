@@ -56,7 +56,18 @@ namespace
         return distanceSquared(unit, *candidate) <= seekRange * seekRange;
     }
 
-    Unit* betterTarget(MoveableUnit& unit, Unit* current, Unit* candidate, TargetScope scope)
+    int targetScore(Game& game, MoveableUnit& unit, Unit* candidate)
+    {
+        int score = distanceSquared(unit, *candidate);
+        if (game.unitTauntsNearbyEnemies(candidate->myteam, candidate->unitName)) {
+            // Guardian taunt is a mechanism perk: nearby armies naturally snap
+            // to the tank unless an aggro target is already forcing retaliation.
+            score -= 80;
+        }
+        return score;
+    }
+
+    Unit* betterTarget(Game& game, MoveableUnit& unit, Unit* current, Unit* candidate, TargetScope scope)
     {
         if (candidate == nullptr || candidate->Health <= 0 || candidate->myteam == unit.myteam) {
             return current;
@@ -74,7 +85,7 @@ namespace
             return candidateInRange ? candidate : current;
         }
 
-        return distanceSquared(unit, *candidate) < distanceSquared(unit, *current) ? candidate : current;
+        return targetScore(game, unit, candidate) < targetScore(game, unit, current) ? candidate : current;
     }
 
     Unit* chooseTarget(Game& game, MoveableUnit& unit, TargetScope scope)
@@ -90,15 +101,15 @@ namespace
         Unit* best = nullptr;
         if (unit.myteam == PLAYER) {
             for (auto& enemy : game.enemys) {
-                best = betterTarget(unit, best, enemy.get(), scope);
+                best = betterTarget(game, unit, best, enemy.get(), scope);
             }
-            best = betterTarget(unit, best, game.Base_blue.get(), scope);
+            best = betterTarget(game, unit, best, game.Base_blue.get(), scope);
         }
         else {
             for (auto& playerUnit : game.myunits) {
-                best = betterTarget(unit, best, playerUnit.get(), scope);
+                best = betterTarget(game, unit, best, playerUnit.get(), scope);
             }
-            best = betterTarget(unit, best, game.Base_red.get(), scope);
+            best = betterTarget(game, unit, best, game.Base_red.get(), scope);
         }
         return best;
     }

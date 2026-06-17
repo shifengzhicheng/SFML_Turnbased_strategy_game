@@ -37,15 +37,15 @@ namespace game_internal
     {
         switch (type) {
         case perk::Fortitude:
-            return "Infantry and Guard +32% HP.\nTanks suddenly hold the line.";
+            return "Guardians taunt nearby enemies.\nHigher levels harden them versus siege.";
         case perk::Volley:
-            return "Shooters +30% damage.\nAlso shoot 10% faster.";
+            return "Shooters chain shots.\nLv2/Lv4 extend range, capped at 5.";
         case perk::Charge:
-            return "Cavalry +28% damage, +18% HP.\nAttack cycle is 7.5% faster.";
+            return "Cavalry gains shock tactics.\nLv2 ignores Infantry counter.";
         case perk::SiegeCraft:
-            return "Siege +32% damage, +16% HP.\nBuildings take a brutal hit.";
+            return "Siege splash chips escorts.\nHigher levels improve breach pressure.";
         case perk::TowerCraft:
-            return "Towers +16% damage.\n+1 range at high level.";
+            return "Towers focus siege threats.\nEvery shot adds max-HP pressure.";
         case perk::Logistics:
             return "Barracks train 12% faster.\nTurns economy into tempo.";
         case perk::Mining:
@@ -54,7 +54,7 @@ namespace game_internal
             return "Instant 80+12/LEVEL CMD.\nBuild or queue now.";
         case perk::Drill:
         default:
-            return "Infantry +30%, Guard +24% damage.\nFrontline stays scary.";
+            return "Infantry gains shield drill.\nLv2 resists shooters, Lv3 cleaves.";
         }
     }
 
@@ -95,6 +95,8 @@ namespace game_internal
             return "BuildTower";
         case gameop::QueueUnit:
             return "QueueUnit";
+        case gameop::UpgradeUnitMastery:
+            return "UpgradeUnitMastery";
         case gameop::SelectLane:
         default:
             return "SelectLane";

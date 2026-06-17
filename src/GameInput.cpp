@@ -87,6 +87,34 @@ void Game::GameInput(Vector2i mousePos, Event event) {
             clear();
             gameSceneState = SCENE_GAME;
         }
+        if (!tutorialVisible) {
+            const bool shift = sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)
+                || sf::Keyboard::isKeyPressed(sf::Keyboard::RShift);
+            const auto unitHotkey = [this, shift](int unitName) {
+                executeOperation(PLAYER, GameOperation(shift ? gameop::UpgradeUnitMastery : gameop::QueueUnit,
+                                                       playerSelectedLane, unitName));
+            };
+            if (event.key.code == sf::Keyboard::Num1 || event.key.code == sf::Keyboard::Numpad1) {
+                unitHotkey(UName::INFANTARY);
+                return;
+            }
+            if (event.key.code == sf::Keyboard::Num2 || event.key.code == sf::Keyboard::Numpad2) {
+                unitHotkey(UName::SHOOTER);
+                return;
+            }
+            if (event.key.code == sf::Keyboard::Num3 || event.key.code == sf::Keyboard::Numpad3) {
+                unitHotkey(UName::CAVALRY);
+                return;
+            }
+            if (event.key.code == sf::Keyboard::Num4 || event.key.code == sf::Keyboard::Numpad4) {
+                unitHotkey(UName::SIEGE);
+                return;
+            }
+            if (event.key.code == sf::Keyboard::Num5 || event.key.code == sf::Keyboard::Numpad5) {
+                unitHotkey(UName::GUARDIAN);
+                return;
+            }
+        }
     }
     if (tutorialVisible) {
         return;
@@ -193,6 +221,31 @@ void Game::handleBuildButtons(Vector2i mousePos, Event event)
         executeOperation(PLAYER, GameOperation(gameop::BuildTower, playerSelectedLane));
         towerBtn.setState(NORMAL);
         return;
+    }
+
+    if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
+        const auto masteryRect = [](int buttonY) {
+            return sf::FloatRect(static_cast<float>(config::PanelX + config::PanelWidth - 50),
+                                 static_cast<float>(buttonY + 6), 32.f, 26.f);
+        };
+        const std::pair<int, int> masteryButtons[] = {
+            {UName::INFANTARY, config::BuildInfantryY},
+            {UName::SHOOTER, config::BuildShooterY},
+            {UName::CAVALRY, config::BuildCavalryY},
+            {UName::SIEGE, config::BuildSiegeY},
+            {UName::GUARDIAN, config::BuildGuardianY},
+        };
+        for (const auto& entry : masteryButtons) {
+            if (masteryRect(entry.second).contains(static_cast<float>(mousePos.x), static_cast<float>(mousePos.y))) {
+                executeOperation(PLAYER, GameOperation(gameop::UpgradeUnitMastery, playerSelectedLane, entry.first));
+                inf.setState(NORMAL);
+                sho.setState(NORMAL);
+                cav.setState(NORMAL);
+                siegeBtn.setState(NORMAL);
+                guardianBtn.setState(NORMAL);
+                return;
+            }
+        }
     }
 
     if (inf.checkMouse(mousePos, event) == RELEASE) {

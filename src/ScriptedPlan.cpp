@@ -48,6 +48,8 @@ int estimatedOperationCost(const Game& game, int team, const GameOperation& oper
         return buildingDefinition(building::DefenseTower).commandCost;
     case gameop::QueueUnit:
         return game.unitCost(operation.unitName);
+    case gameop::UpgradeUnitMastery:
+        return game.unitMasteryUpgradeCost(team, operation.unitName);
     case gameop::SelectLane:
     default:
         return 0;
@@ -295,6 +297,10 @@ private:
                       GameOperation(gameop::UpgradeEconomy));
         }
         else {
+            const bool earlyTechLag = game.playerEconomyLevel >= 1
+                && game.playerUpgradeLevel < std::min(3, desiredTech);
+            pushMacro(earlyTechLag,
+                      GameOperation(gameop::UpgradeTech));
             pushMacro(game.playerEconomyLevel < desiredEconomy,
                       GameOperation(gameop::UpgradeEconomy));
             pushMacro(game.playerUpgradeLevel < desiredTech,
@@ -316,8 +322,19 @@ private:
         if (plan == ScriptedPlan::Rush) {
             reserve /= 2;
         }
-        if (pressure >= 4 || armyBehind || game.myunits.size() < 6) {
+        if (pressure >= 6 || (armyBehind && game.myunits.size() < 4)) {
             reserve = 0;
+        }
+
+        if (!queuedMacro && game.gameTimeSeconds > 250.f && !armyBehind && pressure < 4) {
+            for (int unit : unitPriorityForPlan(game, plan)) {
+                const GameOperation mastery(gameop::UpgradeUnitMastery, lane::Mid, unit);
+                const int cost = estimatedOperationCost(game, PLAYER, mastery);
+                if (game.canUpgradeUnitMastery(PLAYER, unit) && budget >= cost + reserve) {
+                    queuedMacro = pushIfAffordable(game, budget, mastery);
+                    break;
+                }
+            }
         }
         if (!game.hasUnitCapacity(PLAYER)) {
             return;

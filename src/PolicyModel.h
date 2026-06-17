@@ -15,6 +15,7 @@ namespace policy
         Cavalry,
         Siege,
         Guardian,
+        Mastery,
         Wait,
         Count
     };

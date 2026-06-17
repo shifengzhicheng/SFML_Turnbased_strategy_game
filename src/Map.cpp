@@ -109,6 +109,20 @@ namespace
         }
     }
 
+    void mirrorMaskHorizontally(std::vector<std::vector<bool>>& mask)
+    {
+        const int lines = static_cast<int>(mask.size());
+        const int cols = static_cast<int>(mask.front().size());
+        for (int y = 1; y < lines - 1; ++y) {
+            for (int x = 1; x < cols / 2; ++x) {
+                const int mirrorX = cols - 1 - x;
+                const bool safe = mask[y][x] || mask[y][mirrorX];
+                mask[y][x] = safe;
+                mask[y][mirrorX] = safe;
+            }
+        }
+    }
+
     std::vector<GridPoint> carveMainRoute(std::vector<std::vector<int>>& map,
                                           std::vector<std::vector<bool>>& routeMask,
                                           GridPoint start, GridPoint end,
@@ -434,6 +448,7 @@ void mapgenerator::gmap(std::vector<std::vector<int>>& initMap, int cols, int li
         clearDisc(initMap, plaza.x, plaza.y, 3);
         markDisc(routeMask, plaza.x, plaza.y, 3);
     }
+    mirrorMaskHorizontally(routeMask);
 
     placeRiver(initMap, routeMask, red, blue, rng);
     placeTributary(initMap, routeMask, red, blue, rng);
@@ -443,7 +458,7 @@ void mapgenerator::gmap(std::vector<std::vector<int>>& initMap, int cols, int li
         placeCluster(initMap, routeMask, GridPoint{xDist(rng), yDist(rng)}, mountainRadius(rng), 1, red, blue, rng);
     }
 
-    const int forestClusters = std::max(10, cols * lines / 210);
+    const int forestClusters = std::max(12, cols * lines / 190);
     for (int i = 0; i < forestClusters; ++i) {
         placeCluster(initMap, routeMask, GridPoint{xDist(rng), yDist(rng)}, forestRadius(rng), 3, red, blue, rng);
     }

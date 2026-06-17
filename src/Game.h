@@ -23,6 +23,7 @@
 #include "PathfindingService.h"
 #include "ResourceNode.h"
 #include "Worker.h"
+#include "UnitUpgradeState.h"
 
 class Game
 {
@@ -99,6 +100,8 @@ public:
     std::array<int, perk::Count> playerPerkLevels{};
     std::array<int, perk::Count> aiPerkLevels{};
     std::array<PerkChoice, 3> perkChoices{};
+    UnitMasteryState playerMastery;
+    UnitMasteryState aiMastery;
 
     sf::Texture tStartBtnNormal, tStartBtnHover, tStartBtnClick;
     sf::Texture tStartHelpNormal, tStartHelpHover, tStartHelpClick;
@@ -223,6 +226,17 @@ public:
     float unitDamageMultiplier(int team, int unitName) const;
     float unitHealthMultiplier(int team, int unitName) const;
     float unitAttackCooldownMultiplier(int team, int unitName) const;
+    float unitBuildingDamageMultiplier(int team, int unitName) const;
+    int unitAttackRange(int team, int unitName) const;
+    int unitMasteryLevel(int team, int unitName) const;
+    int unitMasteryUpgradeCost(int team, int unitName) const;
+    bool canUpgradeUnitMastery(int team, int unitName) const;
+    bool upgradeUnitMastery(int team, int unitName);
+    bool counterApplies(int attackerTeam, int attackerUnitName, int defenderTeam, int defenderUnitName) const;
+    int additionalAttackTargets(int team, int unitName) const;
+    float additionalTargetDamageMultiplier(int team, int unitName) const;
+    bool unitTauntsNearbyEnemies(int team, int unitName) const;
+    float siegeDamageTakenMultiplier(int team, int unitName) const;
     float baseDamageTakenMultiplier(int attackerUnitName, int defenderTeam) const;
     float baseShieldSecondsForTeam(int team) const;
     float teamTrainTimeMultiplier(int team) const;

@@ -158,6 +158,8 @@ void Game::clear()
     aiSelectedLane = lane::Mid;
     playerPerkLevels.fill(0);
     aiPerkLevels.fill(0);
+    playerMastery.levels.fill(0);
+    aiMastery.levels.fill(0);
     aiController.reset();
     ++pathGeneration;
     nextPathRequestId = 1;

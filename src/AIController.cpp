@@ -107,7 +107,7 @@ namespace
         return {
             1.f,
             std::clamp(game.gameTimeSeconds / 900.f, 0.f, 1.5f),
-            static_cast<float>(game.aiCommand) / static_cast<float>(config::MaxCommand),
+            static_cast<float>(std::min(game.aiCommand, config::CommandFeatureScale)) / static_cast<float>(config::CommandFeatureScale),
             static_cast<float>(game.aiEconomyLevel) / static_cast<float>(config::MaxEconomyLevel),
             static_cast<float>(game.aiUpgradeLevel) / static_cast<float>(config::MaxTechLevel),
             static_cast<float>(game.completedBuildingCount(AI, building::Barracks)) / static_cast<float>(std::max(1, game.buildingCap(AI, building::Barracks))),
@@ -197,6 +197,13 @@ namespace
                 push(action, GameOperation(gameop::QueueUnit, chooseModelLane(game, action, orderIndex), unit));
             }
         }
+        if (allowMacro && game.gameTimeSeconds > 150.f) {
+            for (int unit : {UName::INFANTARY, UName::SHOOTER, UName::CAVALRY, UName::SIEGE, UName::GUARDIAN}) {
+                if (game.canUpgradeUnitMastery(AI, unit)) {
+                    push(policy::Action::Mastery, GameOperation(gameop::UpgradeUnitMastery, lane::Mid, unit));
+                }
+            }
+        }
         return candidates;
     }
 
@@ -215,6 +222,7 @@ namespace
             {{-0.08f,  0.12f,  1.02f,  0.35f,  0.24f,  0.55f, -0.03f, -0.48f,  0.45f,  0.02f,  0.18f,  0.35f}},
             {{-0.42f,  1.10f,  1.05f,  0.50f,  0.80f,  0.78f, -0.10f, -0.35f,  0.35f,  0.00f, -0.05f,  1.10f}},
             {{-0.58f,  0.95f,  1.02f,  0.55f,  0.82f,  0.80f, -0.05f, -0.42f,  0.52f, -0.02f,  0.60f,  0.25f}},
+            {{-0.30f,  0.98f,  1.20f,  0.42f,  0.72f,  0.42f, -0.02f, -0.20f,  0.16f,  0.08f, -0.12f,  0.36f}},
             {{-0.48f,  0.05f, -0.95f,  0.06f,  0.02f, -0.18f,  0.00f,  0.82f, -0.70f,  0.22f, -0.50f,  0.12f}}
         }};
 
@@ -307,6 +315,20 @@ namespace
         case policy::Action::Guardian:
             score += (pressure || game.gameTimeSeconds > 620.f) ? 0.9f : -0.55f;
             break;
+        case policy::Action::Mastery: {
+            const int unit = candidate.operation.unitName;
+            const int ownCount = countUnitsNamed(game.enemys, unit);
+            score += game.gameTimeSeconds > 260.f ? 0.95f : -0.70f;
+            score += static_cast<float>(ownCount) * 0.07f;
+            score -= static_cast<float>(game.unitMasteryLevel(AI, unit)) * 0.10f;
+            if (prioritizeTech || prioritizeEconomy || needsFirstBarracks) {
+                score -= 0.85f;
+            }
+            if (game.aiCommand > config::CommandFeatureScale * 2 / 3) {
+                score += 0.45f;
+            }
+            break;
+        }
         case policy::Action::Wait: {
             const int macroCost = needsFirstBarracks ? buildingDefinition(building::Barracks).commandCost
                 : (needsTech ? techCost : (needsEconomy ? economyCost : 0));
@@ -363,7 +385,7 @@ void AIController::update(Game& game, float dt)
     // The official AI now uses the same operation model that the self-play
     // trainer exercises: score legal actions, execute a short queue, then let
     // auto-pathing/combat resolve the consequences.
-    const int maxActions = std::clamp(2 + game.aiEconomyLevel / 4 + game.aiUpgradeLevel / 6, 2, 5);
+    const int maxActions = std::clamp(1 + game.aiEconomyLevel / 5 + game.aiUpgradeLevel / 8, 1, 3);
     bool macroUsed = false;
     for (int i = 0; i < maxActions; ++i) {
         auto candidates = legalCandidates(game, !macroUsed, decisionStep + i);

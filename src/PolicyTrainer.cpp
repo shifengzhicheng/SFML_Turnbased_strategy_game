@@ -40,7 +40,7 @@ std::array<float, PolicyFeatureCount> policyFeatures(const Game& game, int team)
     return {
         1.f,
         std::clamp(game.gameTimeSeconds / 900.f, 0.f, 1.5f),
-        static_cast<float>(game.commandForTeam(team)) / static_cast<float>(config::MaxCommand),
+        static_cast<float>(std::min(game.commandForTeam(team), config::CommandFeatureScale)) / static_cast<float>(config::CommandFeatureScale),
         static_cast<float>(game.economyLevelForTeam(team)) / static_cast<float>(config::MaxEconomyLevel),
         static_cast<float>(team == PLAYER ? game.playerUpgradeLevel : game.aiUpgradeLevel) / static_cast<float>(config::MaxTechLevel),
         static_cast<float>(game.completedBuildingCount(team, building::Barracks)) / static_cast<float>(ownBarracksCap),
@@ -81,6 +81,13 @@ std::vector<PolicyChoice> legalPolicyChoices(const Game& game, int team, std::mt
         const int unit = policy::unitForAction(action);
         if (game.canQueueUnit(team, unit)) {
             push(action, GameOperation(gameop::QueueUnit, laneDist(rng), unit));
+        }
+    }
+    if (game.gameTimeSeconds > 150.f) {
+        for (int unit : {UName::INFANTARY, UName::SHOOTER, UName::CAVALRY, UName::SIEGE, UName::GUARDIAN}) {
+            if (game.canUpgradeUnitMastery(team, unit)) {
+                push(policy::Action::Mastery, GameOperation(gameop::UpgradeUnitMastery, laneDist(rng), unit));
+            }
         }
     }
     return choices;

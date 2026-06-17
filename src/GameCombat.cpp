@@ -4,6 +4,8 @@
 #include "ArtAssets.h"
 #include "AutoCombat.h"
 #include "RealtimeConfig.h"
+#include "PerkMechanics.h"
+#include "UnitDefinition.h"
 
 #include <algorithm>
 #include <cmath>
@@ -28,6 +30,7 @@ void Game::updateDefenseTowers(float dt)
         }
         const int range = defenseTowerRange(building.team);
         const int rangeSquared = range * range;
+        const TowerMechanics towerMechanics = towerMechanicsFor(building.team == PLAYER ? playerPerkLevels : aiPerkLevels);
 
         building.attackTimer += dt;
         if (building.attackTimer < realtime::DefenseTowerAttackCooldown) {
@@ -40,8 +43,18 @@ void Game::updateDefenseTowers(float dt)
             if (candidate == nullptr || candidate->Health <= 0 || candidate->myteam == building.team) {
                 return;
             }
-            const int score = distanceSquared(building.point, Point(candidate->x, candidate->y));
-            if (score <= rangeSquared && score < bestScore) {
+            const int dist = distanceSquared(building.point, Point(candidate->x, candidate->y));
+            if (dist > rangeSquared) {
+                return;
+            }
+            int score = dist * 10;
+            if (candidate->unitName == UName::SIEGE) {
+                score -= towerMechanics.prioritizesSiege ? 420 : 260;
+            }
+            if (candidate->unitName == UName::CAVALRY) {
+                score -= 80;
+            }
+            if (score < bestScore) {
                 bestScore = score;
                 target = candidate;
             }
@@ -63,9 +76,16 @@ void Game::updateDefenseTowers(float dt)
         }
 
         building.attackTimer = 0.f;
-        const float towerMultiplier = damageMultiplier(building.team)
-            + static_cast<float>(perkLevel(building.team, perk::TowerCraft)) * config::TowerDamageBonus;
-        const int damage = std::max(1, static_cast<int>(std::round(static_cast<float>(config::DefenseTowerDamage) * towerMultiplier)));
+        const float towerMultiplier = damageMultiplier(building.team);
+        const int targetMaxHealth = target->unitName == UName::BASE ? 4000
+            : (isTrainableUnit(target->unitName)
+                ? static_cast<int>(std::round(static_cast<float>(unitDefinition(target->unitName).maxHealth)
+                    * unitHealthMultiplier(target->myteam, target->unitName)))
+                : std::max(1, target->Health));
+        const int flatDamage = std::max(1, static_cast<int>(std::round(static_cast<float>(config::DefenseTowerDamage) * towerMultiplier)));
+        const int percentDamage = std::max(1, static_cast<int>(std::round(
+            static_cast<float>(targetMaxHealth) * towerMechanics.maxHealthDamagePercent)));
+        const int damage = flatDamage + percentDamage;
         target->Health -= damage;
 
         const sf::Vector2f towerCenter(
@@ -221,7 +241,7 @@ void Game::autoAttackBuilding(MoveableUnit& unit, Building& building)
         typeFactor = 0.82f;
     }
     else if (unit.unitName == UName::SIEGE) {
-        typeFactor = 2.18f + static_cast<float>(perkLevel(unit.myteam, perk::SiegeCraft)) * config::SiegeBuildingDamageBonus;
+        typeFactor = 2.18f * unitBuildingDamageMultiplier(unit.myteam, unit.unitName);
     }
     else if (unit.unitName == UName::GUARDIAN) {
         typeFactor = 1.24f;
