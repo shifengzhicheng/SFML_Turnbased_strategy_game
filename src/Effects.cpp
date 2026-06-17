@@ -25,15 +25,15 @@ void Effects::addAttack(sf::Vector2f start, sf::Vector2f end, sf::Color color)
     // time-driven drawables, so splitting rendering into another thread is riskier.
     AttackEffect effect;
     effect.durationSeconds = 0.38f;
-    effect.beam.setSize(sf::Vector2f(length, 4.f));
-    effect.beam.setOrigin(0.f, 2.f);
+    effect.beam.setSize(sf::Vector2f(length, 3.f));
+    effect.beam.setOrigin(0.f, 1.5f);
     effect.beam.setPosition(start);
     effect.color = color;
     effect.beam.setFillColor(color);
     effect.beam.setRotation(static_cast<float>(std::atan2(delta.y, delta.x) * 180.0 / config::Pi));
 
-    effect.impact.setRadius(7.f);
-    effect.impact.setOrigin(7.f, 7.f);
+    effect.impact.setSize(sf::Vector2f(12.f, 12.f));
+    effect.impact.setOrigin(6.f, 6.f);
     effect.impact.setPosition(end);
     effect.impact.setFillColor(sf::Color(255, 232, 112, 150));
     effect.impact.setOutlineColor(sf::Color(255, 86, 43, 220));
@@ -104,11 +104,11 @@ void Effects::drawAttacks(sf::RenderWindow& window)
         auto beamColor = it->color;
         beamColor.a = alpha;
         it->beam.setFillColor(beamColor);
-        it->beam.setScale(1.f, 1.f + progress * 1.8f);
+        it->beam.setScale(1.f, 1.f + progress * 1.25f);
 
-        const float radius = 7.f + 18.f * progress;
-        it->impact.setRadius(radius);
-        it->impact.setOrigin(radius, radius);
+        const float size = 12.f + 22.f * progress;
+        it->impact.setSize(sf::Vector2f(size, size));
+        it->impact.setOrigin(size * 0.5f, size * 0.5f);
         it->impact.setFillColor(sf::Color(255, 214, 82, static_cast<sf::Uint8>(120.f * (1.f - progress))));
         it->impact.setOutlineColor(sf::Color(it->color.r, it->color.g, it->color.b, alpha));
 

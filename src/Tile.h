@@ -34,6 +34,10 @@ public:
     sf::Vector2i getIndex() const;
     void setID(tile::ID id);
     tile::ID getID() const;
+    bool hasRaisedObject() const;
+    float renderSortY() const;
+    void drawGround(sf::RenderTarget& target, sf::RenderStates states) const;
+    void drawObject(sf::RenderTarget& target, sf::RenderStates states) const;
 
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 };

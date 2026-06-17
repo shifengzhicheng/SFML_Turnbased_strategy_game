@@ -16,6 +16,26 @@ using namespace sf;
 using namespace std;
 using namespace unit_visual;
 
+namespace
+{
+	float actionDistanceForUnit(int unitName)
+	{
+		switch (unitName) {
+		case UName::CAVALRY:
+			return 8.5f;
+		case UName::SIEGE:
+			return 2.2f;
+		case UName::SHOOTER:
+			return 2.8f;
+		case UName::GUARDIAN:
+			return 5.8f;
+		case UName::INFANTARY:
+		default:
+			return 5.2f;
+		}
+	}
+}
+
 MoveableUnit::MoveableUnit(int _team, int _x, int _y, Game* _mygame)
 {
 	mygame = _mygame;
@@ -104,7 +124,7 @@ void MoveableUnit::updatemystate()
 	const float t = visualClock.getElapsedTime().asSeconds();
 	const float moveBob = UnitState == UState::MOVING ? std::sin(t * 13.f + static_cast<float>(x + y)) * 2.2f : 0.f;
 	const float selectedPulse = UnitState == UState::UNITCLICK ? 1.f + std::sin(t * 6.f) * 0.045f : 1.f;
-	const sf::Vector2f offset = actionOffset(4.4f) + sf::Vector2f(0.f, moveBob);
+	const sf::Vector2f offset = actionOffset(actionDistanceForUnit(unitName)) + sf::Vector2f(0.f, moveBob);
 	placeUnitSprite(*this, x, y, config::UnitSpriteScale * selectedPulse, offset);
 	string temp = std::to_string(Health) + "/" + std::to_string(myinfo.Health);
 	UnitText.setString(temp);

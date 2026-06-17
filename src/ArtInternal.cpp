@@ -19,13 +19,13 @@ namespace art_internal
     void commitTexture(sf::Texture& texture, const sf::RenderTexture& renderTexture)
     {
         texture.loadFromImage(renderTexture.getTexture().copyToImage());
-        texture.setSmooth(true);
+        texture.setSmooth(false);
     }
 
     bool createCanvas(sf::RenderTexture& canvas, sf::Vector2u size)
     {
         sf::ContextSettings settings;
-        settings.antialiasingLevel = 4;
+        settings.antialiasingLevel = 0;
         return canvas.create(size.x, size.y, settings);
     }
 
@@ -165,232 +165,208 @@ namespace art_internal
         target.draw(gate);
     }
 
-    void drawUnitIcon(sf::RenderTarget& target, art::UnitKind kind, art::Team team, sf::Vector2f center, float scale)
+    void drawPixelRect(sf::RenderTarget& target, sf::Vector2f origin, float scale,
+                       float x, float y, float w, float h, sf::Color color)
+    {
+        sf::RectangleShape rect(sf::Vector2f(std::max(1.f, std::round(w * scale)),
+                                             std::max(1.f, std::round(h * scale))));
+        rect.setPosition(std::round(origin.x + x * scale), std::round(origin.y + y * scale));
+        rect.setFillColor(color);
+        target.draw(rect);
+    }
+
+    void drawPixelOutline(sf::RenderTarget& target, sf::Vector2f origin, float scale,
+                          float x, float y, float w, float h, sf::Color fill, sf::Color outline)
+    {
+        drawPixelRect(target, origin, scale, x - 1.f, y - 1.f, w + 2.f, h + 2.f, outline);
+        drawPixelRect(target, origin, scale, x, y, w, h, fill);
+    }
+
+    void drawPixelShadow(sf::RenderTarget& target, sf::Vector2f origin, float scale,
+                         float x, float y, float w, sf::Color color)
+    {
+        drawPixelRect(target, origin, scale, x + 4.f, y - 2.f, w - 8.f, 2.f, sf::Color(color.r, color.g, color.b, 42));
+        drawPixelRect(target, origin, scale, x, y, w, 3.f, color);
+        drawPixelRect(target, origin, scale, x + 5.f, y + 3.f, w - 10.f, 2.f, sf::Color(color.r, color.g, color.b, 52));
+    }
+
+    void drawPixelBaseIcon(sf::RenderTarget& target, sf::Vector2f origin, float scale, art::Team team)
     {
         const auto main = art::teamColor(team);
         const auto accent = art::teamAccent(team);
-        const auto pale = mix(main, sf::Color::White, 0.48f);
-        const auto dark = mix(accent, sf::Color::Black, 0.28f);
-        const auto brass = sf::Color(239, 193, 88);
+        const auto wall = sf::Color(190, 176, 132);
+        const auto wallDark = sf::Color(79, 68, 50);
+        const auto roof = mix(accent, sf::Color(188, 132, 58), 0.35f);
 
-        sf::CircleShape shadow(12.f * scale, 36);
-        shadow.setOrigin(12.f * scale, 4.f * scale);
-        shadow.setScale(1.35f, 0.42f);
-        shadow.setPosition(center.x, center.y + 11.f * scale);
-        shadow.setFillColor(sf::Color(13, 23, 20, 85));
-        target.draw(shadow);
+        drawPixelShadow(target, origin, scale, 10.f, 54.f, 44.f, sf::Color(10, 15, 13, 95));
+        drawPixelOutline(target, origin, scale, 17.f, 30.f, 31.f, 23.f, wall, wallDark);
+        drawPixelRect(target, origin, scale, 20.f, 34.f, 25.f, 4.f, mix(wall, sf::Color::White, 0.22f));
+        drawPixelRect(target, origin, scale, 23.f, 41.f, 5.f, 12.f, sf::Color(57, 45, 35));
+        drawPixelRect(target, origin, scale, 36.f, 41.f, 5.f, 12.f, sf::Color(57, 45, 35));
+        drawPixelRect(target, origin, scale, 15.f, 24.f, 35.f, 7.f, roof);
+        drawPixelRect(target, origin, scale, 20.f, 17.f, 25.f, 7.f, roof);
+        drawPixelRect(target, origin, scale, 25.f, 11.f, 15.f, 6.f, roof);
+        drawPixelRect(target, origin, scale, 18.f, 26.f, 6.f, 4.f, main);
+        drawPixelRect(target, origin, scale, 30.f, 19.f, 5.f, 4.f, main);
+        drawPixelRect(target, origin, scale, 42.f, 26.f, 6.f, 4.f, main);
+        drawPixelRect(target, origin, scale, 29.f, 42.f, 6.f, 11.f, sf::Color(37, 30, 24));
+        drawPixelRect(target, origin, scale, 30.f, 43.f, 4.f, 2.f, sf::Color(255, 219, 104));
+    }
 
-        if (kind == art::UnitKind::Base) {
-            drawBase(target, sf::Vector2f(center.x - 20.f * scale, center.y - 20.f * scale), scale, team);
-            return;
-        }
+    void drawInfantryPixel(sf::RenderTarget& target, sf::Vector2f origin, float scale, art::Team team)
+    {
+        const auto main = art::teamColor(team);
+        const auto accent = art::teamAccent(team);
+        const auto outline = sf::Color(37, 31, 27);
+        const auto skin = sf::Color(239, 196, 143);
+        const auto metal = sf::Color(206, 213, 205);
+        const auto gold = sf::Color(235, 186, 71);
 
-        sf::CircleShape rim(14.f * scale, 40);
-        rim.setOrigin(14.f * scale, 14.f * scale);
-        rim.setPosition(center);
-        rim.setFillColor(dark);
-        rim.setOutlineColor(sf::Color(255, 230, 139, 210));
-        rim.setOutlineThickness(1.35f * scale);
-        target.draw(rim);
+        drawPixelShadow(target, origin, scale, 20.f, 57.f, 26.f, sf::Color(9, 15, 13, 96));
+        drawPixelRect(target, origin, scale, 27.f, 47.f, 4.f, 9.f, outline);
+        drawPixelRect(target, origin, scale, 36.f, 47.f, 4.f, 9.f, outline);
+        drawPixelRect(target, origin, scale, 27.f, 53.f, 7.f, 3.f, sf::Color(58, 43, 34));
+        drawPixelRect(target, origin, scale, 34.f, 53.f, 7.f, 3.f, sf::Color(58, 43, 34));
+        drawPixelOutline(target, origin, scale, 25.f, 32.f, 16.f, 17.f, main, outline);
+        drawPixelRect(target, origin, scale, 28.f, 35.f, 10.f, 4.f, mix(main, sf::Color::White, 0.35f));
+        drawPixelRect(target, origin, scale, 31.f, 40.f, 4.f, 9.f, accent);
+        drawPixelOutline(target, origin, scale, 27.f, 23.f, 11.f, 9.f, skin, outline);
+        drawPixelRect(target, origin, scale, 25.f, 19.f, 15.f, 5.f, metal);
+        drawPixelRect(target, origin, scale, 28.f, 16.f, 9.f, 4.f, metal);
+        drawPixelRect(target, origin, scale, 23.f, 34.f, 10.f, 16.f, gold);
+        drawPixelRect(target, origin, scale, 25.f, 37.f, 6.f, 10.f, main);
+        drawPixelRect(target, origin, scale, 43.f, 22.f, 3.f, 28.f, sf::Color(236, 239, 218));
+        drawPixelRect(target, origin, scale, 40.f, 24.f, 9.f, 3.f, gold);
+        drawPixelRect(target, origin, scale, 44.f, 18.f, 1.f, 5.f, sf::Color(255, 248, 214));
+    }
 
-        sf::CircleShape token(11.4f * scale, 40);
-        token.setOrigin(11.4f * scale, 11.4f * scale);
-        token.setPosition(center.x - 0.2f * scale, center.y - 0.8f * scale);
-        token.setFillColor(sf::Color(pale.r, pale.g, pale.b, 238));
-        target.draw(token);
+    void drawShooterPixel(sf::RenderTarget& target, sf::Vector2f origin, float scale, art::Team team)
+    {
+        const auto main = art::teamColor(team);
+        const auto accent = art::teamAccent(team);
+        const auto outline = sf::Color(36, 28, 25);
+        const auto skin = sf::Color(231, 185, 133);
+        const auto leather = sf::Color(94, 61, 38);
+        const auto bow = sf::Color(204, 145, 65);
 
-        sf::CircleShape shine(5.2f * scale, 24);
-        shine.setOrigin(5.2f * scale, 5.2f * scale);
-        shine.setPosition(center.x - 4.5f * scale, center.y - 6.f * scale);
-        shine.setFillColor(sf::Color(255, 255, 244, 72));
-        target.draw(shine);
+        drawPixelShadow(target, origin, scale, 21.f, 57.f, 25.f, sf::Color(9, 15, 13, 92));
+        drawPixelRect(target, origin, scale, 27.f, 47.f, 4.f, 9.f, outline);
+        drawPixelRect(target, origin, scale, 35.f, 47.f, 4.f, 9.f, outline);
+        drawPixelRect(target, origin, scale, 24.f, 32.f, 18.f, 18.f, mix(main, sf::Color::Black, 0.18f));
+        drawPixelRect(target, origin, scale, 22.f, 38.f, 5.f, 13.f, accent);
+        drawPixelRect(target, origin, scale, 39.f, 37.f, 5.f, 13.f, accent);
+        drawPixelRect(target, origin, scale, 25.f, 24.f, 16.f, 10.f, mix(main, sf::Color::Black, 0.10f));
+        drawPixelRect(target, origin, scale, 28.f, 20.f, 10.f, 5.f, mix(main, sf::Color::Black, 0.05f));
+        drawPixelRect(target, origin, scale, 29.f, 27.f, 8.f, 6.f, skin);
+        drawPixelRect(target, origin, scale, 31.f, 30.f, 2.f, 2.f, outline);
+        drawPixelRect(target, origin, scale, 43.f, 25.f, 3.f, 28.f, bow);
+        drawPixelRect(target, origin, scale, 46.f, 28.f, 1.f, 22.f, sf::Color(238, 224, 174));
+        drawPixelRect(target, origin, scale, 36.f, 36.f, 15.f, 2.f, sf::Color(238, 224, 174));
+        drawPixelRect(target, origin, scale, 49.f, 35.f, 4.f, 4.f, sf::Color(238, 224, 174));
+        drawPixelRect(target, origin, scale, 18.f, 34.f, 5.f, 16.f, leather);
+        drawPixelRect(target, origin, scale, 17.f, 31.f, 7.f, 3.f, sf::Color(232, 220, 165));
+    }
+
+    void drawCavalryPixel(sf::RenderTarget& target, sf::Vector2f origin, float scale, art::Team team)
+    {
+        const auto main = art::teamColor(team);
+        const auto accent = art::teamAccent(team);
+        const auto outline = sf::Color(34, 28, 24);
+        const auto horse = team == art::Team::Enemy ? sf::Color(83, 104, 140) : sf::Color(126, 76, 42);
+        const auto horseLight = mix(horse, sf::Color::White, 0.18f);
+        const auto metal = sf::Color(218, 222, 210);
+
+        drawPixelShadow(target, origin, scale, 12.f, 57.f, 41.f, sf::Color(9, 15, 13, 105));
+        drawPixelRect(target, origin, scale, 17.f, 47.f, 5.f, 10.f, outline);
+        drawPixelRect(target, origin, scale, 27.f, 47.f, 4.f, 10.f, outline);
+        drawPixelRect(target, origin, scale, 41.f, 46.f, 5.f, 11.f, outline);
+        drawPixelOutline(target, origin, scale, 15.f, 37.f, 31.f, 12.f, horse, outline);
+        drawPixelRect(target, origin, scale, 20.f, 35.f, 18.f, 4.f, horseLight);
+        drawPixelOutline(target, origin, scale, 43.f, 31.f, 10.f, 10.f, horse, outline);
+        drawPixelRect(target, origin, scale, 51.f, 35.f, 5.f, 3.f, outline);
+        drawPixelRect(target, origin, scale, 14.f, 35.f, 5.f, 7.f, sf::Color(48, 36, 28));
+        drawPixelOutline(target, origin, scale, 28.f, 25.f, 11.f, 13.f, main, outline);
+        drawPixelRect(target, origin, scale, 30.f, 20.f, 8.f, 7.f, metal);
+        drawPixelRect(target, origin, scale, 33.f, 16.f, 4.f, 4.f, accent);
+        drawPixelRect(target, origin, scale, 37.f, 20.f, 23.f, 3.f, sf::Color(239, 229, 187));
+        drawPixelRect(target, origin, scale, 57.f, 18.f, 3.f, 6.f, sf::Color(239, 229, 187));
+        drawPixelRect(target, origin, scale, 24.f, 39.f, 13.f, 3.f, sf::Color(227, 178, 75));
+    }
+
+    void drawSiegePixel(sf::RenderTarget& target, sf::Vector2f origin, float scale, art::Team team)
+    {
+        const auto accent = art::teamAccent(team);
+        const auto outline = sf::Color(31, 29, 26);
+        const auto wood = sf::Color(104, 75, 47);
+        const auto woodLight = sf::Color(146, 103, 60);
+        const auto metal = sf::Color(181, 184, 170);
+        const auto fire = sf::Color(255, 188, 76);
+
+        drawPixelShadow(target, origin, scale, 9.f, 57.f, 48.f, sf::Color(9, 15, 13, 112));
+        drawPixelOutline(target, origin, scale, 17.f, 40.f, 32.f, 12.f, wood, outline);
+        drawPixelRect(target, origin, scale, 21.f, 43.f, 24.f, 3.f, woodLight);
+        drawPixelRect(target, origin, scale, 20.f, 34.f, 30.f, 7.f, sf::Color(82, 72, 60));
+        drawPixelRect(target, origin, scale, 46.f, 29.f, 14.f, 5.f, metal);
+        drawPixelRect(target, origin, scale, 56.f, 27.f, 4.f, 9.f, outline);
+        drawPixelRect(target, origin, scale, 12.f, 51.f, 11.f, 8.f, outline);
+        drawPixelRect(target, origin, scale, 16.f, 53.f, 3.f, 3.f, sf::Color(220, 176, 76));
+        drawPixelRect(target, origin, scale, 42.f, 50.f, 11.f, 8.f, outline);
+        drawPixelRect(target, origin, scale, 46.f, 52.f, 3.f, 3.f, sf::Color(220, 176, 76));
+        drawPixelRect(target, origin, scale, 24.f, 31.f, 11.f, 5.f, accent);
+        drawPixelRect(target, origin, scale, 59.f, 26.f, 3.f, 3.f, fire);
+        drawPixelRect(target, origin, scale, 61.f, 24.f, 2.f, 2.f, sf::Color(255, 230, 131));
+    }
+
+    void drawGuardianPixel(sf::RenderTarget& target, sf::Vector2f origin, float scale, art::Team team)
+    {
+        const auto main = art::teamColor(team);
+        const auto accent = art::teamAccent(team);
+        const auto outline = sf::Color(28, 31, 29);
+        const auto armor = mix(main, sf::Color(91, 102, 96), 0.62f);
+        const auto armorLight = mix(armor, sf::Color::White, 0.25f);
+        const auto gold = sf::Color(237, 190, 76);
+
+        drawPixelShadow(target, origin, scale, 9.f, 57.f, 49.f, sf::Color(9, 15, 13, 120));
+        drawPixelRect(target, origin, scale, 24.f, 48.f, 6.f, 9.f, outline);
+        drawPixelRect(target, origin, scale, 36.f, 48.f, 6.f, 9.f, outline);
+        drawPixelOutline(target, origin, scale, 21.f, 26.f, 24.f, 25.f, armor, outline);
+        drawPixelRect(target, origin, scale, 16.f, 31.f, 9.f, 18.f, armorLight);
+        drawPixelRect(target, origin, scale, 42.f, 31.f, 9.f, 18.f, armorLight);
+        drawPixelRect(target, origin, scale, 26.f, 22.f, 14.f, 6.f, armorLight);
+        drawPixelRect(target, origin, scale, 29.f, 15.f, 8.f, 8.f, gold);
+        drawPixelRect(target, origin, scale, 28.f, 33.f, 11.f, 12.f, accent);
+        drawPixelRect(target, origin, scale, 31.f, 36.f, 5.f, 6.f, sf::Color(255, 230, 119));
+        drawPixelRect(target, origin, scale, 49.f, 22.f, 4.f, 30.f, sf::Color(232, 226, 196));
+        drawPixelRect(target, origin, scale, 45.f, 25.f, 12.f, 3.f, gold);
+        drawPixelRect(target, origin, scale, 50.f, 17.f, 2.f, 6.f, sf::Color(255, 246, 204));
+    }
+
+    void drawUnitIcon(sf::RenderTarget& target, art::UnitKind kind, art::Team team, sf::Vector2f center, float scale)
+    {
+        const sf::Vector2f origin(std::round(center.x - 32.f * scale), std::round(center.y - 32.f * scale));
 
         switch (kind) {
-        case art::UnitKind::Infantry: {
-            drawSword(target, center + sf::Vector2f(5.f * scale, 1.f * scale), scale * 1.13f, sf::Color(244, 247, 232), dark);
-
-            sf::ConvexShape shield(5);
-            shield.setPoint(0, sf::Vector2f(center.x - 8.f * scale, center.y - 7.f * scale));
-            shield.setPoint(1, sf::Vector2f(center.x + 2.f * scale, center.y - 10.f * scale));
-            shield.setPoint(2, sf::Vector2f(center.x + 9.f * scale, center.y - 3.f * scale));
-            shield.setPoint(3, sf::Vector2f(center.x + 5.f * scale, center.y + 10.f * scale));
-            shield.setPoint(4, sf::Vector2f(center.x - 8.f * scale, center.y + 7.f * scale));
-            shield.setFillColor(sf::Color(242, 215, 121));
-            shield.setOutlineColor(dark);
-            shield.setOutlineThickness(1.1f * scale);
-            target.draw(shield);
-
-            sf::RectangleShape stripe(sf::Vector2f(2.8f * scale, 16.f * scale));
-            stripe.setOrigin(1.4f * scale, 8.f * scale);
-            stripe.setPosition(center.x + 0.5f * scale, center.y);
-            stripe.setFillColor(main);
-            stripe.setRotation(-14.f);
-            target.draw(stripe);
+        case art::UnitKind::Base:
+            drawPixelBaseIcon(target, origin, scale, team);
             break;
-        }
-        case art::UnitKind::Shooter: {
-            sf::ConvexShape cape(4);
-            cape.setPoint(0, sf::Vector2f(center.x - 9.f * scale, center.y - 3.f * scale));
-            cape.setPoint(1, sf::Vector2f(center.x - 1.f * scale, center.y - 12.f * scale));
-            cape.setPoint(2, sf::Vector2f(center.x + 8.f * scale, center.y - 1.f * scale));
-            cape.setPoint(3, sf::Vector2f(center.x + 2.f * scale, center.y + 10.f * scale));
-            cape.setFillColor(mix(main, sf::Color::Black, 0.10f));
-            cape.setOutlineColor(dark);
-            cape.setOutlineThickness(0.9f * scale);
-            target.draw(cape);
-
-            sf::ConvexShape hood(3);
-            hood.setPoint(0, sf::Vector2f(center.x - 7.f * scale, center.y - 5.f * scale));
-            hood.setPoint(1, sf::Vector2f(center.x - 1.f * scale, center.y - 13.f * scale));
-            hood.setPoint(2, sf::Vector2f(center.x + 7.f * scale, center.y - 5.f * scale));
-            hood.setFillColor(dark);
-            target.draw(hood);
-
-            sf::CircleShape face(3.2f * scale, 18);
-            face.setOrigin(3.2f * scale, 3.2f * scale);
-            face.setPosition(center.x - 0.5f * scale, center.y - 4.f * scale);
-            face.setFillColor(sf::Color(246, 219, 166));
-            target.draw(face);
-
-            drawBow(target, center + sf::Vector2f(1.5f * scale, 1.5f * scale), scale * 1.20f, brass, sf::Color(39, 34, 28));
-            sf::RectangleShape quiver(sf::Vector2f(3.f * scale, 10.f * scale));
-            quiver.setOrigin(1.5f * scale, 5.f * scale);
-            quiver.setPosition(center.x + 8.f * scale, center.y + 2.f * scale);
-            quiver.setRotation(-20.f);
-            quiver.setFillColor(sf::Color(82, 53, 35));
-            target.draw(quiver);
+        case art::UnitKind::Infantry:
+            drawInfantryPixel(target, origin, scale, team);
             break;
-        }
-        case art::UnitKind::Cavalry: {
-            sf::RectangleShape lance(sf::Vector2f(20.f * scale, 1.8f * scale));
-            lance.setOrigin(2.f * scale, 0.8f * scale);
-            lance.setPosition(center.x - 5.f * scale, center.y - 7.f * scale);
-            lance.setRotation(-25.f);
-            lance.setFillColor(sf::Color(247, 238, 197));
-            target.draw(lance);
-
-            const sf::Color horseBody = team == art::Team::Enemy ? sf::Color(89, 104, 132) : sf::Color(121, 77, 43);
-
-            sf::ConvexShape knight(7);
-            knight.setPoint(0, sf::Vector2f(center.x - 9.f * scale, center.y + 8.f * scale));
-            knight.setPoint(1, sf::Vector2f(center.x - 7.f * scale, center.y - 3.f * scale));
-            knight.setPoint(2, sf::Vector2f(center.x - 1.f * scale, center.y - 10.f * scale));
-            knight.setPoint(3, sf::Vector2f(center.x + 8.f * scale, center.y - 7.f * scale));
-            knight.setPoint(4, sf::Vector2f(center.x + 10.f * scale, center.y - 1.f * scale));
-            knight.setPoint(5, sf::Vector2f(center.x + 3.f * scale, center.y + 5.f * scale));
-            knight.setPoint(6, sf::Vector2f(center.x + 6.f * scale, center.y + 11.f * scale));
-            knight.setFillColor(horseBody);
-            knight.setOutlineColor(dark);
-            knight.setOutlineThickness(1.1f * scale);
-            target.draw(knight);
-
-            sf::ConvexShape mane(4);
-            mane.setPoint(0, sf::Vector2f(center.x - 5.f * scale, center.y - 5.f * scale));
-            mane.setPoint(1, sf::Vector2f(center.x + 1.f * scale, center.y - 10.f * scale));
-            mane.setPoint(2, sf::Vector2f(center.x + 4.f * scale, center.y - 6.f * scale));
-            mane.setPoint(3, sf::Vector2f(center.x - 2.f * scale, center.y - 2.f * scale));
-            mane.setFillColor(dark);
-            target.draw(mane);
-
-            sf::CircleShape eye(1.1f * scale, 10);
-            eye.setOrigin(1.1f * scale, 1.1f * scale);
-            eye.setPosition(center.x + 5.6f * scale, center.y - 4.1f * scale);
-            eye.setFillColor(sf::Color(255, 236, 165));
-            target.draw(eye);
-
-            sf::RectangleShape reins(sf::Vector2f(8.f * scale, 1.4f * scale));
-            reins.setOrigin(0.f, 0.7f * scale);
-            reins.setPosition(center.x + 0.5f * scale, center.y + 1.f * scale);
-            reins.setRotation(-18.f);
-            reins.setFillColor(brass);
-            target.draw(reins);
+        case art::UnitKind::Shooter:
+            drawShooterPixel(target, origin, scale, team);
             break;
-        }
-        case art::UnitKind::Siege: {
-            sf::ConvexShape carriage(6);
-            carriage.setPoint(0, sf::Vector2f(center.x - 10.f * scale, center.y + 5.f * scale));
-            carriage.setPoint(1, sf::Vector2f(center.x - 7.f * scale, center.y - 4.f * scale));
-            carriage.setPoint(2, sf::Vector2f(center.x + 3.f * scale, center.y - 8.f * scale));
-            carriage.setPoint(3, sf::Vector2f(center.x + 11.f * scale, center.y - 1.f * scale));
-            carriage.setPoint(4, sf::Vector2f(center.x + 8.f * scale, center.y + 8.f * scale));
-            carriage.setPoint(5, sf::Vector2f(center.x - 4.f * scale, center.y + 10.f * scale));
-            carriage.setFillColor(sf::Color(87, 73, 56));
-            carriage.setOutlineColor(dark);
-            carriage.setOutlineThickness(1.f * scale);
-            target.draw(carriage);
-
-            sf::RectangleShape barrel(sf::Vector2f(21.f * scale, 4.4f * scale));
-            barrel.setOrigin(3.f * scale, 2.2f * scale);
-            barrel.setPosition(center.x - 3.f * scale, center.y - 5.f * scale);
-            barrel.setRotation(-18.f);
-            barrel.setFillColor(sf::Color(221, 218, 196));
-            barrel.setOutlineColor(sf::Color(38, 35, 31));
-            barrel.setOutlineThickness(0.8f * scale);
-            target.draw(barrel);
-
-            sf::CircleShape wheelL(3.7f * scale, 18);
-            wheelL.setOrigin(3.7f * scale, 3.7f * scale);
-            wheelL.setPosition(center.x - 7.2f * scale, center.y + 8.f * scale);
-            wheelL.setFillColor(sf::Color(48, 42, 36));
-            wheelL.setOutlineColor(brass);
-            wheelL.setOutlineThickness(0.9f * scale);
-            target.draw(wheelL);
-
-            sf::CircleShape wheelR = wheelL;
-            wheelR.setPosition(center.x + 7.2f * scale, center.y + 5.8f * scale);
-            target.draw(wheelR);
-
-            sf::CircleShape spark(2.3f * scale, 12);
-            spark.setOrigin(2.3f * scale, 2.3f * scale);
-            spark.setPosition(center.x + 11.f * scale, center.y - 9.f * scale);
-            spark.setFillColor(sf::Color(255, 226, 112));
-            target.draw(spark);
+        case art::UnitKind::Cavalry:
+            drawCavalryPixel(target, origin, scale, team);
             break;
-        }
-        case art::UnitKind::Guardian: {
-            sf::ConvexShape armor(8);
-            armor.setPoint(0, sf::Vector2f(center.x - 8.f * scale, center.y + 10.f * scale));
-            armor.setPoint(1, sf::Vector2f(center.x - 11.f * scale, center.y + 1.f * scale));
-            armor.setPoint(2, sf::Vector2f(center.x - 8.f * scale, center.y - 8.f * scale));
-            armor.setPoint(3, sf::Vector2f(center.x - 1.f * scale, center.y - 12.f * scale));
-            armor.setPoint(4, sf::Vector2f(center.x + 8.f * scale, center.y - 8.f * scale));
-            armor.setPoint(5, sf::Vector2f(center.x + 11.f * scale, center.y + 1.f * scale));
-            armor.setPoint(6, sf::Vector2f(center.x + 7.f * scale, center.y + 10.f * scale));
-            armor.setPoint(7, sf::Vector2f(center.x - 1.f * scale, center.y + 13.f * scale));
-            armor.setFillColor(mix(main, sf::Color(65, 73, 70), 0.55f));
-            armor.setOutlineColor(sf::Color(31, 35, 33));
-            armor.setOutlineThickness(1.2f * scale);
-            target.draw(armor);
-
-            sf::RectangleShape crest(sf::Vector2f(4.f * scale, 14.f * scale));
-            crest.setOrigin(2.f * scale, 7.f * scale);
-            crest.setPosition(center.x, center.y - 1.f * scale);
-            crest.setFillColor(brass);
-            crest.setRotation(-12.f);
-            target.draw(crest);
-
-            sf::CircleShape core(4.8f * scale, 22);
-            core.setOrigin(4.8f * scale, 4.8f * scale);
-            core.setPosition(center.x + 1.f * scale, center.y - 2.f * scale);
-            core.setFillColor(sf::Color(255, 229, 120));
-            core.setOutlineColor(sf::Color(71, 53, 28));
-            core.setOutlineThickness(0.8f * scale);
-            target.draw(core);
-
-            drawSword(target, center + sf::Vector2f(8.f * scale, 2.f * scale), scale * 1.1f, sf::Color(250, 244, 211), dark);
+        case art::UnitKind::Siege:
+            drawSiegePixel(target, origin, scale, team);
             break;
-        }
+        case art::UnitKind::Guardian:
+            drawGuardianPixel(target, origin, scale, team);
+            break;
         default:
             break;
         }
-
-        sf::CircleShape badge(3.3f * scale, 18);
-        badge.setOrigin(3.3f * scale, 3.3f * scale);
-        badge.setPosition(center.x + 8.7f * scale, center.y + 8.5f * scale);
-        badge.setFillColor(accent);
-        badge.setOutlineColor(sf::Color(255, 245, 207, 210));
-        badge.setOutlineThickness(0.8f * scale);
-        target.draw(badge);
     }
 
     std::string costForIcon(art::UnitKind icon)

@@ -31,15 +31,15 @@ namespace game_internal
 
     inline void drawUnitBase(sf::RenderWindow& window, Point point, sf::Color color)
     {
-        sf::CircleShape marker(9.f, 28);
-        marker.setOrigin(9.f, 9.f);
-        marker.setScale(1.15f, 0.62f);
-        marker.setPosition(point.x * config::TileSize + config::TileSize / 2.f,
-                           point.y * config::TileSize + config::TileSize / 2.f + 7.f);
-        marker.setFillColor(sf::Color(color.r, color.g, color.b, 96));
-        marker.setOutlineColor(sf::Color(color.r, color.g, color.b, 210));
-        marker.setOutlineThickness(1.4f);
-        window.draw(marker);
+        const sf::Vector2f origin(point.x * config::TileSize, point.y * config::TileSize);
+        sf::RectangleShape shadow(sf::Vector2f(18.f, 4.f));
+        shadow.setPosition(origin + sf::Vector2f(1.f, 16.f));
+        shadow.setFillColor(sf::Color(color.r, color.g, color.b, 86));
+        window.draw(shadow);
+        sf::RectangleShape core(sf::Vector2f(12.f, 2.f));
+        core.setPosition(origin + sf::Vector2f(4.f, 17.f));
+        core.setFillColor(sf::Color(color.r, color.g, color.b, 150));
+        window.draw(core);
     }
 
     inline sf::Color ownerColor(int owner)

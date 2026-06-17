@@ -68,6 +68,46 @@ namespace
 		return result;
 	}
 
+	sf::Color attackEffectColor(int unitName, const DamageResult& damageResult, bool secondary)
+	{
+		if (secondary) {
+			return sf::Color(255, 166, 94, 230);
+		}
+		if (damageResult.counter) {
+			return sf::Color(255, 206, 65, 255);
+		}
+		if (damageResult.resisted) {
+			return sf::Color(113, 176, 255, 255);
+		}
+		switch (unitName) {
+		case UName::SHOOTER:
+			return sf::Color(255, 236, 152, 255);
+		case UName::CAVALRY:
+			return sf::Color(255, 121, 72, 255);
+		case UName::SIEGE:
+			return sf::Color(255, 138, 48, 255);
+		case UName::GUARDIAN:
+			return sf::Color(255, 218, 95, 255);
+		case UName::INFANTARY:
+		default:
+			return sf::Color(255, 92, 58, 255);
+		}
+	}
+
+	float screenShakeForUnit(int unitName)
+	{
+		switch (unitName) {
+		case UName::SIEGE:
+			return 5.2f;
+		case UName::GUARDIAN:
+			return 4.2f;
+		case UName::CAVALRY:
+			return 3.8f;
+		default:
+			return 2.7f;
+		}
+	}
+
 	int dealDamage(Game& game, MoveableUnit* attacker, Unit* target, int baseDamage, float finalScale, bool secondary)
 	{
 		const DamageResult damageResult = calculateDamage(game, attacker, target, baseDamage);
@@ -84,11 +124,7 @@ namespace
 		}
 
 		const sf::Vector2f targetCenter = unitCenter(target);
-		const sf::Color beamColor = secondary
-			? sf::Color(255, 166, 94, 230)
-			: (damageResult.counter
-				? sf::Color(255, 206, 65, 255)
-				: (damageResult.resisted ? sf::Color(113, 176, 255, 255) : sf::Color(255, 74, 39, 255)));
+		const sf::Color beamColor = attackEffectColor(attacker->unitName, damageResult, secondary);
 		const sf::Vector2f attackVector = unitCenter(target) - unitCenter(attacker);
 		attacker->playFlash(sf::Color(255, 245, 180, 255), secondary ? 0.10f : 0.16f);
 		if (!secondary) {
@@ -183,6 +219,6 @@ void Attacker::Attack(MoveableUnit* me, Unit* u)
 			}
 		}
 
-		mygame->startScreenShake(0.13f, 3.2f);
+		mygame->startScreenShake(0.13f, screenShakeForUnit(me->unitName));
 	}
 }

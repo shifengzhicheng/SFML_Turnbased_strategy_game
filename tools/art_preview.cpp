@@ -1,5 +1,6 @@
 #include "ArtAssets.h"
 #include "Config.h"
+#include "Tile.h"
 
 #include <SFML/Graphics.hpp>
 #include <iostream>
@@ -7,12 +8,14 @@
 
 namespace
 {
-    sf::Vector2f centeredTileSpritePosition(const sf::Texture& texture, sf::Vector2f tileTopLeft, float scale)
+    sf::Vector2f footAnchoredSpritePosition(const sf::Texture& texture, sf::Vector2f tileTopLeft, float scale)
     {
         const sf::Vector2u size = texture.getSize();
+        const sf::Vector2f foot(tileTopLeft.x + config::TileSize * 0.5f,
+                                tileTopLeft.y + config::TileSize + 1.f);
         return sf::Vector2f(
-            tileTopLeft.x + (config::TileSize - static_cast<float>(size.x) * scale) * 0.5f,
-            tileTopLeft.y + (config::TileSize - static_cast<float>(size.y) * scale) * 0.5f);
+            foot.x - static_cast<float>(size.x) * scale * 0.5f,
+            foot.y - static_cast<float>(size.y) * scale);
     }
 
     void drawLabel(sf::RenderTexture& canvas, const sf::Font& font, const std::string& text, float x, float y)
@@ -52,21 +55,35 @@ int main(int argc, char** argv)
             sf::RectangleShape dash(sf::Vector2f(5.f, 1.f));
             dash.setFillColor(sf::Color(162, 184, 118, 70));
             dash.setPosition(static_cast<float>(x + ((x + y) % 7)), static_cast<float>(y + ((x * 3 + y) % 8)));
-            dash.setRotation(static_cast<float>((x * 11 + y * 7) % 28) - 14.f);
             canvas.draw(dash);
         }
     }
 
     sf::VertexArray grid(sf::Lines);
     for (int x = 24; x <= 584; x += config::TileSize) {
-        grid.append(sf::Vertex(sf::Vector2f(static_cast<float>(x), 72.f), sf::Color(108, 119, 115, 175)));
-        grid.append(sf::Vertex(sf::Vector2f(static_cast<float>(x), 432.f), sf::Color(108, 119, 115, 175)));
+        grid.append(sf::Vertex(sf::Vector2f(static_cast<float>(x), 72.f), sf::Color(53, 74, 58, 62)));
+        grid.append(sf::Vertex(sf::Vector2f(static_cast<float>(x), 432.f), sf::Color(53, 74, 58, 62)));
     }
     for (int y = 72; y <= 432; y += config::TileSize) {
-        grid.append(sf::Vertex(sf::Vector2f(24.f, static_cast<float>(y)), sf::Color(108, 119, 115, 175)));
-        grid.append(sf::Vertex(sf::Vector2f(584.f, static_cast<float>(y)), sf::Color(108, 119, 115, 175)));
+        grid.append(sf::Vertex(sf::Vector2f(24.f, static_cast<float>(y)), sf::Color(53, 74, 58, 62)));
+        grid.append(sf::Vertex(sf::Vector2f(584.f, static_cast<float>(y)), sf::Color(53, 74, 58, 62)));
     }
     canvas.draw(grid);
+
+    const tile::ID samples[] = {
+        tile::Empty,
+        tile::Tree,
+        tile::Mount,
+        tile::River,
+        tile::Resource,
+        tile::Player_Barracks,
+        tile::Player_Tower
+    };
+    for (int i = 0; i < 7; ++i) {
+        MapPos tileSample(sf::IntRect(42 + i * 34, 386, config::TileSize, config::TileSize), samples[i]);
+        tileSample.drawGround(canvas, sf::RenderStates::Default);
+        tileSample.drawObject(canvas, sf::RenderStates::Default);
+    }
 
     sf::Texture infantry, shooter, cavalry, siege, guardian, enemy, endTurn, infButton, shoButton, cavButton, siegeButton, guardianButton;
     art::makeUnitTexture(infantry, art::UnitKind::Infantry, art::Team::Player);
@@ -76,25 +93,23 @@ int main(int argc, char** argv)
     art::makeUnitTexture(guardian, art::UnitKind::Guardian, art::Team::Player);
     art::makeUnitTexture(enemy, art::UnitKind::Shooter, art::Team::Enemy);
     art::makeButtonTexture(endTurn, font, "END TURN", art::ButtonState::Hover, sf::Vector2u(128, 44));
-    art::makeButtonTexture(infButton, font, "Infantry", art::ButtonState::Normal, sf::Vector2u(128, 42), art::UnitKind::Infantry, art::Team::Player);
-    art::makeButtonTexture(shoButton, font, "Shooter", art::ButtonState::Hover, sf::Vector2u(128, 42), art::UnitKind::Shooter, art::Team::Player);
-    art::makeButtonTexture(cavButton, font, "Cavalry", art::ButtonState::Pressed, sf::Vector2u(128, 42), art::UnitKind::Cavalry, art::Team::Player);
-    art::makeButtonTexture(siegeButton, font, "Siege", art::ButtonState::Normal, sf::Vector2u(128, 42), art::UnitKind::Siege, art::Team::Player);
-    art::makeButtonTexture(guardianButton, font, "Guard", art::ButtonState::Hover, sf::Vector2u(128, 42), art::UnitKind::Guardian, art::Team::Player);
+    art::makeButtonTexture(infButton, font, "INF", art::ButtonState::Normal, sf::Vector2u(128, 42), art::UnitKind::Infantry, art::Team::Player);
+    art::makeButtonTexture(shoButton, font, "BOW", art::ButtonState::Hover, sf::Vector2u(128, 42), art::UnitKind::Shooter, art::Team::Player);
+    art::makeButtonTexture(cavButton, font, "CAV", art::ButtonState::Pressed, sf::Vector2u(128, 42), art::UnitKind::Cavalry, art::Team::Player);
+    art::makeButtonTexture(siegeButton, font, "SGE", art::ButtonState::Normal, sf::Vector2u(128, 42), art::UnitKind::Siege, art::Team::Player);
+    art::makeButtonTexture(guardianButton, font, "GRD", art::ButtonState::Hover, sf::Vector2u(128, 42), art::UnitKind::Guardian, art::Team::Player);
 
     const sf::Vector2f unitPositions[] = {{104.f, 124.f}, {164.f, 164.f}, {244.f, 244.f}, {324.f, 204.f}, {404.f, 244.f}, {464.f, 164.f}};
     const sf::Texture* unitTextures[] = {&infantry, &shooter, &cavalry, &siege, &guardian, &enemy};
     for (int i = 0; i < 6; ++i) {
-        sf::CircleShape base(9.f, 24);
-        base.setOrigin(9.f, 9.f);
-        base.setScale(1.15f, 0.62f);
-        base.setPosition(unitPositions[i].x + 10.f, unitPositions[i].y + 17.f);
+        sf::RectangleShape base(sf::Vector2f(18.f, 4.f));
+        base.setPosition(unitPositions[i].x + 1.f, unitPositions[i].y + 16.f);
         base.setFillColor(i == 5 ? sf::Color(61, 128, 206, 110) : sf::Color(218, 76, 60, 110));
         canvas.draw(base);
 
         sf::Sprite sprite(*unitTextures[i]);
         sprite.setScale(config::UnitSpriteScale, config::UnitSpriteScale);
-        sprite.setPosition(centeredTileSpritePosition(*unitTextures[i], unitPositions[i], config::UnitSpriteScale));
+        sprite.setPosition(footAnchoredSpritePosition(*unitTextures[i], unitPositions[i], config::UnitSpriteScale));
         canvas.draw(sprite);
     }
 

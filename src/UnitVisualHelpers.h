@@ -20,9 +20,13 @@ namespace unit_visual
         const sf::Vector2u size = texture != nullptr
             ? texture->getSize()
             : sf::Vector2u(config::UnitTextureSize, config::UnitTextureSize);
+        // Gameplay still uses tile coordinates; the sprite is anchored to the
+        // unit's feet so 2.5D art can rise above its occupied grid cell.
+        const float footX = tileX * TileSize + TileSize * 0.5f;
+        const float footY = tileY * TileSize + TileSize + 1.f;
         return sf::Vector2f(
-            tileX * TileSize + (TileSize - static_cast<float>(size.x) * scale) * 0.5f + offset.x,
-            tileY * TileSize + (TileSize - static_cast<float>(size.y) * scale) * 0.5f + offset.y);
+            footX - static_cast<float>(size.x) * scale * 0.5f + offset.x,
+            footY - static_cast<float>(size.y) * scale + offset.y);
     }
 
     inline void placeUnitSprite(sf::Sprite& sprite,
@@ -41,8 +45,10 @@ namespace unit_visual
                                  sf::Vector2f offset = sf::Vector2f(0.f, 0.f))
     {
         const auto bounds = text.getLocalBounds();
+        const float visualTop = tileY * TileSize + TileSize + 1.f
+            - static_cast<float>(config::UnitTextureSize) * config::UnitSpriteScale;
         text.setPosition(
             tileX * TileSize + TileSize * 0.5f - bounds.left - bounds.width * 0.5f + offset.x,
-            tileY * TileSize - 12.f + offset.y * 0.35f);
+            visualTop - 11.f + offset.y * 0.35f);
     }
 }

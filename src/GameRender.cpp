@@ -8,8 +8,10 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <functional>
 #include <limits>
 #include <utility>
+#include <vector>
 
 using namespace sf;
 using namespace std;
@@ -109,24 +111,45 @@ void Game::Draw()
         gameView.move(currentShakeOffset());
         window.setView(gameView);
 
-        for (const auto& tile : tiles)
-            window.draw(tile);
-
-        if (Base_red && Base_red->UnitState == UState::UNITCLICK) {
-            RectangleShape rect;
-            rect.setPosition(Base_red->getPosition());
-            rect.setSize(sf::Vector2f(2 * SqureSize, 2 * SqureSize));
-            rect.setFillColor(sf::Color::Transparent);
-            rect.setOutlineColor(sf::Color::Red);
-            rect.setOutlineThickness(2.f);
-            window.draw(rect);
+        for (const auto& tile : tiles) {
+            tile.drawGround(window, sf::RenderStates::Default);
         }
 
-        drawGridOverlay();
         drawLaneGuides();
-        drawResourceNodes();
-        drawBuildings();
-        drawWorkers();
+        drawGridOverlay();
+
+        struct RenderItem
+        {
+            float sortY = 0.f;
+            int sortX = 0;
+            std::function<void()> draw;
+        };
+        std::vector<RenderItem> renderItems;
+
+        for (const auto& tile : tiles) {
+            if (!tile.hasRaisedObject()) {
+                continue;
+            }
+            const auto index = tile.getIndex();
+            const MapPos* tilePtr = &tile;
+            renderItems.push_back({tile.renderSortY(), index.x, [this, tilePtr]() {
+                tilePtr->drawObject(window, sf::RenderStates::Default);
+            }});
+        }
+
+        for (const auto& node : resources) {
+            const ResourceNode* nodePtr = &node;
+            renderItems.push_back({static_cast<float>((node.point.y + 1) * SqureSize), node.point.x, [this, nodePtr]() {
+                drawResourceNode(*nodePtr);
+            }});
+        }
+
+        for (const auto& workerUnit : workers) {
+            const Worker* workerPtr = &workerUnit;
+            renderItems.push_back({static_cast<float>((workerUnit.point.y + 1) * SqureSize), workerUnit.point.x, [this, workerPtr]() {
+                drawWorkerSprite(*workerPtr);
+            }});
+        }
 
         const auto drawBaseShield = [this](const DisMoveableUnit* base, int team) {
             const float seconds = baseShieldSecondsForTeam(team);
@@ -144,17 +167,6 @@ void Game::Draw()
             shield.setOutlineThickness(2.2f);
             window.draw(shield);
         };
-        drawBaseShield(Base_red.get(), PLAYER);
-        drawBaseShield(Base_blue.get(), AI);
-
-        if (Base_red) {
-            window.draw(*Base_red);
-            window.draw(Base_red->UnitText);
-        }
-        if (Base_blue) {
-            window.draw(*Base_blue);
-            window.draw(Base_blue->UnitText);
-        }
         const auto drawBasePerks = [this](const DisMoveableUnit* base, int team) {
             if (base == nullptr) {
                 return;
@@ -193,23 +205,57 @@ void Game::Draw()
             status.setPosition(base->x * SqureSize - 10.f, base->y * SqureSize - 28.f);
             window.draw(status);
         };
-        drawBasePerks(Base_red.get(), PLAYER);
-        drawBasePerks(Base_blue.get(), AI);
+        const auto pushBase = [&](DisMoveableUnit* base, int team) {
+            if (base == nullptr) {
+                return;
+            }
+            renderItems.push_back({static_cast<float>((base->y + config::BaseFootprintSize) * SqureSize), base->x, [this, base, team, drawBaseShield, drawBasePerks]() {
+                drawBaseShield(base, team);
+                if (team == PLAYER && base->UnitState == UState::UNITCLICK) {
+                    MapPos selected(Point(base->x, base->y), true, true);
+                    window.draw(selected);
+                }
+                window.draw(*base);
+                window.draw(base->UnitText);
+                drawBasePerks(base, team);
+            }});
+        };
+        pushBase(Base_red.get(), PLAYER);
+        pushBase(Base_blue.get(), AI);
 
+        const auto pushUnit = [&](MoveableUnit* unit, sf::Color color, bool playerUnit) {
+            if (unit == nullptr) {
+                return;
+            }
+            renderItems.push_back({static_cast<float>((unit->y + 1) * SqureSize), unit->x, [this, unit, color, playerUnit]() {
+                drawUnitBase(window, Point(unit->x, unit->y), color);
+                if (playerUnit && unit->UnitState == UState::UNITCLICK) {
+                    MapPos selected(Point(unit->x, unit->y), tile::Choosen);
+                    window.draw(selected);
+                }
+                window.draw(*unit);
+                window.draw(unit->UnitText);
+            }});
+        };
         for (const auto& u : enemys) {
-            drawUnitBase(window, Point(u->x, u->y), sf::Color(61, 128, 206));
-            window.draw(*u);
-            window.draw(u->UnitText);
+            pushUnit(u.get(), sf::Color(61, 128, 206), false);
         }
         for (const auto& u : myunits) {
-            drawUnitBase(window, Point(u->x, u->y), sf::Color(218, 76, 60));
-            if (u->UnitState == UState::UNITCLICK) {
-                MapPos selected(Point(u->x, u->y), tile::Choosen);
-                window.draw(selected);
-            }
-            window.draw(*u);
-            window.draw(u->UnitText);
+            pushUnit(u.get(), sf::Color(218, 76, 60), true);
         }
+
+        std::sort(renderItems.begin(), renderItems.end(), [](const RenderItem& a, const RenderItem& b) {
+            if (a.sortY != b.sortY) {
+                return a.sortY < b.sortY;
+            }
+            return a.sortX < b.sortX;
+        });
+        for (const auto& item : renderItems) {
+            item.draw();
+        }
+
+        drawBuildings();
+
         effects.draw(window);
 
         window.setView(defaultView);

@@ -7,7 +7,7 @@
 struct AttackEffect
 {
     sf::RectangleShape beam;
-    sf::CircleShape impact;
+    sf::RectangleShape impact;
     sf::Color color = sf::Color::White;
     sf::Clock lifetime;
     float durationSeconds = 0.35f;

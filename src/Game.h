@@ -176,8 +176,10 @@ public:
     void drawLaneGuides();
     void drawGridOverlay();
     void drawResourceNodes();
+    void drawResourceNode(const ResourceNode& node);
     void drawBuildings();
     void drawWorkers();
+    void drawWorkerSprite(const Worker& workerUnit);
     void drawTutorialOverlay();
     void drawRewardOverlay();
     void addAttackEffect(sf::Vector2f start, sf::Vector2f end, sf::Color color);

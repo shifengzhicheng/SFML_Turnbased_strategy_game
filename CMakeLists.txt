@@ -113,7 +113,7 @@ target_link_libraries(sfml_tbs PRIVATE sfml_tbs_game)
 add_executable(sfml_tbs_art_preview EXCLUDE_FROM_ALL
     tools/art_preview.cpp
 )
-target_link_libraries(sfml_tbs_art_preview PRIVATE sfml_tbs_art)
+target_link_libraries(sfml_tbs_art_preview PRIVATE sfml_tbs_game)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(sfml_tbs PRIVATE -Wno-deprecated-declarations)
