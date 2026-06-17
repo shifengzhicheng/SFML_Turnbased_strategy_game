@@ -57,11 +57,11 @@ namespace
 			result.resisted = true;
 		}
 		else if (game.counterApplies(attacker->myteam, attacker->unitName, defender->myteam, defender->unitName)) {
-			result.amount = static_cast<int>(std::round(static_cast<float>(baseDamage) * 1.45f));
+			result.amount = static_cast<int>(std::round(static_cast<float>(baseDamage) * 1.60f));
 			result.counter = true;
 		}
 		else if (game.counterApplies(defender->myteam, defender->unitName, attacker->myteam, attacker->unitName)) {
-			result.amount = static_cast<int>(std::round(static_cast<float>(baseDamage) * 0.8f));
+			result.amount = static_cast<int>(std::round(static_cast<float>(baseDamage) * 0.74f));
 			result.resisted = true;
 		}
 		result.amount = std::max(1, result.amount);

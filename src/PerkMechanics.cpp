@@ -33,13 +33,15 @@ UnitMechanics unitMechanicsFor(int unitName, const std::array<int, perk::Count>&
         const int fortitude = perkLevels[static_cast<std::size_t>(perk::Fortitude)];
         mechanics.tauntsNearbyEnemies = fortitude >= 1;
         mechanics.siegeDamageTakenMultiplier = fortitude >= 3 ? 0.62f : (fortitude >= 2 ? 0.75f : 1.f);
+        mechanics.additionalAttackTargets = fortitude >= 3 ? 2 : 1;
+        mechanics.additionalTargetDamageMultiplier = fortitude >= 4 ? 0.42f : 0.28f;
         break;
     }
     case UName::SIEGE: {
         const int siegeCraft = perkLevels[static_cast<std::size_t>(perk::SiegeCraft)];
         mechanics.buildingDamageMultiplier = siegeCraft >= 2 ? 1.20f : 1.f;
-        mechanics.additionalAttackTargets = siegeCraft >= 1 ? 1 : 0;
-        mechanics.additionalTargetDamageMultiplier = siegeCraft >= 4 ? 0.50f : 0.32f;
+        mechanics.additionalAttackTargets = siegeCraft >= 1 ? 2 : 1;
+        mechanics.additionalTargetDamageMultiplier = siegeCraft >= 4 ? 0.50f : (siegeCraft >= 1 ? 0.38f : 0.24f);
         break;
     }
     default:

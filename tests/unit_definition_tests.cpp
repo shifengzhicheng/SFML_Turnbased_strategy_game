@@ -49,6 +49,8 @@ int main()
     require(findUnitDefinition(UName::BASE) == nullptr, "base is not a trainable unit definition");
     require(unitDefinition(UName::INFANTARY).commandCost == config::InfantryCost,
             "infantry cost should stay sourced from Config");
+    require(config::InfantryCost >= 24 && config::InfantryHealth <= 170 && config::InfantryDamage <= 36,
+            "infantry should not be cheap enough to dominate no-collision swarm fights");
     require(unitDefinition(UName::SHOOTER).trainSeconds == realtime::ShooterTrainSeconds,
             "shooter train time should stay sourced from RealtimeConfig");
     require(unitDefinition(UName::SHOOTER).unlockByEconomyOrTech,
@@ -79,6 +81,8 @@ int main()
             "guardian health should stay sourced from Config");
     require(unitDefinition(UName::GUARDIAN).commandCost >= unitDefinition(UName::CAVALRY).commandCost * 2,
             "guardian should remain a late-game commitment");
+    require(unitDefinition(UName::GUARDIAN).maxHealth >= 900,
+            "guardian should be sturdy enough to anchor a mixed army");
     require(unitDefinition(UName::GUARDIAN).requiredTechLevel == 7,
             "guardian should stay a late-game unlock");
     require(config::InfantrySeekRange > config::InfantryRange

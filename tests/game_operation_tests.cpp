@@ -243,6 +243,44 @@ int main()
             "Volley mechanic should damage an additional target in range");
 
     game.clear();
+    for (int x = 10; x <= 15; ++x) {
+        game.setTileID(x, 10, tile::Empty);
+    }
+    require(game.createUnit(PLAYER, UName::SIEGE, 10, 10, lane::Mid),
+            "baseline siege should spawn for anti-swarm checks");
+    require(game.createUnit(AI, UName::INFANTARY, 14, 10, lane::Mid),
+            "primary siege splash target should spawn");
+    require(game.createUnit(AI, UName::INFANTARY, 13, 10, lane::Mid),
+            "secondary siege splash target should spawn");
+    MoveableUnit* baselineSiege = game.myunits.back().get();
+    MoveableUnit* primarySiegeTarget = game.enemys.front().get();
+    MoveableUnit* secondarySiegeTarget = game.enemys.back().get();
+    const int secondaryBeforeSiege = secondarySiegeTarget->Health;
+    baselineSiege->autoAttack(primarySiegeTarget);
+    require(secondarySiegeTarget->Health < secondaryBeforeSiege,
+            "baseline siege should splash nearby units so infantry swarms have a counter");
+
+    game.clear();
+    for (int y = 10; y <= 11; ++y) {
+        for (int x = 10; x <= 11; ++x) {
+            game.setTileID(x, y, tile::Empty);
+        }
+    }
+    require(game.createUnit(PLAYER, UName::GUARDIAN, 10, 10, lane::Mid),
+            "baseline guardian should spawn for cleave checks");
+    require(game.createUnit(AI, UName::INFANTARY, 11, 10, lane::Mid),
+            "primary guardian cleave target should spawn");
+    require(game.createUnit(AI, UName::INFANTARY, 10, 11, lane::Mid),
+            "secondary guardian cleave target should spawn");
+    MoveableUnit* baselineGuardian = game.myunits.back().get();
+    MoveableUnit* primaryGuardianTarget = game.enemys.front().get();
+    MoveableUnit* secondaryGuardianTarget = game.enemys.back().get();
+    const int secondaryBeforeGuardian = secondaryGuardianTarget->Health;
+    baselineGuardian->autoAttack(primaryGuardianTarget);
+    require(secondaryGuardianTarget->Health < secondaryBeforeGuardian,
+            "baseline guardian should cleave adjacent units to anchor against swarms");
+
+    game.clear();
     for (int x = 10; x <= 12; ++x) {
         game.setTileID(x, 10, tile::Empty);
     }

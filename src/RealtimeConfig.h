@@ -17,7 +17,7 @@ namespace realtime
     inline constexpr float ShooterStepSeconds = 0.82f;
     inline constexpr float CavalryStepSeconds = 0.34f;
     inline constexpr float SiegeStepSeconds = 1.58f;
-    inline constexpr float GuardianStepSeconds = 1.08f;
+    inline constexpr float GuardianStepSeconds = 0.96f;
 
     static_assert(CavalryStepSeconds < InfantryStepSeconds);
     static_assert(InfantryStepSeconds < ShooterStepSeconds);
@@ -28,7 +28,7 @@ namespace realtime
     inline constexpr float ShooterAttackCooldown = 1.78f;
     inline constexpr float CavalryAttackCooldown = 1.76f;
     inline constexpr float SiegeAttackCooldown = 2.48f;
-    inline constexpr float GuardianAttackCooldown = 2.18f;
+    inline constexpr float GuardianAttackCooldown = 2.05f;
     inline constexpr float DefenseTowerAttackCooldown = 1.55f;
 
     inline constexpr float BarracksBuildSeconds = 12.0f;
