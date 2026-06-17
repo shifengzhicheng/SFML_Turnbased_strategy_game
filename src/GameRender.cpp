@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <functional>
 #include <limits>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -327,9 +328,14 @@ void Game::Draw()
         result.setPosition(gameWin ? 545.f : 560.f, 178.f);
         window.draw(result);
 
-        sf::Text summary(gameWin ? "Your build order broke the enemy core." : "The enemy policy found a stronger timing.", myfont, 18);
+        const std::string summaryText = gameWin
+            ? "You destroyed the enemy base."
+            : "Your base fell. Regroup and try again.";
+        sf::Text summary(summaryText, myfont, 18);
         summary.setFillColor(sf::Color(226, 232, 202));
-        summary.setPosition(gameWin ? 478.f : 475.f, 255.f);
+        const sf::FloatRect summaryBounds = summary.getLocalBounds();
+        summary.setOrigin(summaryBounds.left + summaryBounds.width * 0.5f, 0.f);
+        summary.setPosition(670.f, 255.f);
         window.draw(summary);
 
         sf::Text stats("Time " + std::to_string(static_cast<int>(gameTimeSeconds)) + "s   Your Lv " + std::to_string(playerUpgradeLevel)
