@@ -62,6 +62,41 @@ bool Game::canUnitStepInto(const MoveableUnit& unit, Point point) const
     return isCellWalkableForUnit(point.x, point.y);
 }
 
+bool Game::hasLineOfSight(Point from, Point to) const
+{
+    int currentX = from.x;
+    int currentY = from.y;
+    const int dx = std::abs(to.x - from.x);
+    const int dy = std::abs(to.y - from.y);
+    const int stepX = from.x < to.x ? 1 : -1;
+    const int stepY = from.y < to.y ? 1 : -1;
+    int error = dx - dy;
+
+    while (currentX != to.x || currentY != to.y) {
+        const int doubledError = error * 2;
+        if (doubledError > -dy) {
+            error -= dy;
+            currentX += stepX;
+        }
+        if (doubledError < dx) {
+            error += dx;
+            currentY += stepY;
+        }
+
+        if (currentX == to.x && currentY == to.y) {
+            break;
+        }
+        if (!isMapCell(currentX, currentY)) {
+            return false;
+        }
+        const tile::ID id = tiles[currentY * horizontalTiles + currentX].getID();
+        if (isBlockingTile(id)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool Game::isBuildableCell(int x, int y) const
 {
     if (!isMapCell(x, y)) {

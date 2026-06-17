@@ -201,6 +201,7 @@ public:
     bool isCellReservedForSpawn(int x, int y) const;
     bool isBuildableCell(int x, int y) const;
     bool isBuildSiteInInfluence(int team, Point point, int type) const;
+    bool hasLineOfSight(Point from, Point to) const;
     bool canUnitStepInto(const MoveableUnit& unit, Point point) const;
     
     void clear();

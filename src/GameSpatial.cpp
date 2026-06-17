@@ -107,6 +107,9 @@ Point Game::findAttackStandPoint(const MoveableUnit& unit, const Building& build
             if (toTarget > rangeSquared) {
                 continue;
             }
+            if (!hasLineOfSight(candidate, building.point)) {
+                continue;
+            }
 
             const int score = distanceSquared(current, candidate);
             if (score < bestScore) {

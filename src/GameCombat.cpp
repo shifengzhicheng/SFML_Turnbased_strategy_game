@@ -47,6 +47,9 @@ void Game::updateDefenseTowers(float dt)
             if (dist > rangeSquared) {
                 return;
             }
+            if (!hasLineOfSight(building.point, Point(candidate->x, candidate->y))) {
+                return;
+            }
             int score = dist * 10;
             if (candidate->unitName == UName::SIEGE) {
                 score -= towerMechanics.prioritizesSiege ? 420 : 260;
@@ -175,11 +178,17 @@ Building* Game::chooseBuildingTarget(MoveableUnit& unit)
     Building* best = nullptr;
     int bestScore = std::numeric_limits<int>::max();
     const Point current(unit.x, unit.y);
+    const int safeLane = std::clamp(unit.laneIndex, 0, lane::Count - 1);
+    const int mapH = height / SqureSize;
+    const int centerY = mapH / 2;
+    const Point laneEntry = laneRallyPoint(unit.myteam, safeLane, lane_geometry::RallyStageCount - 1);
+
     for (auto& building : buildings) {
         if (building.team == unit.myteam || building.health <= 0 || !building.complete) {
             continue;
         }
-        int priority = 400;
+
+        int priority = 420;
         if (building.type == building::DefenseTower) {
             priority = 0;
         }
@@ -187,9 +196,39 @@ Building* Game::chooseBuildingTarget(MoveableUnit& unit)
             priority = 220;
         }
 
-        const Point laneMid = laneWaypoint(unit.myteam, unit.laneIndex, 1);
-        const int lanePenalty = std::abs(building.point.y - laneMid.y) * 12;
-        const int score = priority + lanePenalty + distanceSquared(current, building.point);
+        const bool topSide = building.point.y < centerY - 1;
+        const bool botSide = building.point.y > centerY + 1;
+        const bool sameSide = (safeLane == lane::Top && topSide) || (safeLane == lane::Bot && botSide);
+        const bool wrongSide = (safeLane == lane::Top && botSide) || (safeLane == lane::Bot && topSide);
+
+        if (safeLane != lane::Mid) {
+            // Side-lane armies should raid what their path actually exposes:
+            // same-side towers and barracks. This makes flanks split defenses
+            // through map space instead of artificial multi-lane stat bonuses.
+            if (sameSide && building.type == building::Barracks) {
+                priority -= 190;
+            }
+            if (sameSide && building.type == building::DefenseTower) {
+                priority -= 50;
+            }
+            if (!sameSide) {
+                priority += 220;
+            }
+            if (wrongSide) {
+                priority += 220;
+            }
+        }
+        else {
+            priority += std::abs(building.point.y - centerY) * 14;
+        }
+
+        const int lanePenalty = std::abs(building.point.y - laneEntry.y) * (safeLane == lane::Mid ? 8 : 18);
+        const Point standPoint = findAttackStandPoint(unit, building);
+        const bool clearStand = standPoint.x >= 0
+            && distanceSquared(standPoint, building.point) <= unit.myAttackRange() * unit.myAttackRange()
+            && hasLineOfSight(standPoint, building.point);
+        const int standPenalty = clearStand ? distanceSquared(current, standPoint) : distanceSquared(current, building.point) + 260;
+        const int score = priority + lanePenalty + standPenalty;
         if (score < bestScore) {
             bestScore = score;
             best = &building;
@@ -245,7 +284,9 @@ bool Game::canAttackBuilding(const MoveableUnit& unit, const Building& building)
         return false;
     }
     const int range = std::max(1, unit.myAttackRange());
-    return distanceSquared(Point(unit.x, unit.y), building.point) <= range * range;
+    const Point unitPoint(unit.x, unit.y);
+    return distanceSquared(unitPoint, building.point) <= range * range
+        && hasLineOfSight(unitPoint, building.point);
 }
 
 void Game::autoAttackBuilding(MoveableUnit& unit, Building& building)

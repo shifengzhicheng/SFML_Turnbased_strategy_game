@@ -38,6 +38,24 @@ namespace
         const int dy = a.y - b.y;
         return dx * dx + dy * dy;
     }
+
+    tile::ID tileAt(const Game& game, Point point)
+    {
+        return game.tiles[point.y * game.horizontalTiles + point.x].getID();
+    }
+
+    Building makeCompletedBuilding(int id, int team, int type, Point point)
+    {
+        Building building;
+        building.id = id;
+        building.team = team;
+        building.type = type;
+        building.point = point;
+        building.complete = true;
+        building.maxHealth = buildingDefinition(type).maxHealth;
+        building.health = building.maxHealth;
+        return building;
+    }
 }
 
 int main()
@@ -438,6 +456,81 @@ int main()
     game.setTileID(12, 10, tile::Empty);
     require(game.myunits.back()->canAutoAttack(game.enemys.back().get()),
             "clearing the obstacle should restore line-of-sight attacks");
+
+    game.clear();
+    const Point redTopGate(game.Red_baseP.x + 5, game.Red_baseP.y - 3);
+    const Point redBotGate(game.Red_baseP.x + 5, game.Red_baseP.y + 4);
+    const Point redMiddleGate(game.Red_baseP.x + 5, game.Red_baseP.y + 1);
+    const Point blueTopGate(game.Blue_baseP.x - 5, game.Blue_baseP.y - 3);
+    const Point blueBotGate(game.Blue_baseP.x - 5, game.Blue_baseP.y + 4);
+    const Point blueMiddleGate(game.Blue_baseP.x - 5, game.Blue_baseP.y + 1);
+    require(game.isCellWalkableForUnit(redTopGate.x, redTopGate.y)
+                && game.isCellWalkableForUnit(redBotGate.x, redBotGate.y)
+                && game.isCellWalkableForUnit(redMiddleGate.x, redMiddleGate.y)
+                && game.isCellWalkableForUnit(blueTopGate.x, blueTopGate.y)
+                && game.isCellWalkableForUnit(blueBotGate.x, blueBotGate.y)
+                && game.isCellWalkableForUnit(blueMiddleGate.x, blueMiddleGate.y),
+            "base templates should keep top, middle, and bot approach gates walkable");
+    require(tileAt(game, Point(game.Red_baseP.x + 5, game.Red_baseP.y - 2)) == tile::Mount
+                && tileAt(game, Point(game.Red_baseP.x + 6, game.Red_baseP.y - 1)) == tile::Tree
+                && tileAt(game, Point(game.Blue_baseP.x - 5, game.Blue_baseP.y - 2)) == tile::Mount
+                && tileAt(game, Point(game.Blue_baseP.x - 6, game.Blue_baseP.y - 1)) == tile::Tree,
+            "base templates should place mirrored front blockers that make the direct route harder");
+
+    game.clear();
+    for (int x = 10; x <= 16; ++x) {
+        game.setTileID(x, 10, tile::Empty);
+    }
+    Building losTower = makeCompletedBuilding(2001, PLAYER, building::DefenseTower, Point(10, 10));
+    losTower.attackTimer = realtime::DefenseTowerAttackCooldown;
+    game.buildings.push_back(losTower);
+    require(game.createUnit(AI, UName::INFANTARY, 15, 10, lane::Mid),
+            "tower line-of-sight target should spawn");
+    MoveableUnit* losTowerTarget = game.enemys.back().get();
+    game.setTileID(12, 10, tile::Tree);
+    const int targetHealthBeforeBlockedTower = losTowerTarget->Health;
+    game.updateDefenseTowers(0.25f);
+    require(losTowerTarget->Health == targetHealthBeforeBlockedTower,
+            "terrain between a tower and target should block tower fire");
+    game.setTileID(12, 10, tile::Empty);
+    game.buildings.back().attackTimer = realtime::DefenseTowerAttackCooldown;
+    game.updateDefenseTowers(0.25f);
+    require(losTowerTarget->Health < targetHealthBeforeBlockedTower,
+            "clearing tower line-of-sight should restore tower fire");
+
+    game.clear();
+    for (int x = 10; x <= 15; ++x) {
+        game.setTileID(x, 10, tile::Empty);
+    }
+    require(game.createUnit(PLAYER, UName::SIEGE, 10, 10, lane::Mid),
+            "building line-of-sight attacker should spawn");
+    MoveableUnit* losSiege = game.myunits.back().get();
+    Building losBuilding = makeCompletedBuilding(2002, AI, building::DefenseTower, Point(14, 10));
+    game.setTileID(12, 10, tile::Tree);
+    require(!game.canAttackBuilding(*losSiege, losBuilding),
+            "terrain between a unit and building should block building attacks");
+    game.setTileID(12, 10, tile::Empty);
+    require(game.canAttackBuilding(*losSiege, losBuilding),
+            "clearing building line-of-sight should restore building attacks");
+
+    game.clear();
+    clearArea(game, Point(35, 15), 8);
+    require(game.createUnit(PLAYER, UName::INFANTARY, 32, 12, lane::Top),
+            "top-lane building target test unit should spawn");
+    MoveableUnit* topRaider = game.myunits.back().get();
+    game.buildings.push_back(makeCompletedBuilding(2101, AI, building::DefenseTower, Point(36, 15)));
+    game.buildings.push_back(makeCompletedBuilding(2102, AI, building::Barracks, Point(37, 11)));
+    Building* topTarget = game.chooseBuildingTarget(*topRaider);
+    require(topTarget != nullptr && topTarget->id == 2102,
+            "top-lane units should prefer same-side production over collapsing onto the central fort");
+    game.myunits.clear();
+    require(game.createUnit(PLAYER, UName::INFANTARY, 32, 18, lane::Bot),
+            "bot-lane building target test unit should spawn");
+    MoveableUnit* botRaider = game.myunits.back().get();
+    game.buildings.push_back(makeCompletedBuilding(2103, AI, building::Barracks, Point(37, 19)));
+    Building* botTarget = game.chooseBuildingTarget(*botRaider);
+    require(botTarget != nullptr && botTarget->id == 2103,
+            "bot-lane units should prefer same-side production over off-lane targets");
 
     game.clear();
     for (int x = 10; x <= 14; ++x) {

@@ -278,9 +278,56 @@ void Game::setBase()
         setTileID(base.x, base.y + 1, id);
         setTileID(base.x + 1, base.y + 1, id);
     };
+    const auto carveHorizontal = [this](int fromX, int toX, int y, tile::ID id) {
+        const int begin = std::min(fromX, toX);
+        const int end = std::max(fromX, toX);
+        for (int x = begin; x <= end; ++x) {
+            if (isMapCell(x, y)) {
+                setTileID(x, y, id);
+            }
+        }
+    };
+    const auto setTemplateTile = [this](int x, int y, tile::ID id, Point base) {
+        const bool isBaseFootprint = x >= base.x && x <= base.x + 1 && y >= base.y && y <= base.y + 1;
+        if (!isBaseFootprint && isMapCell(x, y)) {
+            setTileID(x, y, id);
+        }
+    };
+    const auto applyBaseApproachTemplate = [&](Point base, int team) {
+        const int dir = team == PLAYER ? 1 : -1;
+        const int frontX = base.x + dir * 5;
+        const int farFrontX = base.x + dir * 8;
+        const int midY = base.y + 1;
+        const int topY = base.y - 3;
+        const int botY = base.y + 4;
+
+        // Fixed base approaches make map strategy readable: the middle road is
+        // a short fortified throat, while top/bot roads stay open as side gates.
+        carveHorizontal(base.x + dir * 2, farFrontX, midY, tile::Path);
+        carveHorizontal(base.x + dir * 2, farFrontX, topY, tile::Path);
+        carveHorizontal(base.x + dir * 2, farFrontX, botY, tile::Path);
+        carveHorizontal(base.x + dir * 1, base.x + dir * 3, base.y - 1, tile::Empty);
+        carveHorizontal(base.x + dir * 1, base.x + dir * 3, base.y + 2, tile::Empty);
+
+        const Point blockers[] = {
+            Point(frontX, base.y - 2),
+            Point(frontX + dir, base.y - 2),
+            Point(frontX, base.y + 3),
+            Point(frontX + dir, base.y + 3),
+            Point(frontX + dir, base.y - 1),
+            Point(frontX + dir, base.y + 2),
+            Point(farFrontX, topY - 1),
+            Point(farFrontX, botY + 1),
+        };
+        for (std::size_t i = 0; i < sizeof(blockers) / sizeof(blockers[0]); ++i) {
+            setTemplateTile(blockers[i].x, blockers[i].y, i < 4 ? tile::Mount : tile::Tree, base);
+        }
+    };
 
     clearBaseArea(Red_baseP);
     clearBaseArea(Blue_baseP);
+    applyBaseApproachTemplate(Red_baseP, PLAYER);
+    applyBaseApproachTemplate(Blue_baseP, AI);
     stampBase(Red_baseP, PLAYER);
     stampBase(Blue_baseP, AI);
 
@@ -302,13 +349,13 @@ void Game::placeResourceNodes()
         Point point;
     };
     const std::vector<ResourceTarget> targets = {
-        {Point(Red_baseP.x + 7, Red_baseP.y + 4)},
-        {Point(Blue_baseP.x - 7, Blue_baseP.y - 4)},
+        {Point(Red_baseP.x + 3, Red_baseP.y + 6)},
+        {Point(Blue_baseP.x - 3, Blue_baseP.y - 6)},
         {lane_geometry::laneWaypoint(mapW, mapH, lane::Mid, 1, false)},
         {lane_geometry::laneWaypoint(mapW, mapH, lane::Top, 1, false)},
         {lane_geometry::laneWaypoint(mapW, mapH, lane::Bot, 1, false)},
-        {lane_geometry::laneWaypoint(mapW, mapH, lane::Mid, 0, false)},
-        {lane_geometry::laneWaypoint(mapW, mapH, lane::Mid, 2, false)}
+        {Point(mapW / 3, mapH / 2 - 5)},
+        {Point(mapW * 2 / 3, mapH / 2 + 5)}
     };
 
     for (const auto& target : targets) {
