@@ -40,6 +40,22 @@ namespace
         return dx * dx + dy * dy;
     }
 
+    int openNeighborCount(const Game& game, Point point)
+    {
+        int count = 0;
+        for (int dy = -1; dy <= 1; ++dy) {
+            for (int dx = -1; dx <= 1; ++dx) {
+                if (dx == 0 && dy == 0) {
+                    continue;
+                }
+                if (game.isCellWalkableForUnit(point.x + dx, point.y + dy)) {
+                    ++count;
+                }
+            }
+        }
+        return count;
+    }
+
     tile::ID tileAt(const Game& game, Point point)
     {
         return game.tiles[point.y * game.horizontalTiles + point.x].getID();
@@ -125,6 +141,9 @@ int main()
         require(distanceSquared(playerBarracks, game.Red_baseP) <= 36
                     && distanceSquared(aiBarracks, game.Blue_baseP) <= 36,
                 "automatic barracks should stay in the protected base pocket");
+        require(openNeighborCount(game, playerBarracks) >= 2
+                    && openNeighborCount(game, aiBarracks) >= 2,
+                "automatic barracks should leave room for workers and unit spawns");
     }
     for (int x = 15; x < mapW - 15; x += 4) {
         const int midY = static_cast<int>(std::round(lane_geometry::laneYAtX(mapW, mapH, lane::Mid, x)));
@@ -161,6 +180,45 @@ int main()
     require(std::max(std::abs(firstTower.x - secondTower.x), std::abs(firstTower.y - secondTower.y))
                 >= config::TowerPlacementMinSpacing,
             "automatic tower placement should keep towers from visually stacking");
+    const auto towerCoversLane = [&game](Point tower, int laneIndex) {
+        const Point target = game.laneRallyPoint(PLAYER, laneIndex, 1);
+        const int range = game.defenseTowerRange(PLAYER);
+        return distanceSquared(tower, target) <= range * range
+            && game.hasLineOfSightForTower(tower, target, PLAYER);
+    };
+    require(towerCoversLane(firstTower, lane::Mid) && towerCoversLane(secondTower, lane::Mid),
+            "automatic tower placement should cover the selected lane approach");
+    for (Point tower : {firstTower, secondTower}) {
+        const int laneY = static_cast<int>(std::round(lane_geometry::laneYAtX(mapW, mapH, lane::Mid, tower.x)));
+        require(std::abs(tower.y - laneY) >= 1,
+                "automatic tower placement should sit on lane shoulders instead of the lane road");
+    }
+    game.clear();
+
+    game.playerCommand = 1000;
+    game.playerUpgradeLevel = 8;
+    game.playerEconomyLevel = 6;
+    require(game.executeOperation(PLAYER, GameOperation(gameop::BuildBarracks, lane::Top))
+                && game.executeOperation(PLAYER, GameOperation(gameop::BuildBarracks, lane::Mid))
+                && game.executeOperation(PLAYER, GameOperation(gameop::BuildBarracks, lane::Bot)),
+            "multiple automatic barracks should fit into the protected base pocket");
+    require(game.totalBuildingCount(PLAYER, building::Barracks) == 3,
+            "barracks pocket should support multiple production buildings");
+    for (auto a = game.buildings.begin(); a != game.buildings.end(); ++a) {
+        if (a->type != building::Barracks) {
+            continue;
+        }
+        require(distanceSquared(a->point, game.Red_baseP) <= 36,
+                "every automatic barracks should remain close enough to rebuild after a raid");
+        auto b = a;
+        for (++b; b != game.buildings.end(); ++b) {
+            if (b->type != building::Barracks) {
+                continue;
+            }
+            require(std::max(std::abs(a->point.x - b->point.x), std::abs(a->point.y - b->point.y)) >= 3,
+                    "automatic barracks should not stack into a cramped production clump");
+        }
+    }
     game.clear();
 
     require(!game.canQueueUnit(PLAYER, UName::INFANTARY),
