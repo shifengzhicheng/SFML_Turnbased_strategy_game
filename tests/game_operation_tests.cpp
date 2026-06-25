@@ -7,10 +7,12 @@
 #include "UnitDefinition.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <thread>
 
 namespace
 {
@@ -728,6 +730,43 @@ int main()
             "combat movement should ignore other unit bodies and allow stacking");
     require(game.myunits.back()->x == 11 && game.myunits.back()->y == 15,
             "the blocking unit should remain stacked on the same cell");
+
+    game.clear();
+    for (int x = 8; x <= 18; ++x) {
+        game.setTileID(x, 15, tile::Empty);
+    }
+    require(game.createUnit(PLAYER, UName::INFANTARY, 10, 15, lane::Mid),
+            "stale path test unit should spawn");
+    MoveableUnit* stalePathUnit = game.myunits.back().get();
+    game.requestPathForUnit(*stalePathUnit, Point(16, 15));
+    stalePathUnit->x = 12;
+    stalePathUnit->y = 15;
+    for (int i = 0; i < 60 && stalePathUnit->pendingPathRequest != 0; ++i) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        game.applyPathResults();
+    }
+    require(stalePathUnit->pendingPathRequest == 0,
+            "pathfinding worker should finish the stale path request");
+    require(!stalePathUnit->mypath.empty()
+                && stalePathUnit->mypath.front().x == 13
+                && stalePathUnit->mypath.front().y == 15,
+            "async path results should be trimmed to the unit's current tile");
+
+    game.clear();
+    for (int x = 8; x <= 18; ++x) {
+        game.setTileID(x, 15, tile::Empty);
+    }
+    require(game.createUnit(PLAYER, UName::INFANTARY, 10, 15, lane::Mid),
+            "corrupt path test unit should spawn");
+    MoveableUnit* corruptPathUnit = game.myunits.back().get();
+    corruptPathUnit->nextRallyStage = 1;
+    corruptPathUnit->pendingPathGoal = game.laneRallyPoint(PLAYER, lane::Mid, 1);
+    corruptPathUnit->mypath.push_back(Point(15, 15));
+    realtime::updateAutoCombat(game, 1.0f);
+    require(corruptPathUnit->x == 10 && corruptPathUnit->y == 15,
+            "combat movement should reject non-adjacent path steps instead of teleporting");
+    require(corruptPathUnit->mypath.empty(),
+            "rejecting a corrupt path should force a fresh path request later");
 
     game.gameOver = true;
     game.clear();

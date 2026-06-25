@@ -25,6 +25,16 @@ namespace
         return dx * dx + dy * dy;
     }
 
+    bool samePoint(Point a, Point b)
+    {
+        return a.x == b.x && a.y == b.y;
+    }
+
+    bool isAdjacentCardinalStep(Point a, Point b)
+    {
+        return std::abs(a.x - b.x) + std::abs(a.y - b.y) == 1;
+    }
+
     int distanceSquared(const Unit& a, const Unit& b)
     {
         return distanceSquared(Point(a.x, a.y), Point(b.x, b.y));
@@ -276,12 +286,22 @@ namespace
             ? (target != nullptr ? chooseApproachPoint(game, unit, target) : rallyPoint)
             : (buildingTarget != nullptr ? game.findAttackStandPoint(unit, *buildingTarget) : chooseApproachPoint(game, unit, target));
         refreshPathIfNeeded(game, unit, goal);
+        const Point current(unit.x, unit.y);
+        while (!unit.mypath.empty() && samePoint(unit.mypath.front(), current)) {
+            unit.mypath.pop_front();
+        }
         if (unit.mypath.empty()) {
             unit.UnitState = UState::UNITNORMAL;
             return;
         }
 
         const Point next = unit.mypath.front();
+        if (!isAdjacentCardinalStep(current, next)) {
+            unit.mypath.clear();
+            unit.realtimePathTimer = realtime::PathRefreshSeconds;
+            unit.UnitState = UState::UNITNORMAL;
+            return;
+        }
         unit.mypath.pop_front();
         if (tryMove(game, unit, next)) {
             return;

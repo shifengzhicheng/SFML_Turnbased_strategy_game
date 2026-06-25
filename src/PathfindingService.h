@@ -25,6 +25,7 @@ struct PathResult
     int requestId = 0;
     int generation = 0;
     int ownerId = 0;
+    Point start;
     Point goal;
     std::deque<Point> path;
 };

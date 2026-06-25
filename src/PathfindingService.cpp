@@ -57,6 +57,7 @@ void PathfindingService::workerLoop()
         result.requestId = request.requestId;
         result.generation = request.generation;
         result.ownerId = request.ownerId;
+        result.start = request.start;
         result.goal = request.goal;
         result.path = astar.GetPath(request.start, request.goal, request.allowDiagonal);
         if (!result.path.empty()) {
