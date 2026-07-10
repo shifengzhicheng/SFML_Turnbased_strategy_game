@@ -263,9 +263,9 @@ private:
         const int desiredEconomy = desiredEconomyForPlan(plan, game.gameTimeSeconds);
         const int desiredTech = desiredTechForPlan(game, plan);
         const int desiredBarracks = desiredBarracksForPlan(game, plan);
-        int desiredTowers = (plan == ScriptedPlan::Rush || game.gameTimeSeconds < 260.f) ? 0 : 1;
-        if (pressure >= 5 || baseHurt) {
-            desiredTowers = std::max(desiredTowers, 1 + (pressure >= 9 ? 1 : 0));
+        int desiredTowers = 0;
+        if (pressure >= 4 || baseHurt) {
+            desiredTowers = 1 + (pressure >= 9 ? 1 : 0);
         }
 
         // Only one macro operation is queued per think tick so the script
@@ -284,9 +284,12 @@ private:
             return;
         }
 
-        pushMacro(game.totalBuildingCount(PLAYER, building::DefenseTower)
-            < std::min(desiredTowers, game.buildingCap(PLAYER, building::DefenseTower)),
-            GameOperation(gameop::BuildTower, chooseScriptedLane(game, plan, 0)));
+        const bool urgentDefense = pressure >= 4 || baseHurt;
+        if (urgentDefense) {
+            pushMacro(game.totalBuildingCount(PLAYER, building::DefenseTower)
+                < std::min(desiredTowers, game.buildingCap(PLAYER, building::DefenseTower)),
+                GameOperation(gameop::BuildTower, chooseScriptedLane(game, plan, 0)));
+        }
 
         if (plan == ScriptedPlan::Rush) {
             pushMacro(game.totalBuildingCount(PLAYER, building::Barracks) < desiredBarracks,
@@ -299,10 +302,10 @@ private:
         else {
             const bool earlyTechLag = game.playerEconomyLevel >= 1
                 && game.playerUpgradeLevel < std::min(3, desiredTech);
-            pushMacro(earlyTechLag,
-                      GameOperation(gameop::UpgradeTech));
             pushMacro(game.playerEconomyLevel < desiredEconomy,
                       GameOperation(gameop::UpgradeEconomy));
+            pushMacro(earlyTechLag,
+                      GameOperation(gameop::UpgradeTech));
             pushMacro(game.playerUpgradeLevel < desiredTech,
                       GameOperation(gameop::UpgradeTech));
             pushMacro(game.totalBuildingCount(PLAYER, building::Barracks) < desiredBarracks,
@@ -322,8 +325,15 @@ private:
         if (plan == ScriptedPlan::Rush) {
             reserve /= 2;
         }
-        if (pressure >= 6 || (armyBehind && game.myunits.size() < 4)) {
+        if (pressure >= 7 || (baseHurt && pressure >= 4)) {
             reserve = 0;
+        }
+
+        const bool macroStillNeeded = game.playerEconomyLevel < desiredEconomy
+            || game.playerUpgradeLevel < desiredTech
+            || game.totalBuildingCount(PLAYER, building::Barracks) < desiredBarracks;
+        if (!queuedMacro && macroStillNeeded && reserve > budget && !urgentDefense) {
+            return;
         }
 
         if (!queuedMacro && game.gameTimeSeconds > 250.f && !armyBehind && pressure < 4) {
@@ -370,7 +380,7 @@ private:
                     break;
                 }
             }
-            if (!queuedUnit && reserve > 0 && game.myunits.size() < 8) {
+            if (!queuedUnit && reserve > 0 && urgentDefense && game.myunits.size() < 5) {
                 for (int unit : priorities) {
                     const int cost = game.unitCost(unit);
                     if (cost > 0 && game.isUnitUnlocked(PLAYER, unit) && budget >= cost) {

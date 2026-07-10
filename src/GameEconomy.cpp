@@ -39,34 +39,15 @@ int Game::upgradeCostForNextLevel(int team) const
         215, 260, 310, 370, 440,
         520, 610, 710, 820, 950
     };
-    int rawCost = costs[level];
-    if (team == AI && gameTimeSeconds > 420.f && economyLevelForTeam(AI) <= 1) {
-        rawCost = static_cast<int>(std::round(static_cast<float>(rawCost) * 0.62f));
-    }
-    if (team == AI && gameTimeSeconds > 840.f) {
-        rawCost = static_cast<int>(std::round(static_cast<float>(rawCost) * 0.42f));
-    }
-    else if (team == AI && gameTimeSeconds > 780.f) {
-        rawCost = static_cast<int>(std::round(static_cast<float>(rawCost) * 0.58f));
-    }
-    else if (team == AI && gameTimeSeconds > 660.f) {
-        rawCost = static_cast<int>(std::round(static_cast<float>(rawCost) * 0.74f));
-    }
-    return std::max(25, rawCost);
+    return costs[level];
 }
 
 int Game::resourceIncome(int team) const
 {
     const int level = economyLevelForTeam(team);
     const float multiplier = miningIncomeMultiplier(team);
-    int income = config::BaseCommandIncome
+    return config::BaseCommandIncome
         + static_cast<int>(std::round(static_cast<float>(economyIncomeBonusForLevel(level)) * multiplier));
-    if (team == AI) {
-        // A mild difficulty stipend keeps heuristic AI competitive without
-        // adding hidden resource types for the player to understand.
-        income += (gameTimeSeconds > 360.f ? 1 : 0) + static_cast<int>(gameTimeSeconds / 520.f);
-    }
-    return income;
 }
 
 int Game::economyLevelForTeam(int team) const
@@ -82,19 +63,9 @@ int Game::economyUpgradeCost(int team) const
     }
     // Keep payback near the length of one or two pushes: late economy should
     // accelerate the army, not feel like a dead sink before the match ends.
-    int cost = config::EconomyUpgradeCost
+    return config::EconomyUpgradeCost
         + level * config::EconomyUpgradeCostStep
         + level * level;
-    if (team == AI && gameTimeSeconds > 840.f) {
-        cost = static_cast<int>(std::round(static_cast<float>(cost) * 0.52f));
-    }
-    else if (team == AI && gameTimeSeconds > 720.f) {
-        cost = static_cast<int>(std::round(static_cast<float>(cost) * 0.65f));
-    }
-    else if (team == AI && gameTimeSeconds > 420.f) {
-        cost = static_cast<int>(std::round(static_cast<float>(cost) * 0.78f));
-    }
-    return std::max(20, cost);
 }
 
 bool Game::upgradeTeam(int team)

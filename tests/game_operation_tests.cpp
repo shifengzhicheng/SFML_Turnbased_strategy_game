@@ -2,6 +2,7 @@
 #include "AutoCombat.h"
 #include "BuildingDefinition.h"
 #include "LaneGeometry.h"
+#include "PolicyModel.h"
 #include "RealtimeConfig.h"
 #include "SidebarLayout.h"
 #include "UnitDefinition.h"
@@ -86,6 +87,27 @@ int main()
     game.autoChooseRewards = true;
     game.externalAIControl = true;
     game.gameSceneState = SCENE_GAME;
+    game.clear();
+
+    game.gameTimeSeconds = 900.f;
+    game.playerEconomyLevel = 6;
+    game.aiEconomyLevel = 6;
+    game.playerUpgradeLevel = 8;
+    game.aiUpgradeLevel = 8;
+    game.playerCommand = 700;
+    game.aiCommand = 700;
+    require(game.resourceIncome(PLAYER) == game.resourceIncome(AI),
+            "normal AI economy should use the same income formula as the player");
+    require(game.economyUpgradeCost(PLAYER) == game.economyUpgradeCost(AI),
+            "normal AI economy upgrades should not receive hidden discounts");
+    require(game.upgradeCostForNextLevel(PLAYER) == game.upgradeCostForNextLevel(AI),
+            "normal AI technology should not receive hidden discounts");
+    const auto playerFeatures = policy::extractFeatures(game, PLAYER);
+    const auto aiFeatures = policy::extractFeatures(game, AI);
+    for (std::size_t i = 0; i < policy::FeatureCount; ++i) {
+        require(std::abs(playerFeatures[i] - aiFeatures[i]) < 0.0001f,
+                "shared policy features should be side-symmetric in a symmetric state");
+    }
     game.clear();
 
     sf::Event lanePress{};

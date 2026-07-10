@@ -14,7 +14,6 @@ public:
     void update(Game& game, float dt);
 
 private:
-    static constexpr int FeatureCount = 12;
     static constexpr int ActionCount = policy::ActionCount;
 
     float thinkTimer = 0.f;

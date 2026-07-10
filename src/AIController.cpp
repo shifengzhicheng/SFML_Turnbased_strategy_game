@@ -21,7 +21,6 @@
 namespace
 {
     constexpr int ActionCount = policy::ActionCount;
-    constexpr int FeatureCount = 12;
 
     struct Candidate
     {
@@ -100,37 +99,17 @@ namespace
         return (static_cast<int>(game.gameTimeSeconds / 34.f) + orderIndex) % lane::Count;
     }
 
-    std::array<float, FeatureCount> featuresForAI(const Game& game)
-    {
-        const float playerPressure = static_cast<float>(game.unitsNearPoint(PLAYER, game.Blue_baseP, 13));
-        const float aiPressure = static_cast<float>(game.unitsNearPoint(AI, game.Red_baseP, 13));
-        return {
-            1.f,
-            std::clamp(game.gameTimeSeconds / 900.f, 0.f, 1.5f),
-            static_cast<float>(std::min(game.aiCommand, config::CommandFeatureScale)) / static_cast<float>(config::CommandFeatureScale),
-            static_cast<float>(game.aiEconomyLevel) / static_cast<float>(config::MaxEconomyLevel),
-            static_cast<float>(game.aiUpgradeLevel) / static_cast<float>(config::MaxTechLevel),
-            static_cast<float>(game.completedBuildingCount(AI, building::Barracks)) / static_cast<float>(std::max(1, game.buildingCap(AI, building::Barracks))),
-            static_cast<float>(game.totalBuildingCount(AI, building::DefenseTower)) / static_cast<float>(std::max(1, game.buildingCap(AI, building::DefenseTower))),
-            static_cast<float>(game.enemys.size()) / static_cast<float>(config::MaxUnits),
-            static_cast<float>(game.myunits.size()) / static_cast<float>(config::MaxUnits),
-            static_cast<float>(game.Base_blue ? game.Base_blue->Health : 0) / 4000.f,
-            playerPressure / 16.f,
-            aiPressure / 16.f
-        };
-    }
-
     int desiredEconomy(const Game& game)
     {
         int desired = 1;
-        if (game.gameTimeSeconds > 25.f) desired = 2;
-        if (game.gameTimeSeconds > 70.f) desired = 3;
-        if (game.gameTimeSeconds > 135.f) desired = 4;
-        if (game.gameTimeSeconds > 230.f) desired = 5;
-        if (game.gameTimeSeconds > 360.f) desired = 7;
-        if (game.gameTimeSeconds > 520.f) desired = 9;
-        if (game.gameTimeSeconds > 700.f) desired = 11;
-        if (game.gameTimeSeconds > 840.f) desired = config::MaxEconomyLevel;
+        if (game.gameTimeSeconds > 40.f) desired = 2;
+        if (game.gameTimeSeconds > 105.f) desired = 3;
+        if (game.gameTimeSeconds > 190.f) desired = 4;
+        if (game.gameTimeSeconds > 300.f) desired = 5;
+        if (game.gameTimeSeconds > 430.f) desired = 6;
+        if (game.gameTimeSeconds > 570.f) desired = 7;
+        if (game.gameTimeSeconds > 710.f) desired = 8;
+        if (game.gameTimeSeconds > 840.f) desired = 9;
         if (game.playerEconomyLevel > game.aiEconomyLevel + 1 || game.enemys.size() >= 14) {
             ++desired;
         }
@@ -139,16 +118,13 @@ namespace
 
     int desiredTech(const Game& game)
     {
-        int allowed = static_cast<int>(game.gameTimeSeconds / 46.f);
+        int allowed = static_cast<int>(game.gameTimeSeconds / 60.f);
         allowed = std::min(allowed, game.aiEconomyLevel + (game.gameTimeSeconds > 600.f ? 7 : 5));
         if (game.playerUpgradeLevel > game.aiUpgradeLevel) {
             allowed = std::max(allowed, game.playerUpgradeLevel + 1);
         }
-        if (game.gameTimeSeconds > 620.f) {
-            allowed = std::max(allowed, 10 + static_cast<int>((game.gameTimeSeconds - 620.f) / 46.f));
-        }
-        if (game.gameTimeSeconds > 840.f) {
-            allowed = config::MaxTechLevel;
+        if (game.gameTimeSeconds > 720.f) {
+            allowed = std::max(allowed, 12 + static_cast<int>((game.gameTimeSeconds - 720.f) / 60.f));
         }
         return std::clamp(allowed, 0, config::MaxTechLevel);
     }
@@ -156,11 +132,11 @@ namespace
     int desiredBarracks(const Game& game)
     {
         int desired = 1;
-        if (game.gameTimeSeconds > 80.f && game.aiEconomyLevel >= 1) desired = 2;
-        if (game.gameTimeSeconds > 210.f && game.aiUpgradeLevel >= 2) desired = 3;
-        if (game.gameTimeSeconds > 360.f && game.aiUpgradeLevel >= 5) desired = 4;
-        if (game.gameTimeSeconds > 560.f && game.aiUpgradeLevel >= 8) desired = 5;
-        if (game.gameTimeSeconds > 760.f) desired = 6;
+        if (game.gameTimeSeconds > 120.f && game.aiEconomyLevel >= 1) desired = 2;
+        if (game.gameTimeSeconds > 290.f && game.aiUpgradeLevel >= 2) desired = 3;
+        if (game.gameTimeSeconds > 470.f && game.aiUpgradeLevel >= 5) desired = 4;
+        if (game.gameTimeSeconds > 680.f && game.aiUpgradeLevel >= 8) desired = 5;
+        if (game.gameTimeSeconds > 850.f) desired = 6;
         if (game.enemys.size() + 4 < game.myunits.size()) {
             ++desired;
         }
@@ -207,30 +183,11 @@ namespace
         return candidates;
     }
 
-    float modelScore(const Game& game, const Candidate& candidate, const std::array<float, FeatureCount>& f,
+    float modelScore(const Game& game, const Candidate& candidate, const policy::FeatureVector& features,
                      const std::array<int, ActionCount>& recentActions)
     {
-        // Stable baked policy weights: the trainer can keep exploring, while
-        // live games use deterministic-enough scores with a few pacing guards.
-        static const std::array<std::array<float, FeatureCount>, ActionCount> weights = {{
-            {{ 0.10f,  0.70f,  1.45f, -1.35f, -0.28f,  0.08f, -0.10f,  0.18f, -0.12f,  0.18f, -0.65f,  0.16f}},
-            {{-0.05f,  0.92f,  1.18f,  0.10f, -1.18f,  0.12f, -0.05f,  0.10f,  0.03f,  0.10f, -0.30f,  0.20f}},
-            {{ 0.18f,  0.62f,  0.95f,  0.38f,  0.20f, -1.25f, -0.10f, -0.15f,  0.28f,  0.16f, -0.22f,  0.24f}},
-            {{-0.70f,  0.35f,  0.70f,  0.02f,  0.18f,  0.05f, -1.00f, -0.08f,  0.15f, -0.35f,  1.35f, -0.18f}},
-            {{ 0.20f, -0.35f,  0.62f, -0.10f, -0.08f,  0.50f,  0.00f, -0.70f,  0.70f, -0.08f,  0.32f, -0.10f}},
-            {{ 0.08f, -0.20f,  0.82f,  0.20f,  0.04f,  0.45f,  0.00f, -0.58f,  0.58f, -0.05f,  0.12f,  0.24f}},
-            {{-0.08f,  0.12f,  1.02f,  0.35f,  0.24f,  0.55f, -0.03f, -0.48f,  0.45f,  0.02f,  0.18f,  0.35f}},
-            {{-0.42f,  1.10f,  1.05f,  0.50f,  0.80f,  0.78f, -0.10f, -0.35f,  0.35f,  0.00f, -0.05f,  1.10f}},
-            {{-0.58f,  0.95f,  1.02f,  0.55f,  0.82f,  0.80f, -0.05f, -0.42f,  0.52f, -0.02f,  0.60f,  0.25f}},
-            {{-0.30f,  0.98f,  1.20f,  0.42f,  0.72f,  0.42f, -0.02f, -0.20f,  0.16f,  0.08f, -0.12f,  0.36f}},
-            {{-0.48f,  0.05f, -0.95f,  0.06f,  0.02f, -0.18f,  0.00f,  0.82f, -0.70f,  0.22f, -0.50f,  0.12f}}
-        }};
-
         const int index = policy::actionIndex(candidate.action);
-        float score = 0.f;
-        for (int i = 0; i < FeatureCount; ++i) {
-            score += weights[static_cast<std::size_t>(index)][static_cast<std::size_t>(i)] * f[static_cast<std::size_t>(i)];
-        }
+        float score = policy::scoreAction(policy::baselineWeights(), candidate.action, features);
 
         const int economyTarget = desiredEconomy(game);
         const int techTarget = desiredTech(game);
@@ -385,7 +342,7 @@ void AIController::update(Game& game, float dt)
     // The official AI now uses the same operation model that the self-play
     // trainer exercises: score legal actions, execute a short queue, then let
     // auto-pathing/combat resolve the consequences.
-    const int maxActions = std::clamp(1 + game.aiEconomyLevel / 5 + game.aiUpgradeLevel / 8, 1, 3);
+    const int maxActions = std::clamp(1 + game.aiEconomyLevel / 7 + game.aiUpgradeLevel / 10, 1, 2);
     bool macroUsed = false;
     for (int i = 0; i < maxActions; ++i) {
         auto candidates = legalCandidates(game, !macroUsed, decisionStep + i);
@@ -393,7 +350,7 @@ void AIController::update(Game& game, float dt)
             break;
         }
 
-        const auto features = featuresForAI(game);
+        const auto features = policy::extractFeatures(game, AI);
         std::normal_distribution<float> noise(0.f, 0.055f);
         Candidate best = candidates.front();
         float bestScore = -1e9f;

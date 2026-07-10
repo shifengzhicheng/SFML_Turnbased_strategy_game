@@ -13,7 +13,6 @@
 #include <vector>
 
 constexpr std::size_t PolicyActionCount = policy::ActionCountSize;
-constexpr std::size_t PolicyFeatureCount = 13;
 
 struct PolicyChoice
 {
@@ -23,36 +22,10 @@ struct PolicyChoice
 
 struct PolicyEvent
 {
-    std::array<float, PolicyFeatureCount> features{};
+    policy::FeatureVector features{};
     int action = 0;
     bool success = false;
 };
-
-std::array<float, PolicyFeatureCount> policyFeatures(const Game& game, int team)
-{
-    const int enemy = team == PLAYER ? AI : PLAYER;
-    const auto& ownUnits = team == PLAYER ? game.myunits : game.enemys;
-    const auto& enemyUnits = team == PLAYER ? game.enemys : game.myunits;
-    const DisMoveableUnit* ownBase = team == PLAYER ? game.Base_red.get() : game.Base_blue.get();
-    const DisMoveableUnit* enemyBase = team == PLAYER ? game.Base_blue.get() : game.Base_red.get();
-    const int ownBarracksCap = std::max(1, game.buildingCap(team, building::Barracks));
-    const int ownTowerCap = std::max(1, game.buildingCap(team, building::DefenseTower));
-    return {
-        1.f,
-        std::clamp(game.gameTimeSeconds / 900.f, 0.f, 1.5f),
-        static_cast<float>(std::min(game.commandForTeam(team), config::CommandFeatureScale)) / static_cast<float>(config::CommandFeatureScale),
-        static_cast<float>(game.economyLevelForTeam(team)) / static_cast<float>(config::MaxEconomyLevel),
-        static_cast<float>(team == PLAYER ? game.playerUpgradeLevel : game.aiUpgradeLevel) / static_cast<float>(config::MaxTechLevel),
-        static_cast<float>(game.completedBuildingCount(team, building::Barracks)) / static_cast<float>(ownBarracksCap),
-        static_cast<float>(game.totalBuildingCount(team, building::DefenseTower)) / static_cast<float>(ownTowerCap),
-        static_cast<float>(ownUnits.size()) / static_cast<float>(config::MaxUnits),
-        static_cast<float>(enemyUnits.size()) / static_cast<float>(config::MaxUnits),
-        static_cast<float>(ownBase ? ownBase->Health : 0) / 4000.f,
-        static_cast<float>(enemyBase ? enemyBase->Health : 0) / 4000.f,
-        static_cast<float>(game.unitsNearPoint(enemy, team == PLAYER ? game.Red_baseP : game.Blue_baseP, 13)) / 20.f,
-        static_cast<float>(game.unitsNearPoint(team, team == PLAYER ? game.Blue_baseP : game.Red_baseP, 13)) / 20.f
-    };
-}
 
 std::vector<PolicyChoice> legalPolicyChoices(const Game& game, int team, std::mt19937& rng)
 {
@@ -98,11 +71,12 @@ class TrainablePolicy
 public:
     explicit TrainablePolicy(unsigned int seed)
     {
+        weights = policy::baselineWeights();
         std::mt19937 rng(seed);
         std::uniform_real_distribution<float> dist(-0.04f, 0.04f);
         for (auto& row : weights) {
             for (float& value : row) {
-                value = dist(rng);
+                value += dist(rng);
             }
         }
     }
@@ -110,7 +84,7 @@ public:
     PolicyChoice choose(const Game& game, int team, std::mt19937& rng, float exploration)
     {
         const auto choices = legalPolicyChoices(game, team, rng);
-        const auto features = policyFeatures(game, team);
+        const auto features = policy::extractFeatures(game, team);
         std::uniform_real_distribution<float> unitDist(0.f, 1.f);
         std::size_t selected = 0;
         if (unitDist(rng) < exploration) {
@@ -121,10 +95,7 @@ public:
             float bestScore = -1e9f;
             for (std::size_t i = 0; i < choices.size(); ++i) {
                 const int action = choices[i].action;
-                float score = 0.f;
-                for (std::size_t f = 0; f < PolicyFeatureCount; ++f) {
-                    score += weights[static_cast<std::size_t>(action)][f] * features[f];
-                }
+                const float score = policy::scoreAction(weights, static_cast<policy::Action>(action), features);
                 if (score > bestScore) {
                     bestScore = score;
                     selected = i;
@@ -147,7 +118,7 @@ public:
         for (const auto& event : history) {
             const float signal = reward + (event.success ? 0.03f : -0.12f);
             auto& row = weights[static_cast<std::size_t>(event.action)];
-            for (std::size_t f = 0; f < PolicyFeatureCount; ++f) {
+            for (std::size_t f = 0; f < policy::FeatureCount; ++f) {
                 row[f] = std::clamp(row[f] + learningRate * signal * event.features[f], -2.5f, 2.5f);
             }
         }
@@ -169,8 +140,8 @@ public:
     }
 
 private:
-    std::array<std::array<float, PolicyFeatureCount>, PolicyActionCount> weights{};
-    std::array<float, PolicyFeatureCount> pendingFeatures{};
+    policy::WeightMatrix weights{};
+    policy::FeatureVector pendingFeatures{};
     std::array<int, PolicyActionCount> actionCounts{};
     std::vector<PolicyEvent> history;
 };
