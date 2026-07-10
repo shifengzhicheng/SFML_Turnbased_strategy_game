@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <limits>
 #include <utility>
+#include <vector>
 
 using namespace sf;
 using namespace std;
@@ -65,55 +66,87 @@ void Game::drawTutorialOverlay()
     closeHint.setPosition(790.f, 75.f);
     window.draw(closeHint);
 
-    const std::vector<std::string> lines = {
-        "Goal",
-        "  Build an economy, pick a lane, draft rogue tactics, then auto-push the enemy base.",
-        "",
-        "Core controls",
-        "  Click ECONOMY: improve accelerating CMD income and add one visible drone.",
-        "  Click Top / Mid / Bot, then click unit buttons to send new troops to that lane.",
-        "  Click the small + on a unit row, or Shift+1..5, to buy infinite CMD Mastery.",
-        "  Barracks and Tower buttons auto-place buildings near your base or lane defense.",
-        "  Click Upgrade: spend CMD to gain a LEVEL and choose one rogue tactic card.",
-        "",
-        "Automation",
-        "  CMD comes from natural income and kill bounties based on enemy unit cost.",
-        "  Drones are your economy/readability meter and auto-build nearby structures.",
-        "  Combat units auto-path down highlighted lanes, fight enemies, then raid buildings.",
-        "  Towers prioritize siege and splash nearby escorts; send units to break tower lines.",
-        "  Main bases have a timed shield; siege pushes are the clean finisher.",
-        "  If all Barracks fall, the base slowly drafts emergency troops.",
-        "  Lost structures refund CMD and trigger a short HQ shield so you can rebuild.",
-        "",
-        "Tactics and counters",
-        "  Every tech upgrade gives 3 mechanism tactic cards. Max tech is LEVEL 15.",
-        "  Press R on the tactic screen to refresh once if the 3 cards miss your build.",
-        "  Unit Mastery is numeric: each level adds +10% baseline damage and HP forever.",
-        "  Perks are build-changing: multi-shot, range caps, taunt, counter immunity.",
-        "  Shooter > Infantry, Infantry > Cavalry, Cavalry > Shooter/Siege.",
-        "  Cavalry rotates almost twice as fast as infantry; Siege crawls and needs escorts.",
-        "  Siege cracks buildings; Guardians are heavy tanks that resist siege splash.",
-        "",
-        "Unlocks",
-        "  Infantry: " + std::to_string(unitCost(UName::INFANTARY)) + " CMD, needs 1 Barracks.",
-        "  Shooter: " + std::to_string(unitCost(UName::SHOOTER)) + " CMD, needs 1 Barracks and Economy 1 or LEVEL 1.",
-        "  Cavalry: " + std::to_string(unitCost(UName::CAVALRY)) + " CMD, needs 2 Barracks and Economy 2 or LEVEL 3.",
-        "  Siege: " + std::to_string(unitCost(UName::SIEGE)) + " CMD, needs LEVEL 5, 2 Barracks, Economy 3; outranges units.",
-        "  Guardian: " + std::to_string(unitCost(UName::GUARDIAN)) + " CMD, needs LEVEL 7, 3 Barracks, Economy 4; anchors pushes.",
-        "",
-        "Hotkeys",
-        "  1-5: queue units.  Shift+1-5: buy Mastery.  H: guide.  C: restart."
+    const auto drawHelpCard = [this](sf::Vector2f pos, sf::Vector2f size, const std::string& title,
+                                     const std::vector<std::string>& bullets, sf::Color accent) {
+        sf::RectangleShape shadow(size);
+        shadow.setPosition(pos + sf::Vector2f(4.f, 5.f));
+        shadow.setFillColor(sf::Color(0, 0, 0, 66));
+        window.draw(shadow);
+
+        sf::RectangleShape card(size);
+        card.setPosition(pos);
+        card.setFillColor(sf::Color(29, 40, 36, 238));
+        card.setOutlineColor(sf::Color(accent.r, accent.g, accent.b, 176));
+        card.setOutlineThickness(1.6f);
+        window.draw(card);
+
+        sf::RectangleShape headerBar(sf::Vector2f(size.x - 12.f, 3.f));
+        headerBar.setPosition(pos + sf::Vector2f(6.f, 8.f));
+        headerBar.setFillColor(sf::Color(accent.r, accent.g, accent.b, 138));
+        window.draw(headerBar);
+
+        sf::CircleShape badge(13.f, 6);
+        badge.setOrigin(13.f, 13.f);
+        badge.setPosition(pos + sf::Vector2f(24.f, 31.f));
+        badge.setFillColor(accent);
+        badge.setOutlineColor(sf::Color(19, 24, 21));
+        badge.setOutlineThickness(1.2f);
+        window.draw(badge);
+
+        sf::Text titleText(title, myfont, 17);
+        titleText.setFillColor(sf::Color(255, 239, 190));
+        titleText.setPosition(pos + sf::Vector2f(48.f, 20.f));
+        window.draw(titleText);
+
+        float lineY = pos.y + 54.f;
+        for (const auto& bullet : bullets) {
+            sf::Text line(bullet, myfont, 11);
+            line.setFillColor(sf::Color(220, 231, 204));
+            line.setPosition(pos.x + 22.f, lineY);
+            window.draw(line);
+            lineY += 18.f;
+        }
     };
 
-    float y = 126.f;
-    for (const auto& line : lines) {
-        const bool section = !line.empty() && line.front() != ' ';
-        sf::Text text(line, myfont, section ? 16 : 12);
-        text.setFillColor(section ? sf::Color(255, 218, 112) : sf::Color(224, 232, 203));
-        text.setPosition(228.f, y);
-        window.draw(text);
-        y += line.empty() ? 7.f : (section ? 22.f : 17.f);
-    }
+    drawHelpCard({220.f, 132.f}, {360.f, 146.f}, "Quick Start", {
+        "ECONOMY grows CMD and visible drones.",
+        "Barracks and Towers auto-place near HQ.",
+        "Pick TOP / MID / BOT, then queue units.",
+        "UPGRADE tech to draft 3 rogue tactics."
+    }, sf::Color(255, 210, 91));
+
+    drawHelpCard({608.f, 132.f}, {360.f, 146.f}, "Auto Battle", {
+        "Units follow lane anchors and fight alone.",
+        "Kills refund CMD by enemy unit value.",
+        "Lost structures grant salvage and HQ shield.",
+        "Siege ends games, but needs escorts."
+    }, sf::Color(116, 184, 255));
+
+    drawHelpCard({220.f, 306.f}, {360.f, 146.f}, "Power Spikes", {
+        "Tech tactics change mechanics, not just stats.",
+        "Press R once to refresh bad tactic cards.",
+        "Mastery adds +10% baseline HP and damage.",
+        "Buff icons show on the selected base."
+    }, sf::Color(126, 206, 142));
+
+    drawHelpCard({608.f, 306.f}, {360.f, 146.f}, "Counters", {
+        "Shooter > Infantry, Infantry > Cavalry.",
+        "Cavalry dives Shooter and Siege lines.",
+        "Guardians tank late pushes.",
+        "Towers splash escorts and punish rushes."
+    }, sf::Color(255, 146, 92));
+
+    drawHelpCard({220.f, 480.f}, {360.f, 132.f}, "Unlocks", {
+        "Inf " + std::to_string(unitCost(UName::INFANTARY)) + " | Bow " + std::to_string(unitCost(UName::SHOOTER)) + " | Cav " + std::to_string(unitCost(UName::CAVALRY)) + " CMD.",
+        "Siege needs Lv5, 2 Barracks, Econ 3.",
+        "Guardian needs Lv7, 3 Barracks, Econ 4."
+    }, sf::Color(238, 188, 92));
+
+    drawHelpCard({608.f, 480.f}, {360.f, 132.f}, "Hotkeys", {
+        "1-5: queue units on selected lane.",
+        "Shift+1-5: buy unit Mastery.",
+        "H: guide | C: restart | Esc: close."
+    }, sf::Color(180, 205, 255));
 }
 
 void Game::drawRewardOverlay()

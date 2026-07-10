@@ -126,10 +126,10 @@ namespace art
         const bool hover = state == ButtonState::Hover;
         const float shift = pressed ? 2.f : 0.f;
         const sf::Color ink(8, 10, 9);
-        const sf::Color brass = hover ? sf::Color(255, 226, 120) : sf::Color(224, 170, 75);
-        const sf::Color brassDark = pressed ? sf::Color(118, 78, 37) : sf::Color(151, 101, 44);
-        const sf::Color face = pressed ? sf::Color(27, 33, 30) : (hover ? sf::Color(47, 61, 53) : sf::Color(34, 43, 39));
-        const sf::Color faceTop = hover ? sf::Color(70, 88, 72) : sf::Color(48, 59, 51);
+        const sf::Color brass = hover ? sf::Color(255, 226, 120) : sf::Color(225, 169, 72);
+        const sf::Color brassDark = pressed ? sf::Color(112, 72, 34) : sf::Color(145, 96, 43);
+        const sf::Color face = pressed ? sf::Color(25, 31, 28) : (hover ? sf::Color(48, 64, 55) : sf::Color(32, 42, 38));
+        const sf::Color faceTop = hover ? sf::Color(77, 97, 78) : sf::Color(49, 61, 52);
         const sf::Color textColor = hover ? sf::Color(255, 243, 187) : sf::Color(238, 231, 201);
 
         sf::RectangleShape shadow(sf::Vector2f(static_cast<float>(size.x) - 8.f, static_cast<float>(size.y) - 8.f));
@@ -171,6 +171,13 @@ namespace art
         topBand.setFillColor(faceTop);
         canvas.draw(topBand);
 
+        for (float y = 11.f; y < faceRect.getSize().y - 6.f; y += 6.f) {
+            sf::RectangleShape scan(sf::Vector2f(faceRect.getSize().x - 12.f, 1.f));
+            scan.setPosition(faceRect.getPosition() + sf::Vector2f(6.f, y));
+            scan.setFillColor(sf::Color(255, 246, 190, hover ? 18 : 11));
+            canvas.draw(scan);
+        }
+
         sf::RectangleShape lowerRail(sf::Vector2f(faceRect.getSize().x, 3.f));
         lowerRail.setPosition(faceRect.getPosition() + sf::Vector2f(0.f, faceRect.getSize().y - 3.f));
         lowerRail.setFillColor(brassDark);
@@ -186,12 +193,23 @@ namespace art
         innerVignette.setFillColor(sf::Color(0, 0, 0, pressed ? 70 : 38));
         canvas.draw(innerVignette);
 
+        const float boltXs[] = {8.f, static_cast<float>(size.x) - 13.f};
+        for (float boltX : boltXs) {
+            sf::RectangleShape bolt(sf::Vector2f(4.f, 4.f));
+            bolt.setPosition(boltX + shift, 8.f + shift);
+            bolt.setFillColor(sf::Color(255, 235, 143, hover ? 180 : 118));
+            canvas.draw(bolt);
+            bolt.setPosition(boltX + shift, static_cast<float>(size.y) - 13.f + shift);
+            bolt.setFillColor(sf::Color(98, 64, 32, 190));
+            canvas.draw(bolt);
+        }
+
         float textLeft = 13.f;
         float textRightPad = 12.f;
         if (icon != UnitKind::None) {
-            sf::RectangleShape iconWell(sf::Vector2f(38.f, 30.f));
+            sf::RectangleShape iconWell(sf::Vector2f(40.f, 30.f));
             iconWell.setPosition(8.f + shift, static_cast<float>(size.y) / 2.f - 15.f + shift);
-            iconWell.setFillColor(sf::Color(22, 28, 25));
+            iconWell.setFillColor(sf::Color(18, 25, 22));
             iconWell.setOutlineColor(brassDark);
             iconWell.setOutlineThickness(1.4f);
             canvas.draw(iconWell);
@@ -204,19 +222,27 @@ namespace art
             iconFloor.setPosition(iconWell.getPosition() + sf::Vector2f(6.f, 23.f));
             iconFloor.setFillColor(sf::Color(0, 0, 0, 62));
             canvas.draw(iconFloor);
-            drawUnitIcon(canvas, icon, team, iconWell.getPosition() + sf::Vector2f(19.f, 16.f), 0.52f);
-            textLeft = 52.f;
+            sf::RectangleShape teamTag(sf::Vector2f(4.f, 22.f));
+            teamTag.setPosition(iconWell.getPosition() + sf::Vector2f(4.f, 5.f));
+            teamTag.setFillColor(teamColor(team));
+            canvas.draw(teamTag);
+            drawUnitIcon(canvas, icon, team, iconWell.getPosition() + sf::Vector2f(21.f, 16.f), 0.54f);
+            textLeft = 55.f;
 
             const std::string cost = costForIcon(icon);
-            sf::RectangleShape costChip(sf::Vector2f(25.f, 19.f));
-            costChip.setPosition(static_cast<float>(size.x) - 31.f + shift, static_cast<float>(size.y) / 2.f - 9.5f + shift);
-            costChip.setFillColor(sf::Color(72, 48, 23));
+            sf::RectangleShape costChip(sf::Vector2f(27.f, 20.f));
+            costChip.setPosition(static_cast<float>(size.x) - 33.f + shift, static_cast<float>(size.y) / 2.f - 10.f + shift);
+            costChip.setFillColor(sf::Color(79, 51, 23));
             costChip.setOutlineColor(sf::Color(255, 219, 93));
             costChip.setOutlineThickness(1.3f);
             canvas.draw(costChip);
+            sf::RectangleShape costShine(sf::Vector2f(21.f, 2.f));
+            costShine.setPosition(costChip.getPosition() + sf::Vector2f(3.f, 3.f));
+            costShine.setFillColor(sf::Color(255, 247, 190, 64));
+            canvas.draw(costShine);
             drawTextCentered(canvas, font, cost, cost.size() > 2 ? 11 : 12, sf::Color(255, 233, 127),
                              sf::FloatRect(costChip.getPosition().x, costChip.getPosition().y - 1.f, costChip.getSize().x, costChip.getSize().y));
-            textRightPad = 34.f;
+            textRightPad = 37.f;
         }
 
         const unsigned int textSize = size.y >= 64 ? 25 : (icon == UnitKind::None ? 15 : 14);

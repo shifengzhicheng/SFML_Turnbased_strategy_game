@@ -10,11 +10,17 @@
 #include <cmath>
 #include <cstdlib>
 #include <limits>
+#include <string>
 #include <utility>
 
 using namespace sf;
 using namespace std;
 using namespace game_internal;
+
+namespace
+{
+    constexpr sf::Uint8 SubtlePanelAlpha = 34;
+}
 
 void Game::DrawSidePanel()
 {
@@ -36,20 +42,25 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
 
     target.draw(sidePanel);
 
-    sf::RectangleShape accentLine(sf::Vector2f(3.f, static_cast<float>(config::WindowHeight)));
+    sf::RectangleShape leftShade(sf::Vector2f(16.f, static_cast<float>(config::WindowHeight)));
+    leftShade.setPosition(static_cast<float>(config::PanelX), 0.f);
+    leftShade.setFillColor(sf::Color(0, 0, 0, 82));
+    target.draw(leftShade);
+
+    sf::RectangleShape accentLine(sf::Vector2f(4.f, static_cast<float>(config::WindowHeight)));
     accentLine.setPosition(static_cast<float>(config::PanelX), 0.f);
-    accentLine.setFillColor(sf::Color(226, 172, 81));
+    accentLine.setFillColor(sf::Color(231, 173, 74));
     target.draw(accentLine);
 
     sf::RectangleShape topGlow(sf::Vector2f(static_cast<float>(config::PanelWidth), 120.f));
     topGlow.setPosition(static_cast<float>(config::PanelX), 0.f);
-    topGlow.setFillColor(sf::Color(255, 222, 138, 10));
+    topGlow.setFillColor(sf::Color(255, 222, 138, 13));
     target.draw(topGlow);
 
-    for (int y = 0; y < config::WindowHeight; y += 18) {
-        sf::RectangleShape dash(sf::Vector2f(static_cast<float>(config::PanelWidth - 34), 1.f));
-        dash.setPosition(static_cast<float>(config::PanelX + 18), static_cast<float>(y + 7));
-        dash.setFillColor(sf::Color(255, 245, 190, y % 36 == 0 ? 13 : 7));
+    for (int y = 0; y < config::WindowHeight; y += 20) {
+        sf::RectangleShape dash(sf::Vector2f(static_cast<float>(config::PanelWidth - 42), 1.f));
+        dash.setPosition(static_cast<float>(config::PanelX + 22), static_cast<float>(y + 9));
+        dash.setFillColor(sf::Color(255, 245, 190, y % 40 == 0 ? 12 : 5));
         target.draw(dash);
     }
 
@@ -65,8 +76,13 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         card.setPosition(panelLeft, y);
         card.setFillColor(fill);
         card.setOutlineColor(outline);
-        card.setOutlineThickness(1.2f);
+        card.setOutlineThickness(1.4f);
         target.draw(card);
+
+        sf::RectangleShape topBand(sf::Vector2f(cardWidth - 4.f, 18.f));
+        topBand.setPosition(panelLeft + 2.f, y + 2.f);
+        topBand.setFillColor(sf::Color(outline.r, outline.g, outline.b, title.empty() ? 18 : SubtlePanelAlpha));
+        target.draw(topBand);
 
         sf::RectangleShape inner(sf::Vector2f(cardWidth - 10.f, h - 10.f));
         inner.setPosition(panelLeft + 5.f, y + 5.f);
@@ -94,18 +110,23 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
             titleBar.setFillColor(sf::Color(outline.r, outline.g, outline.b, 120));
             target.draw(titleBar);
 
+            sf::RectangleShape titleDot(sf::Vector2f(4.f, 8.f));
+            titleDot.setPosition(panelLeft + 9.f, y + 7.f);
+            titleDot.setFillColor(sf::Color(255, 218, 112, 190));
+            target.draw(titleDot);
+
             sf::Text titleText(title, myfont, 10);
             titleText.setFillColor(sf::Color(255, 232, 156));
             titleText.setLetterSpacing(1.18f);
-            titleText.setPosition(panelLeft + 10.f, y + 5.f);
+            titleText.setPosition(panelLeft + 18.f, y + 5.f);
             target.draw(titleText);
         }
     };
 
-    drawPanelCard(sidebar_layout::HeaderCardY, sidebar_layout::HeaderCardH, sf::Color(42, 51, 45), sf::Color(104, 120, 89), "COMMAND");
-    drawPanelCard(sidebar_layout::StatusCardY, sidebar_layout::StatusCardH, sf::Color(33, 42, 38), sf::Color(80, 96, 73), "STATUS");
-    drawPanelCard(sidebar_layout::ActionCardY, sidebar_layout::ActionCardH, sf::Color(55, 44, 29), sf::Color(211, 158, 69), "");
-    drawPanelCard(sidebar_layout::ProduceCardY, sidebar_layout::ProduceCardH, sf::Color(35, 42, 38), sf::Color(82, 95, 70), "PRODUCE / MASTERY");
+    drawPanelCard(sidebar_layout::HeaderCardY, sidebar_layout::HeaderCardH, sf::Color(38, 50, 44), sf::Color(108, 128, 91), "COMMAND");
+    drawPanelCard(sidebar_layout::StatusCardY, sidebar_layout::StatusCardH, sf::Color(29, 39, 35), sf::Color(83, 102, 76), "STATUS");
+    drawPanelCard(sidebar_layout::ActionCardY, sidebar_layout::ActionCardH, sf::Color(58, 45, 28), sf::Color(225, 168, 69), "");
+    drawPanelCard(sidebar_layout::ProduceCardY, sidebar_layout::ProduceCardH, sf::Color(31, 41, 37), sf::Color(87, 105, 75), "PRODUCE / MASTERY");
     drawPanelCard(sidebar_layout::HelpCardY, sidebar_layout::HelpCardH, sf::Color(32, 39, 36), sf::Color(80, 96, 73), "");
 
     const auto guideText = [this]() {
@@ -137,6 +158,18 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
     panelTitle.setOutlineThickness(0.8f);
     panelTitle.setLetterSpacing(1.18f);
     panelTitle.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 27.f);
+
+    sf::RectangleShape liveBadge(sf::Vector2f(70.f, 16.f));
+    liveBadge.setPosition(static_cast<float>(config::PanelX + config::PanelWidth - 88), 30.f);
+    liveBadge.setFillColor(sf::Color(27, 35, 31, 235));
+    liveBadge.setOutlineColor(sf::Color(225, 169, 74, 155));
+    liveBadge.setOutlineThickness(1.f);
+    target.draw(liveBadge);
+    sf::Text liveText(std::string("LIVE ") + laneName(playerSelectedLane), myfont, 8);
+    liveText.setFillColor(sf::Color(255, 226, 142));
+    liveText.setPosition(liveBadge.getPosition() + sf::Vector2f(7.f, 3.f));
+    target.draw(liveText);
+
     Globle_text.setCharacterSize(10);
     Globle_text.setFillColor(sf::Color(221, 211, 177));
     Globle_text.setOutlineColor(sf::Color(12, 15, 13, 190));
@@ -186,12 +219,12 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
 
         sf::RectangleShape chip(sf::Vector2f(w, 17.f));
         chip.setPosition(x, y);
-        chip.setFillColor(strong ? sf::Color(54, 44, 27, 235) : sf::Color(28, 36, 32, 232));
+        chip.setFillColor(strong ? sf::Color(62, 48, 27, 238) : sf::Color(24, 33, 30, 234));
         chip.setOutlineColor(strong ? sf::Color(242, 184, 82, 190) : sf::Color(91, 105, 79, 160));
         chip.setOutlineThickness(1.f);
         target.draw(chip);
 
-        sf::RectangleShape rail(sf::Vector2f(3.f, 13.f));
+        sf::RectangleShape rail(sf::Vector2f(4.f, 13.f));
         rail.setPosition(x + 3.f, y + 2.f);
         rail.setFillColor(accent);
         target.draw(rail);
@@ -220,7 +253,7 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
     drawStatChip(statusX + 74.f, 148.f, 68.f, "TWR", std::to_string(totalBuildingCount(PLAYER, building::DefenseTower)) + "/" + std::to_string(buildingCap(PLAYER, building::DefenseTower)), sf::Color(239, 202, 107));
     drawStatChip(statusX + 148.f, 148.f, 72.f, "ARMY", std::to_string(myunits.size()) + "/" + std::to_string(config::MaxUnits), sf::Color(222, 86, 68));
 
-    sf::RectangleShape buffStrip(sf::Vector2f(220.f, 11.f));
+    sf::RectangleShape buffStrip(sf::Vector2f(220.f, 12.f));
     buffStrip.setPosition(statusX, 167.f);
     buffStrip.setFillColor(sf::Color(17, 24, 21, 180));
     buffStrip.setOutlineColor(inspectingEnemyBase ? sf::Color(80, 140, 206, 120) : sf::Color(212, 152, 60, 120));
@@ -232,7 +265,7 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
     perkText.setFillColor(inspectingEnemyBase ? sf::Color(149, 203, 255) : sf::Color(255, 226, 142));
     perkText.setOutlineColor(sf::Color(11, 14, 12, 200));
     perkText.setOutlineThickness(0.6f);
-    perkText.setPosition(statusX + 5.f, 166.f);
+    perkText.setPosition(statusX + 5.f, 166.5f);
     target.draw(perkText);
 
     int playerLaneCounts[lane::Count] = {};
@@ -251,8 +284,8 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         const sf::FloatRect laneRect = sidebar_layout::laneButtonRect(i);
         sf::RectangleShape laneButton(sf::Vector2f(laneRect.width, laneRect.height));
         laneButton.setPosition(laneRect.left, laneRect.top);
-        laneButton.setFillColor(playerSelectedLane == i ? sf::Color(222, 169, 77) : sf::Color(39, 50, 45));
-        laneButton.setOutlineColor(playerSelectedLane == i ? sf::Color(255, 239, 158) : sf::Color(92, 109, 82));
+        laneButton.setFillColor(playerSelectedLane == i ? sf::Color(211, 154, 62) : sf::Color(33, 45, 40));
+        laneButton.setOutlineColor(playerSelectedLane == i ? sf::Color(255, 239, 158) : sf::Color(88, 108, 80));
         laneButton.setOutlineThickness(playerSelectedLane == i ? 1.8f : 1.f);
         target.draw(laneButton);
 
@@ -261,15 +294,40 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         laneTop.setFillColor(playerSelectedLane == i ? sf::Color(255, 239, 166, 135) : sf::Color(255, 255, 255, 22));
         target.draw(laneTop);
 
+        const int laneTotal = std::max(1, playerLaneCounts[i] + aiLaneCounts[i]);
+        const float meterWidth = laneRect.width - 12.f;
+        const float playerWidth = meterWidth * static_cast<float>(playerLaneCounts[i]) / static_cast<float>(laneTotal);
+        sf::RectangleShape laneMeterBack(sf::Vector2f(meterWidth, 4.f));
+        laneMeterBack.setPosition(laneRect.left + 6.f, laneRect.top + laneRect.height - 7.f);
+        laneMeterBack.setFillColor(sf::Color(11, 16, 14, 155));
+        target.draw(laneMeterBack);
+        sf::RectangleShape lanePlayer(sf::Vector2f(std::max(2.f, playerWidth), 4.f));
+        lanePlayer.setPosition(laneMeterBack.getPosition());
+        lanePlayer.setFillColor(sf::Color(218, 76, 60, playerLaneCounts[i] > 0 ? 210 : 70));
+        target.draw(lanePlayer);
+        sf::RectangleShape laneEnemy(sf::Vector2f(std::max(2.f, meterWidth - playerWidth), 4.f));
+        laneEnemy.setPosition(laneMeterBack.getPosition() + sf::Vector2f(meterWidth - laneEnemy.getSize().x, 0.f));
+        laneEnemy.setFillColor(sf::Color(83, 147, 226, aiLaneCounts[i] > 0 ? 210 : 70));
+        target.draw(laneEnemy);
+
+        if (playerSelectedLane == i) {
+            sf::ConvexShape marker(3);
+            marker.setPoint(0, sf::Vector2f(laneRect.left + laneRect.width - 10.f, laneRect.top + 9.f));
+            marker.setPoint(1, sf::Vector2f(laneRect.left + laneRect.width - 4.f, laneRect.top + 15.f));
+            marker.setPoint(2, sf::Vector2f(laneRect.left + laneRect.width - 10.f, laneRect.top + 21.f));
+            marker.setFillColor(sf::Color(46, 33, 18));
+            target.draw(marker);
+        }
+
         sf::Text laneText(laneName(i), myfont, 10);
         laneText.setFillColor(playerSelectedLane == i ? sf::Color(41, 31, 20) : sf::Color(224, 232, 203));
         laneText.setLetterSpacing(1.12f);
         laneText.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 7.f));
         target.draw(laneText);
 
-        sf::Text laneCount(std::to_string(playerLaneCounts[i]) + "/" + std::to_string(aiLaneCounts[i]), myfont, 8);
+        sf::Text laneCount("P" + std::to_string(playerLaneCounts[i]) + " E" + std::to_string(aiLaneCounts[i]), myfont, 8);
         laneCount.setFillColor(playerSelectedLane == i ? sf::Color(64, 45, 23) : sf::Color(205, 214, 188));
-        laneCount.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 22.f));
+        laneCount.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 21.f));
         target.draw(laneCount);
     }
 
@@ -277,13 +335,11 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         && playerUpgradeLevel < config::MaxTechLevel
         ? sf::Color::White
         : sf::Color(255, 255, 255, 130));
-    target.draw(upgradeBtn);
 
     economyBtn.setColor(commandForTeam(PLAYER) >= economyUpgradeCost(PLAYER)
         && playerEconomyLevel < config::MaxEconomyLevel
         ? sf::Color::White
         : sf::Color(255, 255, 255, 130));
-    target.draw(economyBtn);
 
     economyLabel.setCharacterSize(9);
     economyLabel.setFillColor(sf::Color(244, 221, 150));
@@ -303,14 +359,12 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         ? ("Cost " + std::to_string(economyUpgradeCost(PLAYER))
             + " | +" + std::to_string(nextEconomyGain) + "/tick +drone")
         : ("Max | " + std::to_string(resourceIncome(PLAYER)) + "/tick"));
-    target.draw(economyLabel);
 
     sf::Text upgradeCost("Cost " + std::to_string(upgradeCostForNextLevel(PLAYER)) + " | 3 mechanic cards", myfont, 9);
     upgradeCost.setFillColor(sf::Color(244, 221, 150));
     upgradeCost.setOutlineColor(sf::Color(18, 15, 10, 190));
     upgradeCost.setOutlineThickness(0.7f);
     upgradeCost.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), config::EndTurnButtonY + config::SideButtonHeight - 2.f);
-    target.draw(upgradeCost);
 
     const bool canBuildBarracks = commandForTeam(PLAYER) >= buildingCommandCost(building::Barracks)
         && totalBuildingCount(PLAYER, building::Barracks) < buildingCap(PLAYER, building::Barracks);
@@ -354,7 +408,32 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower)) + "/"
         + std::to_string(buildingCap(PLAYER, building::DefenseTower)) + " | anti-rush", config::BuildTowerY);
 
+    const auto drawButtonBackplate = [&target](int buttonY, bool available) {
+        const float h = static_cast<float>(config::SideButtonHeight);
+        sf::RectangleShape plate(sf::Vector2f(static_cast<float>(config::SideButtonWidth) + 8.f, h));
+        plate.setPosition(static_cast<float>(config::ButtonX - 4), static_cast<float>(buttonY));
+        plate.setFillColor(available ? sf::Color(70, 53, 31, 70) : sf::Color(10, 14, 12, 56));
+        plate.setOutlineColor(available ? sf::Color(233, 179, 80, 70) : sf::Color(88, 100, 82, 45));
+        plate.setOutlineThickness(1.f);
+        target.draw(plate);
+    };
+    drawButtonBackplate(config::EconomyButtonY, commandForTeam(PLAYER) >= economyUpgradeCost(PLAYER)
+        && playerEconomyLevel < config::MaxEconomyLevel);
+    drawButtonBackplate(config::EndTurnButtonY, commandForTeam(PLAYER) >= upgradeCostForNextLevel(PLAYER)
+        && playerUpgradeLevel < config::MaxTechLevel);
+    drawButtonBackplate(config::BuildBarracksY, canBuildBarracks);
+    drawButtonBackplate(config::BuildInfantryY, canQueueUnit(PLAYER, UName::INFANTARY));
+    drawButtonBackplate(config::BuildShooterY, canQueueUnit(PLAYER, UName::SHOOTER));
+    drawButtonBackplate(config::BuildCavalryY, canQueueUnit(PLAYER, UName::CAVALRY));
+    drawButtonBackplate(config::BuildSiegeY, canQueueUnit(PLAYER, UName::SIEGE));
+    drawButtonBackplate(config::BuildGuardianY, canQueueUnit(PLAYER, UName::GUARDIAN));
+    drawButtonBackplate(config::BuildTowerY, canQueueTower);
+
     target.draw(helpBtn);
+    target.draw(economyBtn);
+    target.draw(upgradeBtn);
+    target.draw(economyLabel);
+    target.draw(upgradeCost);
     target.draw(barracksBtn);
     target.draw(inf);
     target.draw(sho);
@@ -389,6 +468,13 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         shine.setPosition(rect.left + 5.f, rect.top + 5.f);
         shine.setFillColor(enabled ? sf::Color(255, 250, 200, 86) : sf::Color(255, 255, 255, 22));
         target.draw(shine);
+
+        if (enabled) {
+            sf::RectangleShape leftPulse(sf::Vector2f(3.f, rect.height - 10.f));
+            leftPulse.setPosition(rect.left + 5.f, rect.top + 5.f);
+            leftPulse.setFillColor(sf::Color(255, 239, 147, 140));
+            target.draw(leftPulse);
+        }
 
         sf::Text upText(locked ? "LOCK" : ("M" + std::to_string(level)), myfont, locked ? 9 : 11);
         upText.setFillColor(enabled ? sf::Color(45, 29, 12) : sf::Color(212, 199, 158));

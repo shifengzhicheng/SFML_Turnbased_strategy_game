@@ -57,6 +57,11 @@ void Game::Draw()
         hero.setOutlineThickness(2.2f);
         window.draw(hero);
 
+        sf::RectangleShape heroTop(sf::Vector2f(696.f, 4.f));
+        heroTop.setPosition(312.f, 124.f);
+        heroTop.setFillColor(sf::Color(255, 226, 142, 128));
+        window.draw(heroTop);
+
         sf::VertexArray heroGrid(sf::Lines);
         for (int x = 324; x <= 996; x += 48) {
             heroGrid.append(sf::Vertex(sf::Vector2f(static_cast<float>(x), 250.f), sf::Color(164, 184, 132, 34)));
@@ -76,7 +81,47 @@ void Game::Draw()
             laneMark.setRotation(i == 0 ? -7.f : (i == 2 ? 7.f : 0.f));
             laneMark.setFillColor(i == 1 ? laneGold : sf::Color(122, 184, 111, 70));
             window.draw(laneMark);
+
+            for (int step = 0; step < 6; ++step) {
+                sf::RectangleShape pip(sf::Vector2f(9.f, 9.f));
+                pip.setOrigin(4.5f, 4.5f);
+                pip.setRotation(45.f);
+                pip.setPosition(430.f + static_cast<float>(step) * 92.f,
+                                308.f + static_cast<float>(i) * 45.f
+                                    + (i == 0 ? -static_cast<float>(step) * 2.2f
+                                              : (i == 2 ? static_cast<float>(step) * 2.2f : 0.f)));
+                pip.setFillColor(i == 1 ? sf::Color(255, 231, 137, 130) : sf::Color(144, 207, 130, 82));
+                window.draw(pip);
+            }
         }
+
+        const auto drawBaseMark = [this](sf::Vector2f pos, sf::Color color, bool rightFacing) {
+            sf::RectangleShape base(sf::Vector2f(52.f, 42.f));
+            base.setOrigin(26.f, 21.f);
+            base.setPosition(pos);
+            base.setFillColor(sf::Color(color.r, color.g, color.b, 158));
+            base.setOutlineColor(sf::Color(255, 239, 180, 148));
+            base.setOutlineThickness(1.4f);
+            window.draw(base);
+
+            sf::RectangleShape roof(sf::Vector2f(40.f, 12.f));
+            roof.setOrigin(20.f, 6.f);
+            roof.setPosition(pos + sf::Vector2f(0.f, -18.f));
+            roof.setFillColor(sf::Color(22, 28, 25, 230));
+            roof.setOutlineColor(sf::Color(color.r, color.g, color.b, 230));
+            roof.setOutlineThickness(1.2f);
+            window.draw(roof);
+
+            sf::ConvexShape flag(3);
+            const float dir = rightFacing ? 1.f : -1.f;
+            flag.setPoint(0, pos + sf::Vector2f(dir * 19.f, -34.f));
+            flag.setPoint(1, pos + sf::Vector2f(dir * 19.f, -17.f));
+            flag.setPoint(2, pos + sf::Vector2f(dir * 38.f, -26.f));
+            flag.setFillColor(color);
+            window.draw(flag);
+        };
+        drawBaseMark({370.f, 386.f}, sf::Color(218, 76, 60), true);
+        drawBaseMark({950.f, 386.f}, sf::Color(68, 132, 218), false);
 
         sf::Text title("COMMAND LINES", myfont, 48);
         title.setFillColor(sf::Color(255, 236, 176));
@@ -92,6 +137,7 @@ void Game::Draw()
         window.draw(subtitle);
 
         const char* cards[] = {"1. Grow CMD", "2. Pick a lane", "3. Draft tactics"};
+        const char* details[] = {"income + drones", "TOP / MID / BOT", "big power spikes"};
         for (int i = 0; i < 3; ++i) {
             sf::RectangleShape card(sf::Vector2f(188.f, 76.f));
             card.setPosition(368.f + static_cast<float>(i) * 204.f, 274.f);
@@ -110,6 +156,11 @@ void Game::Draw()
             cardText.setFillColor(sf::Color(236, 232, 202));
             cardText.setPosition(card.getPosition() + sf::Vector2f(46.f, 15.f));
             window.draw(cardText);
+
+            sf::Text detail(details[i], myfont, 11);
+            detail.setFillColor(sf::Color(190, 207, 174));
+            detail.setPosition(card.getPosition() + sf::Vector2f(46.f, 42.f));
+            window.draw(detail);
         }
 
         startBtn.setPosition(470.f, 410.f);
@@ -121,6 +172,11 @@ void Game::Draw()
         hint.setFillColor(sf::Color(229, 214, 160));
         hint.setPosition(430.f, 516.f);
         window.draw(hint);
+
+        sf::Text noMicro("No micro-control: you build the engine, armies execute the fight.", myfont, 12);
+        noMicro.setFillColor(sf::Color(178, 207, 180));
+        noMicro.setPosition(466.f, 542.f);
+        window.draw(noMicro);
 
         if (tutorialVisible) {
             drawTutorialOverlay();
@@ -320,6 +376,11 @@ void Game::Draw()
         panel.setOutlineThickness(2.4f);
         window.draw(panel);
 
+        sf::RectangleShape panelTop(sf::Vector2f(596.f, 4.f));
+        panelTop.setPosition(372.f, 154.f);
+        panelTop.setFillColor(gameWin ? sf::Color(255, 230, 142, 132) : sf::Color(255, 152, 116, 122));
+        window.draw(panelTop);
+
         sf::Text result(gameWin ? "VICTORY" : "DEFEAT", myfont, 50);
         result.setFillColor(gameWin ? sf::Color(255, 236, 168) : sf::Color(255, 184, 142));
         result.setOutlineColor(sf::Color(22, 18, 14, 230));
@@ -338,11 +399,27 @@ void Game::Draw()
         summary.setPosition(670.f, 255.f);
         window.draw(summary);
 
-        sf::Text stats("Time " + std::to_string(static_cast<int>(gameTimeSeconds)) + "s   Your Lv " + std::to_string(playerUpgradeLevel)
-            + " / AI Lv " + std::to_string(aiUpgradeLevel), myfont, 15);
-        stats.setFillColor(sf::Color(212, 204, 166));
-        stats.setPosition(506.f, 306.f);
-        window.draw(stats);
+        const auto drawResultChip = [this](sf::Vector2f pos, const std::string& label, const std::string& value, sf::Color accent) {
+            sf::RectangleShape chip(sf::Vector2f(160.f, 52.f));
+            chip.setPosition(pos);
+            chip.setFillColor(sf::Color(27, 36, 32, 235));
+            chip.setOutlineColor(sf::Color(accent.r, accent.g, accent.b, 170));
+            chip.setOutlineThickness(1.3f);
+            window.draw(chip);
+
+            sf::Text labelText(label, myfont, 10);
+            labelText.setFillColor(sf::Color(183, 196, 166));
+            labelText.setPosition(pos + sf::Vector2f(12.f, 8.f));
+            window.draw(labelText);
+
+            sf::Text valueText(value, myfont, 18);
+            valueText.setFillColor(sf::Color(255, 236, 168));
+            valueText.setPosition(pos + sf::Vector2f(12.f, 24.f));
+            window.draw(valueText);
+        };
+        drawResultChip({410.f, 304.f}, "TIME", std::to_string(static_cast<int>(gameTimeSeconds)) + "s", sf::Color(239, 196, 102));
+        drawResultChip({590.f, 304.f}, "YOUR TECH", "Lv " + std::to_string(playerUpgradeLevel), sf::Color(126, 206, 142));
+        drawResultChip({770.f, 304.f}, "AI TECH", "Lv " + std::to_string(aiUpgradeLevel), sf::Color(116, 184, 255));
 
         endGame.setPosition(550.f, 372.f);
         window.draw(endGame);
