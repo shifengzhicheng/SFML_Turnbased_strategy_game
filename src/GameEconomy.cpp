@@ -39,7 +39,13 @@ int Game::upgradeCostForNextLevel(int team) const
         215, 260, 310, 370, 440,
         520, 610, 710, 820, 950
     };
-    return costs[level];
+    float overtimeMultiplier = 1.f;
+    if (gameTimeSeconds > config::TechOvertimeDiscountStart) {
+        const float overtimeMinutes = (gameTimeSeconds - config::TechOvertimeDiscountStart) / 60.f;
+        overtimeMultiplier = std::max(config::TechOvertimeDiscountFloor,
+            1.f - overtimeMinutes * config::TechOvertimeDiscountPerMinute);
+    }
+    return std::max(1, static_cast<int>(std::round(static_cast<float>(costs[level]) * overtimeMultiplier)));
 }
 
 int Game::resourceIncome(int team) const
@@ -157,6 +163,34 @@ void Game::awardKillBounty(int receiverTeam, int defeatedUnitName, Point point)
                     receiverTeam == PLAYER ? sf::Color(255, 226, 112) : sf::Color(145, 196, 255), 12);
     logEvent(std::string(receiverTeam == PLAYER ? "player" : "ai")
         + " bounty +" + std::to_string(bounty) + " unit=" + std::to_string(defeatedUnitName));
+}
+
+void Game::applyCommandZonePressure(int attackingTeam)
+{
+    if (gameTimeSeconds < config::EscalationStartSeconds) {
+        return;
+    }
+
+    DisMoveableUnit* targetBase = attackingTeam == PLAYER ? Base_blue.get() : Base_red.get();
+    const Point targetPoint = attackingTeam == PLAYER ? Blue_baseP : Red_baseP;
+    if (targetBase == nullptr || targetBase->Health <= 0) {
+        return;
+    }
+
+    const int pressure = unitsNearPoint(attackingTeam, targetPoint, config::CommandZonePressureRadius);
+    if (pressure <= 0) {
+        return;
+    }
+
+    int damage = std::min(config::CommandZoneDamageCap,
+        static_cast<int>(std::round(static_cast<float>(pressure * config::CommandZoneDamagePerUnit)
+            * structureDamageEscalation())));
+    const int defendingTeam = attackingTeam == PLAYER ? AI : PLAYER;
+    if (baseShieldSecondsForTeam(defendingTeam) > 0.f) {
+        damage = std::max(1, static_cast<int>(std::round(
+            static_cast<float>(damage) * config::EmergencyShieldDamageMultiplier)));
+    }
+    targetBase->Health -= std::max(1, damage);
 }
 
 void Game::addTurnIncome(int team)

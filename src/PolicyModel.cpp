@@ -119,8 +119,8 @@ namespace policy
             static_cast<float>(game.totalBuildingCount(team, building::DefenseTower)) / static_cast<float>(ownTowerCap),
             static_cast<float>(ownUnits.size()) / static_cast<float>(config::MaxUnits),
             static_cast<float>(enemyUnits.size()) / static_cast<float>(config::MaxUnits),
-            static_cast<float>(ownBase ? ownBase->Health : 0) / 4000.f,
-            static_cast<float>(enemyBase ? enemyBase->Health : 0) / 4000.f,
+            static_cast<float>(ownBase ? ownBase->Health : 0) / static_cast<float>(config::BaseHealth),
+            static_cast<float>(enemyBase ? enemyBase->Health : 0) / static_cast<float>(config::BaseHealth),
             static_cast<float>(game.unitsNearPoint(enemy, ownBasePoint, 13)) / 20.f,
             static_cast<float>(game.unitsNearPoint(team, enemyBasePoint, 13)) / 20.f
         }};

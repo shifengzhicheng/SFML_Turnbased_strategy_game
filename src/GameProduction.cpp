@@ -106,6 +106,11 @@ void Game::cleanupDestroyedBuildings()
         }
 
         const Building destroyed = *it;
+        auto& rebuildTimes = destroyed.team == PLAYER ? playerLaneRebuildReady : aiLaneRebuildReady;
+        const int destroyedLane = std::clamp(destroyed.laneIndex, 0, lane::Count - 1);
+        rebuildTimes[static_cast<std::size_t>(destroyedLane)] = std::max(
+            rebuildTimes[static_cast<std::size_t>(destroyedLane)],
+            gameTimeSeconds + config::LaneRebuildLockSeconds);
         resetWorkersForBuilding(destroyed.id);
         setTileID(destroyed.point.x, destroyed.point.y, tile::Empty);
         addFloatingText(sf::Vector2f(destroyed.point.x * SqureSize, destroyed.point.y * SqureSize - 8.f),
@@ -140,16 +145,22 @@ void Game::applyStructureLossRelief(const Building& destroyed)
     commandPool(*this, team) = std::min(config::MaxCommand, commandPool(*this, team) + salvage);
 
     DisMoveableUnit* base = team == PLAYER ? Base_red.get() : Base_blue.get();
+    int& reliefCharges = team == PLAYER ? playerReliefCharges : aiReliefCharges;
     const int repair = destroyed.type == building::Barracks
         ? config::EmergencyBarracksRepair
         : config::EmergencyTowerRepair;
     int appliedRepair = 0;
-    if (base != nullptr && base->Health > 0) {
+    const bool reliefNeeded = base != nullptr && base->Health > 0
+        && (base->Health < config::BaseHealth || losingLastBarracks);
+    bool reliefTriggered = false;
+    if (reliefNeeded && reliefCharges > 0) {
         const int before = base->Health;
-        base->Health = std::min(4000, base->Health + repair);
+        base->Health = std::min(config::BaseHealth, base->Health + repair);
         appliedRepair = base->Health - before;
         float& shieldTimer = team == PLAYER ? playerBaseShieldTimer : aiBaseShieldTimer;
         shieldTimer = std::max(shieldTimer, config::EmergencyShieldSeconds);
+        --reliefCharges;
+        reliefTriggered = true;
         base->playFlash(team == PLAYER ? sf::Color(255, 232, 132, 255) : sf::Color(142, 196, 255, 255), 0.35f);
     }
 
@@ -157,9 +168,9 @@ void Game::applyStructureLossRelief(const Building& destroyed)
         const sf::Vector2f textPos(destroyed.point.x * SqureSize, destroyed.point.y * SqureSize - 26.f);
         addFloatingText(textPos, "Rebuild +" + std::to_string(salvage) + " CMD",
                         sf::Color(255, 232, 132), 12);
-        if (appliedRepair > 0) {
+        if (reliefTriggered) {
             addFloatingText(sf::Vector2f(Red_baseP.x * SqureSize, Red_baseP.y * SqureSize - 36.f),
-                            "HQ Shield +" + std::to_string(appliedRepair),
+                            appliedRepair > 0 ? "HQ Repair +" + std::to_string(appliedRepair) : "HQ Shield",
                             sf::Color(255, 244, 178), 13);
         }
     }
@@ -168,6 +179,7 @@ void Game::applyStructureLossRelief(const Building& destroyed)
         + " comeback salvage=+" + std::to_string(salvage)
         + " repair=+" + std::to_string(appliedRepair)
         + " shield=" + std::to_string(static_cast<int>(std::ceil(baseShieldSecondsForTeam(team))))
+        + " charges=" + std::to_string(reliefCharges)
         + " after " + buildingName(destroyed.type) + " loss");
 }
 
@@ -204,6 +216,8 @@ bool Game::createUnit(int team, int name, int x, int y, int laneIndex)
 
     unit->entityId = nextEntityId++;
     unit->laneIndex = std::clamp(laneIndex, 0, lane::Count - 1);
+    unit->deploymentReadyTime = (std::floor(gameTimeSeconds / config::ArmyWaveIntervalSeconds) + 1.f)
+        * config::ArmyWaveIntervalSeconds;
     unit->scaleMaxHealth(unitHealthMultiplier(team, name));
     if (team == PLAYER) {
         myunits.push_back(std::move(unit));

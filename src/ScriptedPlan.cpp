@@ -252,7 +252,7 @@ private:
         int budget = game.commandForTeam(PLAYER);
         const int pressure = game.unitsNearPoint(AI, game.Red_baseP, 13);
         const bool armyBehind = game.myunits.size() + 4 < game.enemys.size();
-        const bool baseHurt = game.Base_red && game.Base_red->Health < 2450;
+        const bool baseHurt = game.Base_red && game.Base_red->Health < config::BaseHealth * 3 / 5;
         const bool needsFirstBarracks = game.totalBuildingCount(PLAYER, building::Barracks) < 1;
 
         if (needsFirstBarracks) {
@@ -366,7 +366,10 @@ private:
         const auto priorities = unitPriorityForPlan(game, plan);
         for (int i = 0; i < orders; ++i) {
             bool queuedUnit = false;
-            for (int unit : priorities) {
+            for (std::size_t attempt = 0; attempt < priorities.size(); ++attempt) {
+                const std::size_t index = (static_cast<std::size_t>(successfulUnitOps + i) + attempt)
+                    % priorities.size();
+                const int unit = priorities[index];
                 const int cost = game.unitCost(unit);
                 if (cost <= 0 || !game.isUnitUnlocked(PLAYER, unit)) {
                     continue;
@@ -381,7 +384,10 @@ private:
                 }
             }
             if (!queuedUnit && reserve > 0 && urgentDefense && game.myunits.size() < 5) {
-                for (int unit : priorities) {
+                for (std::size_t attempt = 0; attempt < priorities.size(); ++attempt) {
+                    const std::size_t index = (static_cast<std::size_t>(successfulUnitOps + i) + attempt)
+                        % priorities.size();
+                    const int unit = priorities[index];
                     const int cost = game.unitCost(unit);
                     if (cost > 0 && game.isUnitUnlocked(PLAYER, unit) && budget >= cost) {
                         queuedUnit = pushIfAffordable(game, budget,

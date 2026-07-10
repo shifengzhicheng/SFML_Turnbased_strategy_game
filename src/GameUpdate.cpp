@@ -85,10 +85,12 @@ void Game::updateRealtimeEconomy(float dt)
     if (playerIncomeTimer >= realtime::EconomyTickSeconds) {
         playerIncomeTimer -= realtime::EconomyTickSeconds;
         addTurnIncome(PLAYER);
+        applyCommandZonePressure(PLAYER);
     }
     if (aiIncomeTimer >= realtime::EconomyTickSeconds) {
         aiIncomeTimer -= realtime::EconomyTickSeconds;
         addTurnIncome(AI);
+        applyCommandZonePressure(AI);
     }
 }
 
@@ -114,6 +116,12 @@ void Game::logDebugSummary() const
         << " base=" << (Base_red ? Base_red->Health : 0)
         << " shield=" << static_cast<int>(std::ceil(playerBaseShieldTimer))
         << " army=" << myunits.size()
+        << " mix=" << countUnitsNamed(myunits, UName::INFANTARY) << "/"
+        << countUnitsNamed(myunits, UName::SHOOTER) << "/"
+        << countUnitsNamed(myunits, UName::CAVALRY) << "/"
+        << countUnitsNamed(myunits, UName::SIEGE) << "/"
+        << countUnitsNamed(myunits, UName::GUARDIAN)
+        << " push=" << unitsNearPoint(PLAYER, Blue_baseP, 13)
         << " | ai cmd=" << aiCommand
         << " eco=" << aiEconomyLevel
         << " rax=" << completedBuildingCount(AI, building::Barracks) << "/" << buildingCap(AI, building::Barracks)
@@ -122,6 +130,12 @@ void Game::logDebugSummary() const
         << " base=" << (Base_blue ? Base_blue->Health : 0)
         << " shield=" << static_cast<int>(std::ceil(aiBaseShieldTimer))
         << " army=" << enemys.size()
+        << " mix=" << countUnitsNamed(enemys, UName::INFANTARY) << "/"
+        << countUnitsNamed(enemys, UName::SHOOTER) << "/"
+        << countUnitsNamed(enemys, UName::CAVALRY) << "/"
+        << countUnitsNamed(enemys, UName::SIEGE) << "/"
+        << countUnitsNamed(enemys, UName::GUARDIAN)
+        << " push=" << unitsNearPoint(AI, Red_baseP, 13)
         << '\n';
 }
 

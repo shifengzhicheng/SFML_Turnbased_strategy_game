@@ -193,14 +193,14 @@ float Game::siegeDamageTakenMultiplier(int team, int unitName) const
 float Game::baseDamageTakenMultiplier(int attackerUnitName, int defenderTeam) const
 {
     float shield = 1.f;
-    if (gameTimeSeconds < 480.f) {
-        shield = 0.25f;
+    if (gameTimeSeconds < config::BaseProtectionEarlyEnd) {
+        shield = config::BaseProtectionEarlyMultiplier;
     }
-    else if (gameTimeSeconds < 600.f) {
-        shield = 0.45f;
+    else if (gameTimeSeconds < config::BaseProtectionMidEnd) {
+        shield = config::BaseProtectionMidMultiplier;
     }
-    else if (gameTimeSeconds < 720.f) {
-        shield = 0.70f;
+    else if (gameTimeSeconds < config::BaseProtectionLateEnd) {
+        shield = config::BaseProtectionLateMultiplier;
     }
 
     // Siege should feel like the correct finisher, but not fully erase the
@@ -214,7 +214,17 @@ float Game::baseDamageTakenMultiplier(int attackerUnitName, int defenderTeam) co
     if (baseShieldSecondsForTeam(defenderTeam) > 0.f) {
         shield *= config::EmergencyShieldDamageMultiplier;
     }
-    return std::clamp(shield, 0.25f, 1.f);
+    return std::clamp(shield * structureDamageEscalation(), 0.25f, config::EscalationDamageCap);
+}
+
+float Game::structureDamageEscalation() const
+{
+    if (gameTimeSeconds <= config::EscalationStartSeconds) {
+        return 1.f;
+    }
+    const float overtimeMinutes = (gameTimeSeconds - config::EscalationStartSeconds) / 60.f;
+    return std::min(config::EscalationDamageCap,
+                    1.f + overtimeMinutes * config::EscalationDamagePerMinute);
 }
 
 float Game::baseShieldSecondsForTeam(int team) const

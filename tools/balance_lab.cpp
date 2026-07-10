@@ -220,6 +220,7 @@ namespace
             }
             MoveableUnit* unit = team == PLAYER ? game.myunits.back().get() : game.enemys.back().get();
             unit->nextRallyStage = 1;
+            unit->deploymentReadyTime = game.gameTimeSeconds;
         }
         return true;
     }

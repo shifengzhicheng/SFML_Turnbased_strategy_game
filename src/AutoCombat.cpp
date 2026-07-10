@@ -288,6 +288,13 @@ namespace
         const CombatBehaviorDefinition& behavior = combatBehavior(unit.unitName);
         Unit* target = chooseTarget(game, unit, TargetScope::Nearby);
         Building* buildingTarget = game.chooseBuildingTarget(unit);
+        if (game.gameTimeSeconds + 0.001f < unit.deploymentReadyTime && target == nullptr) {
+            unit.UnitState = UState::UNITNORMAL;
+            unit.realtimeMoveTimer = 0.f;
+            unit.mypath.clear();
+            unit.pendingPathRequest = 0;
+            return;
+        }
         const bool prioritizesBuilding = behavior.prioritizesStructures
             && buildingTarget != nullptr
             && unit.aggroSeconds <= 0.f;

@@ -43,13 +43,13 @@ DisMoveableUnit::DisMoveableUnit(int _x, int _y, int _team, Game* _game)
 	mygame = _game;
 	x = _x;
 	y = _y;
-	Health = 4000;
+	Health = config::BaseHealth;
 	myteam = _team;
 	unitName = UName::BASE;
 	indanger = false;
 	UnitText.setFont(mygame->myfont);
 	UnitText.setCharacterSize(14);
-	UnitText.setString("4000/4000");
+	UnitText.setString(std::to_string(config::BaseHealth) + "/" + std::to_string(config::BaseHealth));
 	UnitText.setFillColor(sf::Color::Green);
 	UnitText.setPosition(sf::Transformable::getPosition().x+5, sf::Transformable::getPosition().y - 15);	
 	setPosition(sf::Vector2f(x * TileSize, y * TileSize));
@@ -81,7 +81,7 @@ void DisMoveableUnit::updatemystate()
 	const sf::Vector2f offset = actionOffset(2.f);
 	setPosition(sf::Vector2f(x * TileSize + offset.x, y * TileSize + offset.y));
 
-	string temp = std::to_string(Health) + "/4000";
+	string temp = std::to_string(Health) + "/" + std::to_string(config::BaseHealth);
 	UnitText.setString(temp);
 	UnitText.setPosition(sf::Transformable::getPosition().x + 5, sf::Transformable::getPosition().y - 15);
 	if (Health < 500) indanger = true;

@@ -53,10 +53,12 @@ namespace config
     inline constexpr int TowerCost = 48;
     inline constexpr int StructureSalvagePercent = 42;
     inline constexpr int LastBarracksReliefBonus = 18;
-    inline constexpr float EmergencyShieldSeconds = 18.0f;
-    inline constexpr float EmergencyShieldDamageMultiplier = 0.58f;
-    inline constexpr int EmergencyBarracksRepair = 260;
-    inline constexpr int EmergencyTowerRepair = 170;
+    inline constexpr float LaneRebuildLockSeconds = 30.0f;
+    inline constexpr int ComebackReliefCharges = 2;
+    inline constexpr float EmergencyShieldSeconds = 12.0f;
+    inline constexpr float EmergencyShieldDamageMultiplier = 0.62f;
+    inline constexpr int EmergencyBarracksRepair = 160;
+    inline constexpr int EmergencyTowerRepair = 80;
     inline constexpr int BarracksBaseCap = 1;
     inline constexpr int BarracksCap = 7;
     inline constexpr int TowerBaseCap = 2;
@@ -70,6 +72,7 @@ namespace config
     inline constexpr float MiningIncomeBonus = 0.18f;
     inline constexpr float AttackCooldownFloor = 0.50f;
     inline constexpr float AggroMemorySeconds = 5.0f;
+    inline constexpr float ArmyWaveIntervalSeconds = 18.0f;
     inline constexpr int RewardRerollsPerChoice = 1;
     // Tiles scanned for nearby enemies while units are still following lane
     // rally points. Keep these above attack range so armies peel before melee.
@@ -91,6 +94,23 @@ namespace config
     inline constexpr int TowerPlacementPreferredSpacing = 3;
     inline constexpr int BaseDefenseDamage = 34;
     inline constexpr int BaseDefenseRange = 8;
+    inline constexpr int BaseHealth = 3400;
+    inline constexpr float BaseProtectionEarlyEnd = 150.f;
+    inline constexpr float BaseProtectionMidEnd = 300.f;
+    inline constexpr float BaseProtectionLateEnd = 450.f;
+    inline constexpr float BaseProtectionEarlyMultiplier = 0.45f;
+    inline constexpr float BaseProtectionMidMultiplier = 0.68f;
+    inline constexpr float BaseProtectionLateMultiplier = 0.86f;
+    inline constexpr float EscalationStartSeconds = 450.f;
+    inline constexpr float EscalationDamagePerMinute = 0.25f;
+    inline constexpr float EscalationDamageCap = 3.00f;
+    inline constexpr int OvertimeHQAssaultRadius = 9;
+    inline constexpr int CommandZonePressureRadius = 11;
+    inline constexpr int CommandZoneDamagePerUnit = 6;
+    inline constexpr int CommandZoneDamageCap = 150;
+    inline constexpr float TechOvertimeDiscountStart = 540.f;
+    inline constexpr float TechOvertimeDiscountPerMinute = 0.10f;
+    inline constexpr float TechOvertimeDiscountFloor = 0.55f;
     inline constexpr int BuildInfluenceRadius = 13;
     inline constexpr int InfantryCost = 30;
     inline constexpr int ShooterCost = 31;

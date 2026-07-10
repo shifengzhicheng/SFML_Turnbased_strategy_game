@@ -180,11 +180,26 @@ Building* Game::chooseBuildingTarget(MoveableUnit& unit)
     const Point current(unit.x, unit.y);
     const int safeLane = std::clamp(unit.laneIndex, 0, lane::Count - 1);
     const int mapH = height / SqureSize;
+    const int mapW = width / SqureSize;
     const int centerY = mapH / 2;
+    const bool deepInEnemyTerritory = unit.myteam == PLAYER
+        ? current.x >= mapW * 3 / 5
+        : current.x <= mapW * 2 / 5;
+    const Point enemyBase = unit.myteam == PLAYER ? Blue_baseP : Red_baseP;
+    if (gameTimeSeconds >= config::EscalationStartSeconds
+        && distanceSquared(current, enemyBase)
+            <= config::OvertimeHQAssaultRadius * config::OvertimeHQAssaultRadius) {
+        return nullptr;
+    }
     const Point laneEntry = laneRallyPoint(unit.myteam, safeLane, lane_geometry::RallyStageCount - 1);
 
     for (auto& building : buildings) {
         if (building.team == unit.myteam || building.health <= 0 || !building.complete) {
+            continue;
+        }
+        if (deepInEnemyTerritory && building.laneIndex != safeLane) {
+            // A lane breach must expose the HQ. Chasing surviving structures
+            // across the whole map erased the natural value of split pressure.
             continue;
         }
 
@@ -309,7 +324,8 @@ void Game::autoAttackBuilding(MoveableUnit& unit, Building& building)
         typeFactor = 1.24f;
     }
     const int damage = std::max(1, static_cast<int>(std::round(static_cast<float>(unit.myattack())
-        * unitDamageMultiplier(unit.myteam, unit.unitName) * config::BuildingDamageFactor * typeFactor)));
+        * unitDamageMultiplier(unit.myteam, unit.unitName) * config::BuildingDamageFactor
+        * typeFactor * structureDamageEscalation())));
     building.health -= damage;
 
     const sf::Vector2f origin(building.point.x * SqureSize + SqureSize / 2.f, building.point.y * SqureSize + SqureSize / 2.f);

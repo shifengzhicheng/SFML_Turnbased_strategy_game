@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Config.h"
 #include "Point.h"
 #include "ProductionQueue.h"
 
@@ -17,6 +18,7 @@ struct Building
     int id = 0;
     int team = 0;
     int type = building::Barracks;
+    int laneIndex = lane::Mid;
     Point point;
     bool complete = false;
     int health = 1;

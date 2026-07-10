@@ -65,12 +65,13 @@ namespace
         return game.tiles[point.y * game.horizontalTiles + point.x].getID();
     }
 
-    Building makeCompletedBuilding(int id, int team, int type, Point point)
+    Building makeCompletedBuilding(int id, int team, int type, Point point, int laneIndex = lane::Mid)
     {
         Building building;
         building.id = id;
         building.team = team;
         building.type = type;
+        building.laneIndex = laneIndex;
         building.point = point;
         building.complete = true;
         building.maxHealth = buildingDefinition(type).maxHealth;
@@ -88,8 +89,84 @@ int main()
     game.autoChooseRewards = true;
     game.externalAIControl = true;
     game.gameSceneState = SCENE_GAME;
+    game.matchSeedOverride = 424242u;
     game.clear();
 
+    const auto firstSeededMap = game.maze;
+    game.buildRewardChoices();
+    std::array<int, 3> firstSeededRewards{};
+    for (std::size_t i = 0; i < firstSeededRewards.size(); ++i) {
+        firstSeededRewards[i] = game.perkChoices[i].type;
+    }
+    game.clear();
+    require(game.currentMatchSeed == game.matchSeedOverride && game.maze == firstSeededMap,
+            "one match seed should reproduce the complete generated map");
+    game.buildRewardChoices();
+    for (std::size_t i = 0; i < firstSeededRewards.size(); ++i) {
+        require(game.perkChoices[i].type == firstSeededRewards[i],
+                "one match seed should reproduce the initial Rogue choices");
+    }
+
+    game.playerBaseShieldTimer = 0.f;
+    game.gameTimeSeconds = 0.f;
+    const float earlyBaseDamage = game.baseDamageTakenMultiplier(UName::INFANTARY, PLAYER);
+    game.gameTimeSeconds = 240.f;
+    const float midBaseDamage = game.baseDamageTakenMultiplier(UName::INFANTARY, PLAYER);
+    game.gameTimeSeconds = 420.f;
+    const float lateBaseDamage = game.baseDamageTakenMultiplier(UName::INFANTARY, PLAYER);
+    game.gameTimeSeconds = 900.f;
+    const float overtimeBaseDamage = game.baseDamageTakenMultiplier(UName::INFANTARY, PLAYER);
+    require(earlyBaseDamage < midBaseDamage && midBaseDamage < lateBaseDamage
+                && lateBaseDamage < overtimeBaseDamage && overtimeBaseDamage > 1.f,
+            "base protection should fade into bounded late-game structure escalation");
+    require(game.structureDamageEscalation() <= config::EscalationDamageCap,
+            "late-game structure escalation should respect its cap");
+
+    game.clear();
+    game.gameTimeSeconds = config::EscalationStartSeconds + 60.f;
+    const Point pressurePoint(game.Blue_baseP.x - config::CommandZonePressureRadius + 1, game.Blue_baseP.y);
+    clearArea(game, pressurePoint, 1);
+    require(game.createUnit(PLAYER, UName::INFANTARY, pressurePoint.x, pressurePoint.y, lane::Mid),
+            "command-zone pressure test unit should spawn");
+    const int baseHealthBeforePressure = game.Base_blue->Health;
+    game.applyCommandZonePressure(PLAYER);
+    require(game.Base_blue->Health < baseHealthBeforePressure,
+            "occupying enemy HQ territory in overtime should create bounded siege pressure");
+
+    game.clear();
+    game.Base_red->Health = config::BaseHealth - 600;
+    Building lostTower = makeCompletedBuilding(9001, PLAYER, building::DefenseTower, Point(10, 10));
+    const int firstRepairStart = game.Base_red->Health;
+    game.applyStructureLossRelief(lostTower);
+    require(game.playerReliefCharges == config::ComebackReliefCharges - 1
+                && game.Base_red->Health == firstRepairStart + config::EmergencyTowerRepair
+                && game.playerBaseShieldTimer > 0.f,
+            "the first structure loss should consume one emergency relief charge");
+    game.playerBaseShieldTimer = 0.f;
+    game.applyStructureLossRelief(lostTower);
+    require(game.playerReliefCharges == 0 && game.playerBaseShieldTimer > 0.f,
+            "the second structure loss should consume the final relief charge");
+    game.playerBaseShieldTimer = 0.f;
+    const int healthAfterRelief = game.Base_red->Health;
+    game.applyStructureLossRelief(lostTower);
+    require(game.Base_red->Health == healthAfterRelief && game.playerBaseShieldTimer == 0.f,
+            "later structure losses should grant salvage without infinite repair or shields");
+
+    game.clear();
+    game.gameTimeSeconds = 100.f;
+    game.playerCommand = 1000;
+    require(game.executeOperation(PLAYER, GameOperation(gameop::BuildTower, lane::Top)),
+            "rebuild cooldown test tower should be placed");
+    game.buildings.back().complete = true;
+    game.buildings.back().health = 0;
+    game.cleanupDestroyedBuildings();
+    require(!game.canRebuildLane(PLAYER, lane::Top) && game.canRebuildLane(PLAYER, lane::Bot),
+            "destroying a structure should contest only its own lane");
+    game.gameTimeSeconds += config::LaneRebuildLockSeconds;
+    require(game.canRebuildLane(PLAYER, lane::Top),
+            "a contested lane should reopen construction after the bounded cooldown");
+
+    game.clear();
     game.gameTimeSeconds = 900.f;
     game.playerEconomyLevel = 6;
     game.aiEconomyLevel = 6;
@@ -103,6 +180,13 @@ int main()
             "normal AI economy upgrades should not receive hidden discounts");
     require(game.upgradeCostForNextLevel(PLAYER) == game.upgradeCostForNextLevel(AI),
             "normal AI technology should not receive hidden discounts");
+    const int overtimeTechCost = game.upgradeCostForNextLevel(PLAYER);
+    game.gameTimeSeconds = 0.f;
+    const int openingTechCost = game.upgradeCostForNextLevel(PLAYER);
+    require(overtimeTechCost < openingTechCost
+                && overtimeTechCost >= static_cast<int>(std::floor(openingTechCost * config::TechOvertimeDiscountFloor)),
+            "visible overtime should accelerate technology without dropping below its shared floor");
+    game.gameTimeSeconds = 900.f;
     const auto playerFeatures = policy::extractFeatures(game, PLAYER);
     const auto aiFeatures = policy::extractFeatures(game, AI);
     for (std::size_t i = 0; i < policy::FeatureCount; ++i) {
@@ -394,6 +478,9 @@ int main()
     require(game.createUnit(PLAYER, UName::INFANTARY, masterySpawn.x, masterySpawn.y, lane::Mid),
             "mastery test infantry should spawn");
     MoveableUnit* masteryInfantry = game.myunits.back().get();
+    require(masteryInfantry->deploymentReadyTime > game.gameTimeSeconds
+                && masteryInfantry->deploymentReadyTime - game.gameTimeSeconds <= config::ArmyWaveIntervalSeconds,
+            "new recruits should join the next bounded army deployment wave");
     const int masteryHealthBefore = masteryInfantry->Health;
     require(game.executeOperation(PLAYER, GameOperation(gameop::UpgradeUnitMastery, lane::Mid, UName::INFANTARY)),
             "unit mastery upgrade should succeed with enough CMD and unlocks");
@@ -742,8 +829,8 @@ int main()
     require(game.createUnit(PLAYER, UName::INFANTARY, 32, 12, lane::Top),
             "top-lane building target test unit should spawn");
     MoveableUnit* topRaider = game.myunits.back().get();
-    game.buildings.push_back(makeCompletedBuilding(2101, AI, building::DefenseTower, Point(36, 15)));
-    game.buildings.push_back(makeCompletedBuilding(2102, AI, building::Barracks, Point(37, 11)));
+    game.buildings.push_back(makeCompletedBuilding(2101, AI, building::DefenseTower, Point(36, 15), lane::Mid));
+    game.buildings.push_back(makeCompletedBuilding(2102, AI, building::Barracks, Point(37, 11), lane::Top));
     Building* topTarget = game.chooseBuildingTarget(*topRaider);
     require(topTarget != nullptr && topTarget->id == 2102,
             "top-lane units should prefer same-side production over collapsing onto the central fort");
@@ -751,10 +838,27 @@ int main()
     require(game.createUnit(PLAYER, UName::INFANTARY, 32, 18, lane::Bot),
             "bot-lane building target test unit should spawn");
     MoveableUnit* botRaider = game.myunits.back().get();
-    game.buildings.push_back(makeCompletedBuilding(2103, AI, building::Barracks, Point(37, 19)));
+    game.buildings.push_back(makeCompletedBuilding(2103, AI, building::Barracks, Point(37, 19), lane::Bot));
     Building* botTarget = game.chooseBuildingTarget(*botRaider);
     require(botTarget != nullptr && botTarget->id == 2103,
             "bot-lane units should prefer same-side production over off-lane targets");
+    game.buildings.erase(std::remove_if(game.buildings.begin(), game.buildings.end(), [](const Building& building) {
+        return building.laneIndex == lane::Top;
+    }), game.buildings.end());
+    game.myunits.clear();
+    require(game.createUnit(PLAYER, UName::INFANTARY, 32, 11, lane::Top),
+            "breached top-lane unit should spawn in enemy territory");
+    MoveableUnit* breachedTopUnit = game.myunits.back().get();
+    require(game.chooseBuildingTarget(*breachedTopUnit) == nullptr,
+            "a breached lane should expose the HQ instead of pulling units across other lanes");
+    game.myunits.clear();
+    game.gameTimeSeconds = config::EscalationStartSeconds;
+    const Point overtimeAssaultPoint(game.Blue_baseP.x - config::OvertimeHQAssaultRadius + 1, game.Blue_baseP.y);
+    clearArea(game, overtimeAssaultPoint, 1);
+    require(game.createUnit(PLAYER, UName::SIEGE, overtimeAssaultPoint.x, overtimeAssaultPoint.y, lane::Bot),
+            "overtime HQ assault unit should spawn inside the command zone");
+    require(game.chooseBuildingTarget(*game.myunits.back()) == nullptr,
+            "overtime units inside the HQ zone should stop chasing replacement structures");
 
     game.clear();
     for (int x = 10; x <= 14; ++x) {
@@ -846,6 +950,7 @@ int main()
     require(game.createUnit(PLAYER, UName::INFANTARY, 11, 15, lane::Mid),
             "blocking test unit should spawn");
     MoveableUnit* crowdedMover = game.myunits.front().get();
+    crowdedMover->deploymentReadyTime = game.gameTimeSeconds;
     crowdedMover->nextRallyStage = 1;
     crowdedMover->pendingPathGoal = game.laneRallyPoint(PLAYER, lane::Mid, 1);
     crowdedMover->mypath.clear();
@@ -884,6 +989,7 @@ int main()
     require(game.createUnit(PLAYER, UName::INFANTARY, 10, 15, lane::Mid),
             "corrupt path test unit should spawn");
     MoveableUnit* corruptPathUnit = game.myunits.back().get();
+    corruptPathUnit->deploymentReadyTime = game.gameTimeSeconds;
     corruptPathUnit->nextRallyStage = 1;
     corruptPathUnit->pendingPathGoal = game.laneRallyPoint(PLAYER, lane::Mid, 1);
     corruptPathUnit->mypath.push_back(Point(15, 15));

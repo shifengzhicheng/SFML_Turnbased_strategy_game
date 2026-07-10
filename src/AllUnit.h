@@ -81,6 +81,7 @@ public:
 		float aggroSeconds = 0.f;
 		float stationarySeconds = 0.f;
 		int tilesMovedSinceAttack = 0;
+		float deploymentReadyTime = 0.f;
 
 	std::deque<Point> mypath;
 

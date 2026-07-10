@@ -160,12 +160,18 @@ namespace
         if (allowMacro
             && game.totalBuildingCount(AI, building::Barracks) < game.buildingCap(AI, building::Barracks)
             && game.aiCommand >= buildingDefinition(building::Barracks).commandCost) {
-            push(policy::Action::Barracks, GameOperation(gameop::BuildBarracks, chooseModelLane(game, policy::Action::Barracks, orderIndex)));
+            const int buildLane = chooseModelLane(game, policy::Action::Barracks, orderIndex);
+            if (game.canRebuildLane(AI, buildLane)) {
+                push(policy::Action::Barracks, GameOperation(gameop::BuildBarracks, buildLane));
+            }
         }
         if (allowMacro
             && game.totalBuildingCount(AI, building::DefenseTower) < game.buildingCap(AI, building::DefenseTower)
             && game.aiCommand >= buildingDefinition(building::DefenseTower).commandCost) {
-            push(policy::Action::Tower, GameOperation(gameop::BuildTower, chooseModelLane(game, policy::Action::Tower, orderIndex)));
+            const int buildLane = chooseModelLane(game, policy::Action::Tower, orderIndex);
+            if (game.canRebuildLane(AI, buildLane)) {
+                push(policy::Action::Tower, GameOperation(gameop::BuildTower, buildLane));
+            }
         }
         for (policy::Action action : {policy::Action::Infantry, policy::Action::Shooter, policy::Action::Cavalry, policy::Action::Siege, policy::Action::Guardian}) {
             const int unit = policy::unitForAction(action);
@@ -192,7 +198,8 @@ namespace
         const int economyTarget = desiredEconomy(game);
         const int techTarget = desiredTech(game);
         const int barracksTarget = desiredBarracks(game);
-        const bool pressure = game.unitsNearPoint(PLAYER, game.Blue_baseP, 13) >= 4 || (game.Base_blue && game.Base_blue->Health < 2700);
+        const bool pressure = game.unitsNearPoint(PLAYER, game.Blue_baseP, 13) >= 4
+            || (game.Base_blue && game.Base_blue->Health < config::BaseHealth * 2 / 3);
         const bool openingNeedsUnits = game.enemys.size() < 4 && game.gameTimeSeconds < 115.f && !pressure;
         const bool playerTurtling = game.totalBuildingCount(PLAYER, building::DefenseTower) > 0
             || game.totalBuildingCount(PLAYER, building::Barracks) >= 3;
@@ -338,6 +345,26 @@ void AIController::update(Game& game, float dt)
         return;
     }
     thinkTimer = 0.f;
+
+    const int overtimeTechTarget = desiredTech(game);
+    if (game.gameTimeSeconds >= config::TechOvertimeDiscountStart
+        && game.aiUpgradeLevel < overtimeTechTarget) {
+        const int techCost = game.upgradeCostForNextLevel(AI);
+        const bool armyCanCoverBanking = game.enemys.size() >= 5
+            && game.enemys.size() + 6 >= game.myunits.size()
+            && game.unitsNearPoint(PLAYER, game.Blue_baseP, 13) < 4;
+        if (techCost > 0 && game.aiCommand >= techCost) {
+            game.executeOperation(AI, GameOperation(gameop::UpgradeTech));
+            game.logEvent("ai overtime tech priority");
+            ++decisionStep;
+            return;
+        }
+        if (techCost > 0 && armyCanCoverBanking) {
+            game.logEvent("ai banks for overtime tech");
+            ++decisionStep;
+            return;
+        }
+    }
 
     // The official AI now uses the same operation model that the self-play
     // trainer exercises: score legal actions, execute a short queue, then let

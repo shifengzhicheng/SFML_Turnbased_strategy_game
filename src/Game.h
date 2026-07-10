@@ -81,6 +81,10 @@ public:
     float aiBaseShieldTimer = 0.f;
     float playerEmergencyTrainTimer = 0.f;
     float aiEmergencyTrainTimer = 0.f;
+    int playerReliefCharges = config::ComebackReliefCharges;
+    int aiReliefCharges = config::ComebackReliefCharges;
+    std::array<float, lane::Count> playerLaneRebuildReady{};
+    std::array<float, lane::Count> aiLaneRebuildReady{};
     float gameTimeSeconds = 0.f;
     double realtimeAccumulator = 0.0;
     float debugSummaryTimer = 0.f;
@@ -98,6 +102,7 @@ public:
     int rewardSequence = 0;
     bool rewardChoicesGenerated = false;
     unsigned int matchSeedOverride = 0;
+    unsigned int currentMatchSeed = 0;
     std::mt19937 rewardRng{0xC0FFEEu};
     int playerRewardRerolls = 0;
     int playerSelectedLane = lane::Mid;
@@ -252,6 +257,7 @@ public:
     bool unitTauntsNearbyEnemies(int team, int unitName) const;
     float siegeDamageTakenMultiplier(int team, int unitName) const;
     float baseDamageTakenMultiplier(int attackerUnitName, int defenderTeam) const;
+    float structureDamageEscalation() const;
     float baseShieldSecondsForTeam(int team) const;
     float teamTrainTimeMultiplier(int team) const;
     float miningIncomeMultiplier(int team) const;
@@ -276,6 +282,7 @@ public:
     bool requestBuildTower(int team, Point point);
     bool requestAutoBuildBarracks(int team);
     bool requestAutoBuildTower(int team);
+    bool canRebuildLane(int team, int laneIndex) const;
     Point findAutoBuildSite(int team, int type, int laneIndex) const;
     Building* chooseBuildingTarget(MoveableUnit& unit);
     Point chooseStrategicRallyPoint(MoveableUnit& unit);
@@ -314,6 +321,7 @@ public:
     bool canSpawnUnit(int team, int name) const;
     bool spendCommand(int team, int name);
     void addTurnIncome(int team);
+    void applyCommandZonePressure(int attackingTeam);
     MoveableUnit* findMoveableUnitById(int id);
     void requestPathForUnit(MoveableUnit& unit, Point goal);
     void requestPathForWorker(Worker& worker, Point goal);

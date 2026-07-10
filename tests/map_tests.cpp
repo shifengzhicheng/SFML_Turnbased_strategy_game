@@ -3,7 +3,6 @@
 #include "Config.h"
 #include "LaneGeometry.h"
 
-#include <cassert>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -140,18 +139,30 @@ int main()
 
     for (int i = 0; i < 20; ++i) {
         std::vector<std::vector<int>> map;
-        generator.gmap(map, cols, lines);
+        const unsigned int seed = 20260710u + static_cast<unsigned int>(i);
+        generator.gmap(map, cols, lines, seed);
 
-        assert(static_cast<int>(map.size()) == lines);
-        assert(static_cast<int>(map.front().size()) == cols);
+        if (static_cast<int>(map.size()) != lines || map.empty()
+            || static_cast<int>(map.front().size()) != cols) {
+            std::cerr << "map_tests: map dimensions changed\n";
+            return 1;
+        }
+
+        std::vector<std::vector<int>> repeated;
+        generator.gmap(repeated, cols, lines, seed);
+        if (repeated != map) {
+            return failMapCheck("same seed should reproduce the same map", map, cols, lines);
+        }
 
         for (int x = 0; x < cols; ++x) {
-            assert(map.front()[x] == 1);
-            assert(map.back()[x] == 1);
+            if (map.front()[x] != 1 || map.back()[x] != 1) {
+                return failMapCheck("top or bottom border opened", map, cols, lines);
+            }
         }
         for (int y = 0; y < lines; ++y) {
-            assert(map[y].front() == 1);
-            assert(map[y].back() == 1);
+            if (map[y].front() != 1 || map[y].back() != 1) {
+                return failMapCheck("left or right border opened", map, cols, lines);
+            }
         }
 
         if (countInArea(map, 5, lines / 2, 3, 0) <= 35) {

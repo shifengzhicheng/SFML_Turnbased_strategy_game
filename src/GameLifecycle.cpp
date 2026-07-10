@@ -150,6 +150,10 @@ void Game::clear()
     aiBaseShieldTimer = 0.f;
     playerEmergencyTrainTimer = 0.f;
     aiEmergencyTrainTimer = 0.f;
+    playerReliefCharges = config::ComebackReliefCharges;
+    aiReliefCharges = config::ComebackReliefCharges;
+    playerLaneRebuildReady.fill(0.f);
+    aiLaneRebuildReady.fill(0.f);
     gameTimeSeconds = 0.f;
     realtimeAccumulator = 0.0;
     debugSummaryTimer = 0.f;
@@ -157,20 +161,20 @@ void Game::clear()
     perkOverlayVisible = false;
     rewardSequence = 0;
     rewardChoicesGenerated = false;
-    unsigned int rewardSeed = matchSeedOverride;
-    if (rewardSeed == 0) {
+    currentMatchSeed = matchSeedOverride;
+    if (currentMatchSeed == 0) {
         if (const char* seedValue = std::getenv("TBS_MAP_SEED")) {
             char* end = nullptr;
             const unsigned long parsed = std::strtoul(seedValue, &end, 10);
             if (end != seedValue && *end == '\0') {
-                rewardSeed = static_cast<unsigned int>(parsed);
+                currentMatchSeed = static_cast<unsigned int>(parsed);
             }
         }
     }
-    if (rewardSeed == 0) {
-        rewardSeed = std::random_device{}();
+    if (currentMatchSeed == 0) {
+        currentMatchSeed = std::random_device{}();
     }
-    rewardRng.seed(rewardSeed ^ (static_cast<unsigned int>(pathGeneration) * 0x9E3779B9u));
+    rewardRng.seed(currentMatchSeed ^ 0x9E3779B9u);
     playerRewardRerolls = 0;
     playerSelectedLane = lane::Mid;
     aiSelectedLane = lane::Mid;
@@ -197,7 +201,7 @@ void Game::clear()
     enemys.clear();
     tiles.clear();
     maze = vector<vector<int>>(height / SqureSize, vector<int>(width / SqureSize));
-    gm.gmap(maze, width / SqureSize, height / SqureSize);
+    gm.gmap(maze, width / SqureSize, height / SqureSize, currentMatchSeed);
     int yp = 0;
     int xp = 0;
     for (int y = yp = 0; y < height; y += SqureSize, yp++)

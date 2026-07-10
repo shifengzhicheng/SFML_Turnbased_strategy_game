@@ -153,7 +153,8 @@ float sideScore(const Game& game, int team)
     const DisMoveableUnit* enemyBase = team == PLAYER ? game.Base_blue.get() : game.Base_red.get();
     const auto& ownUnits = team == PLAYER ? game.myunits : game.enemys;
     const auto& enemyUnits = team == PLAYER ? game.enemys : game.myunits;
-    float score = static_cast<float>((ownBase ? ownBase->Health : 0) - (enemyBase ? enemyBase->Health : 0)) / 4000.f;
+    float score = static_cast<float>((ownBase ? ownBase->Health : 0) - (enemyBase ? enemyBase->Health : 0))
+        / static_cast<float>(config::BaseHealth);
     score += static_cast<float>(ownUnits.size()) * 0.012f - static_cast<float>(enemyUnits.size()) * 0.012f;
     score += static_cast<float>(game.economyLevelForTeam(team) - game.economyLevelForTeam(enemy)) * 0.05f;
     score += static_cast<float>((team == PLAYER ? game.playerUpgradeLevel : game.aiUpgradeLevel)

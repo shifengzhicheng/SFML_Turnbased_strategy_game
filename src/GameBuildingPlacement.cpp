@@ -240,6 +240,14 @@ namespace
 bool Game::requestBuildBarracks(int team, Point point)
 {
     const int cost = buildingCommandCost(building::Barracks);
+    const int buildLane = selectedLaneForTeam(team);
+    if (!canRebuildLane(team, buildLane)) {
+        if (team == PLAYER) {
+            addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
+                            "Lane contested", sf::Color(255, 214, 96), 12);
+        }
+        return false;
+    }
     if (totalBuildingCount(team, building::Barracks) >= buildingCap(team, building::Barracks)) {
         if (team == PLAYER) {
             addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
@@ -263,6 +271,7 @@ bool Game::requestBuildBarracks(int team, Point point)
     building.id = nextEntityId++;
     building.team = team;
     building.type = building::Barracks;
+    building.laneIndex = buildLane;
     building.point = point;
     building.buildSeconds = buildingSeconds(building.type);
     building.maxHealth = buildingMaxHealth(building.type);
@@ -280,6 +289,14 @@ bool Game::requestBuildBarracks(int team, Point point)
 bool Game::requestBuildTower(int team, Point point)
 {
     const int cost = buildingCommandCost(building::DefenseTower);
+    const int buildLane = selectedLaneForTeam(team);
+    if (!canRebuildLane(team, buildLane)) {
+        if (team == PLAYER) {
+            addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
+                            "Lane contested", sf::Color(255, 214, 96), 12);
+        }
+        return false;
+    }
     if (totalBuildingCount(team, building::DefenseTower) >= buildingCap(team, building::DefenseTower)) {
         if (team == PLAYER) {
             addFloatingText(sf::Vector2f(point.x * SqureSize, point.y * SqureSize - 8.f),
@@ -303,6 +320,7 @@ bool Game::requestBuildTower(int team, Point point)
     building.id = nextEntityId++;
     building.team = team;
     building.type = building::DefenseTower;
+    building.laneIndex = buildLane;
     building.point = point;
     building.buildSeconds = buildingSeconds(building.type);
     building.maxHealth = buildingMaxHealth(building.type);
@@ -395,4 +413,11 @@ bool Game::requestAutoBuildTower(int team)
         return false;
     }
     return requestBuildTower(team, site);
+}
+
+bool Game::canRebuildLane(int team, int laneIndex) const
+{
+    const int safeLane = std::clamp(laneIndex, 0, lane::Count - 1);
+    const auto& readyTimes = team == PLAYER ? playerLaneRebuildReady : aiLaneRebuildReady;
+    return gameTimeSeconds + 0.001f >= readyTimes[static_cast<std::size_t>(safeLane)];
 }

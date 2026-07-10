@@ -5,8 +5,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <cstdint>
-#include <ctime>
 #include <random>
 #include <vector>
 
@@ -533,7 +531,7 @@ namespace
     }
 }
 
-void mapgenerator::gmap(std::vector<std::vector<int>>& initMap, int cols, int lines)
+void mapgenerator::gmap(std::vector<std::vector<int>>& initMap, int cols, int lines, unsigned int seed)
 {
     if (cols <= 0 || lines <= 0) {
         return;
@@ -543,16 +541,7 @@ void mapgenerator::gmap(std::vector<std::vector<int>>& initMap, int cols, int li
     const GridPoint red{5, std::max(5, lines / 2)};
     const GridPoint blue{std::max(5, cols - 7), std::max(5, lines / 2)};
 
-    const auto seed = static_cast<unsigned int>(std::time(nullptr))
-        ^ static_cast<unsigned int>(reinterpret_cast<std::uintptr_t>(&initMap));
-    unsigned int mapSeed = seed;
-    if (const char* seedValue = std::getenv("TBS_MAP_SEED")) {
-        char* end = nullptr;
-        const unsigned long parsed = std::strtoul(seedValue, &end, 10);
-        if (end != seedValue && *end == '\0') {
-            mapSeed = static_cast<unsigned int>(parsed);
-        }
-    }
+    const unsigned int mapSeed = seed != 0 ? seed : std::random_device{}();
     std::mt19937 rng(mapSeed);
     std::uniform_int_distribution<int> xDist(2, std::max(2, cols - 3));
     std::uniform_int_distribution<int> yDist(2, std::max(2, lines - 3));
