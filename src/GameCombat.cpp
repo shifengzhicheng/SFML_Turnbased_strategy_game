@@ -332,6 +332,7 @@ void Game::autoAttackBuilding(MoveableUnit& unit, Building& building)
     const sf::Vector2f attackVector = origin - unitCenter(unit);
     unit.playFlash(sf::Color(255, 245, 180, 255), 0.14f);
     unit.playAction(attackVector, 0.16f);
-    addAttackEffect(unitCenter(unit), origin, unit.myteam == PLAYER ? sf::Color(255, 211, 84) : sf::Color(118, 178, 255));
+    addUnitAttackEffect(unit.unitName, unitCenter(unit), origin,
+                        unit.myteam == PLAYER ? sf::Color(255, 211, 84) : sf::Color(118, 178, 255));
     addFloatingText(origin + sf::Vector2f(0.f, -14.f), "-" + std::to_string(damage), sf::Color(255, 218, 112), 12);
 }

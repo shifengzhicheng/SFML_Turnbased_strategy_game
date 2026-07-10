@@ -22,6 +22,7 @@ namespace
         building.team = team;
         building.type = type;
         building.point = point;
+        building.laneIndex = laneIndex;
         building.complete = true;
         building.maxHealth = buildingDefinition(type).maxHealth;
         building.health = building.maxHealth;

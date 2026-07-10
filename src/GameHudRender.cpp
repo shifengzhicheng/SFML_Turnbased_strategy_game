@@ -5,6 +5,7 @@
 #include "AutoCombat.h"
 #include "RealtimeConfig.h"
 #include "SidebarLayout.h"
+#include "UnitDefinition.h"
 
 #include <algorithm>
 #include <cmath>
@@ -24,7 +25,7 @@ namespace
 
 void Game::DrawSidePanel()
 {
-    DrawSidePanel(window);
+    DrawSidePanel(renderTarget());
 }
 
 void Game::DrawSidePanel(sf::RenderTarget& target)
@@ -39,6 +40,9 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
     siegeBtn.setPosition(config::ButtonX, config::BuildSiegeY);
     guardianBtn.setPosition(config::ButtonX, config::BuildGuardianY);
     towerBtn.setPosition(config::ButtonX, config::BuildTowerY);
+    constexpr float actionButtonScaleY = 32.f / static_cast<float>(config::SideButtonHeight);
+    economyBtn.setScale(1.f, actionButtonScaleY);
+    upgradeBtn.setScale(1.f, actionButtonScaleY);
 
     target.draw(sidePanel);
 
@@ -130,6 +134,18 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
     drawPanelCard(sidebar_layout::HelpCardY, sidebar_layout::HelpCardH, sf::Color(32, 39, 36), sf::Color(80, 96, 73), "");
 
     const auto guideText = [this]() {
+        const int incoming = unitsNearPoint(AI, Red_baseP, config::CommandZonePressureRadius);
+        const int outgoing = unitsNearPoint(PLAYER, Blue_baseP, config::CommandZonePressureRadius);
+        if (incoming > 0) {
+            return std::string("HQ under pressure: ") + std::to_string(incoming) + " attackers";
+        }
+        if (outgoing > 0) {
+            return std::string("Enemy HQ pressured by ") + std::to_string(outgoing) + " units";
+        }
+        if (gameTimeSeconds >= config::EscalationStartSeconds) {
+            const int pressurePercent = static_cast<int>(std::round(structureDamageEscalation() * 100.f));
+            return std::string("Overtime structure damage ") + std::to_string(pressurePercent) + "%";
+        }
         if (playerEconomyLevel == 0) {
             return std::string("Next: ECONOMY first");
         }
@@ -159,13 +175,20 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
     panelTitle.setLetterSpacing(1.18f);
     panelTitle.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), 27.f);
 
-    sf::RectangleShape liveBadge(sf::Vector2f(70.f, 16.f));
-    liveBadge.setPosition(static_cast<float>(config::PanelX + config::PanelWidth - 88), 30.f);
+    const float waveRemainingRaw = config::ArmyWaveIntervalSeconds
+        - std::fmod(std::max(0.f, gameTimeSeconds), config::ArmyWaveIntervalSeconds);
+    const int waveRemaining = static_cast<int>(std::ceil(waveRemainingRaw));
+    const bool overtime = gameTimeSeconds >= config::EscalationStartSeconds;
+    const std::string liveStatus = overtime
+        ? ("OT " + std::to_string(static_cast<int>(std::round(structureDamageEscalation() * 100.f))) + "%")
+        : ("WAVE " + std::to_string(waveRemaining) + "s");
+    sf::RectangleShape liveBadge(sf::Vector2f(100.f, 17.f));
+    liveBadge.setPosition(static_cast<float>(config::PanelX + config::PanelWidth - 116), 29.f);
     liveBadge.setFillColor(sf::Color(27, 35, 31, 235));
     liveBadge.setOutlineColor(sf::Color(225, 169, 74, 155));
     liveBadge.setOutlineThickness(1.f);
     target.draw(liveBadge);
-    sf::Text liveText(std::string("LIVE ") + laneName(playerSelectedLane), myfont, 8);
+    sf::Text liveText(liveStatus + " " + laneName(playerSelectedLane), myfont, 8);
     liveText.setFillColor(sf::Color(255, 226, 142));
     liveText.setPosition(liveBadge.getPosition() + sf::Vector2f(7.f, 3.f));
     target.draw(liveText);
@@ -212,60 +235,94 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
     const auto drawStatChip = [this, &target](float x, float y, float w,
                                                const std::string& label, const std::string& value,
                                                sf::Color accent, bool strong = false) {
-        sf::RectangleShape shadow(sf::Vector2f(w, 17.f));
+        const float height = strong ? 22.f : 16.f;
+        sf::RectangleShape shadow(sf::Vector2f(w, height));
         shadow.setPosition(x + 1.f, y + 2.f);
         shadow.setFillColor(sf::Color(0, 0, 0, 82));
         target.draw(shadow);
 
-        sf::RectangleShape chip(sf::Vector2f(w, 17.f));
+        sf::RectangleShape chip(sf::Vector2f(w, height));
         chip.setPosition(x, y);
         chip.setFillColor(strong ? sf::Color(62, 48, 27, 238) : sf::Color(24, 33, 30, 234));
         chip.setOutlineColor(strong ? sf::Color(242, 184, 82, 190) : sf::Color(91, 105, 79, 160));
         chip.setOutlineThickness(1.f);
         target.draw(chip);
 
-        sf::RectangleShape rail(sf::Vector2f(4.f, 13.f));
+        sf::RectangleShape rail(sf::Vector2f(4.f, height - 4.f));
         rail.setPosition(x + 3.f, y + 2.f);
         rail.setFillColor(accent);
         target.draw(rail);
 
-        sf::Text labelText(label, myfont, 8);
+        sf::Text labelText(label, myfont, strong ? 9 : 8);
         labelText.setFillColor(sf::Color(187, 197, 166));
         labelText.setPosition(x + 10.f, y + 2.f);
         target.draw(labelText);
 
-        sf::Text valueText(value, myfont, strong ? 12 : 10);
+        sf::Text valueText(value, myfont, strong ? 15 : 10);
         valueText.setFillColor(strong ? sf::Color(255, 231, 133) : sf::Color(239, 232, 201));
         valueText.setOutlineColor(sf::Color(10, 13, 11, 190));
         valueText.setOutlineThickness(0.5f);
         const auto bounds = valueText.getLocalBounds();
-        valueText.setPosition(x + w - bounds.width - bounds.left - 7.f, y + (strong ? 0.f : 2.f));
+        valueText.setPosition(x + w - bounds.width - bounds.left - 7.f, y + (strong ? 1.f : 1.f));
         target.draw(valueText);
     };
 
     const float statusX = static_cast<float>(config::PanelX + config::PanelPadding);
-    drawStatChip(statusX, 108.f, 112.f, "CMD", std::to_string(playerCommand), sf::Color(255, 210, 91), true);
-    drawStatChip(statusX + 118.f, 108.f, 102.f, "FLOW", "+" + std::to_string(resourceIncome(PLAYER)) + "/t", sf::Color(118, 209, 134), true);
-    drawStatChip(statusX, 130.f, 68.f, "TECH", std::to_string(playerUpgradeLevel) + "/" + std::to_string(config::MaxTechLevel), sf::Color(255, 193, 86));
-    drawStatChip(statusX + 74.f, 130.f, 68.f, "AI", std::to_string(aiUpgradeLevel) + "/" + std::to_string(config::MaxTechLevel), sf::Color(116, 181, 255));
-    drawStatChip(statusX + 148.f, 130.f, 72.f, "ECON", std::to_string(playerEconomyLevel) + "/" + std::to_string(config::MaxEconomyLevel), sf::Color(136, 214, 116));
-    drawStatChip(statusX, 148.f, 68.f, "RAX", std::to_string(completedBuildingCount(PLAYER, building::Barracks)) + "/" + std::to_string(buildingCap(PLAYER, building::Barracks)), sf::Color(224, 150, 72));
-    drawStatChip(statusX + 74.f, 148.f, 68.f, "TWR", std::to_string(totalBuildingCount(PLAYER, building::DefenseTower)) + "/" + std::to_string(buildingCap(PLAYER, building::DefenseTower)), sf::Color(239, 202, 107));
-    drawStatChip(statusX + 148.f, 148.f, 72.f, "ARMY", std::to_string(myunits.size()) + "/" + std::to_string(config::MaxUnits), sf::Color(222, 86, 68));
+    const auto drawBaseBar = [this, &target, statusX](float y, const std::string& label,
+                                                      const DisMoveableUnit* base, sf::Color accent,
+                                                      const std::string& rightText) {
+        constexpr float barWidth = 220.f;
+        constexpr float barHeight = 14.f;
+        const int health = base != nullptr ? std::max(0, base->Health) : 0;
+        const float ratio = std::clamp(static_cast<float>(health) / static_cast<float>(config::BaseHealth), 0.f, 1.f);
+        sf::RectangleShape back(sf::Vector2f(barWidth, barHeight));
+        back.setPosition(statusX, y);
+        back.setFillColor(sf::Color(14, 20, 18, 232));
+        back.setOutlineColor(sf::Color(accent.r, accent.g, accent.b, 125));
+        back.setOutlineThickness(1.f);
+        target.draw(back);
+        sf::RectangleShape fill(sf::Vector2f((barWidth - 2.f) * ratio, barHeight - 2.f));
+        fill.setPosition(statusX + 1.f, y + 1.f);
+        fill.setFillColor(sf::Color(accent.r, accent.g, accent.b, 125));
+        target.draw(fill);
+        sf::Text left(label + " " + std::to_string(health) + "/" + std::to_string(config::BaseHealth), myfont, 8);
+        left.setFillColor(sf::Color(248, 239, 202));
+        left.setOutlineColor(sf::Color(10, 13, 11, 220));
+        left.setOutlineThickness(0.7f);
+        left.setPosition(statusX + 5.f, y + 1.f);
+        target.draw(left);
+        sf::Text right(rightText, myfont, 8);
+        right.setFillColor(sf::Color(248, 239, 202));
+        right.setOutlineColor(sf::Color(10, 13, 11, 220));
+        right.setOutlineThickness(0.7f);
+        const auto bounds = right.getLocalBounds();
+        right.setPosition(statusX + barWidth - bounds.width - bounds.left - 5.f, y + 1.f);
+        target.draw(right);
+    };
+    const std::string playerRelief = "R" + std::to_string(playerReliefCharges)
+        + (playerBaseShieldTimer > 0.f ? " S" + std::to_string(static_cast<int>(std::ceil(playerBaseShieldTimer))) : "");
+    drawBaseBar(108.f, "HQ", Base_red.get(), sf::Color(222, 83, 61), playerRelief);
+    drawBaseBar(126.f, "ENEMY", Base_blue.get(), sf::Color(73, 143, 224), "T" + std::to_string(aiUpgradeLevel));
 
-    sf::RectangleShape buffStrip(sf::Vector2f(220.f, 12.f));
-    buffStrip.setPosition(statusX, 167.f);
+    drawStatChip(statusX, 146.f, 108.f, "CMD", std::to_string(playerCommand), sf::Color(255, 210, 91), true);
+    drawStatChip(statusX + 114.f, 146.f, 106.f, "FLOW", "+" + std::to_string(resourceIncome(PLAYER)), sf::Color(118, 209, 134), true);
+    drawStatChip(statusX, 172.f, 70.f, "TECH", std::to_string(playerUpgradeLevel) + "/" + std::to_string(config::MaxTechLevel), sf::Color(255, 193, 86));
+    drawStatChip(statusX + 75.f, 172.f, 70.f, "ECON", std::to_string(playerEconomyLevel) + "/" + std::to_string(config::MaxEconomyLevel), sf::Color(136, 214, 116));
+    drawStatChip(statusX + 150.f, 172.f, 70.f, "ARMY", std::to_string(myunits.size()), sf::Color(222, 86, 68));
+
+    sf::RectangleShape buffStrip(sf::Vector2f(220.f, 8.f));
+    buffStrip.setPosition(statusX, 190.f);
     buffStrip.setFillColor(sf::Color(17, 24, 21, 180));
     buffStrip.setOutlineColor(inspectingEnemyBase ? sf::Color(80, 140, 206, 120) : sf::Color(212, 152, 60, 120));
     buffStrip.setOutlineThickness(1.f);
     target.draw(buffStrip);
 
     sf::Text perkText(std::string(inspectingEnemyBase ? "ENEMY" : "YOUR") + " Lv" + std::to_string(shownLevel)
-        + " BUFFS " + clampText(perkLine(), 24), myfont, 8);
+        + " BUFFS " + clampText(perkLine(), 27), myfont, 7);
     perkText.setFillColor(inspectingEnemyBase ? sf::Color(149, 203, 255) : sf::Color(255, 226, 142));
     perkText.setOutlineColor(sf::Color(11, 14, 12, 200));
     perkText.setOutlineThickness(0.6f);
-    perkText.setPosition(statusX + 5.f, 166.5f);
+    perkText.setPosition(statusX + 5.f, 189.f);
     target.draw(perkText);
 
     int playerLaneCounts[lane::Count] = {};
@@ -322,12 +379,12 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         sf::Text laneText(laneName(i), myfont, 10);
         laneText.setFillColor(playerSelectedLane == i ? sf::Color(41, 31, 20) : sf::Color(224, 232, 203));
         laneText.setLetterSpacing(1.12f);
-        laneText.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 7.f));
+        laneText.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 5.f));
         target.draw(laneText);
 
         sf::Text laneCount("P" + std::to_string(playerLaneCounts[i]) + " E" + std::to_string(aiLaneCounts[i]), myfont, 8);
         laneCount.setFillColor(playerSelectedLane == i ? sf::Color(64, 45, 23) : sf::Color(205, 214, 188));
-        laneCount.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 21.f));
+        laneCount.setPosition(laneButton.getPosition() + sf::Vector2f(8.f, 19.f));
         target.draw(laneCount);
     }
 
@@ -341,11 +398,11 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         ? sf::Color::White
         : sf::Color(255, 255, 255, 130));
 
-    economyLabel.setCharacterSize(9);
+    economyLabel.setCharacterSize(8);
     economyLabel.setFillColor(sf::Color(244, 221, 150));
     economyLabel.setOutlineColor(sf::Color(18, 15, 10, 190));
     economyLabel.setOutlineThickness(0.7f);
-    economyLabel.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), config::EconomyButtonY + config::SideButtonHeight - 2.f);
+    economyLabel.setPosition(static_cast<float>(config::PanelX + config::PanelPadding + 5), config::EconomyButtonY + 32.f);
     const auto projectedIncome = [this](int level) {
         const int bonus = level * config::EconomyIncomeStep
             + (level * level) / config::EconomyIncomeQuadraticDivisor;
@@ -356,15 +413,15 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         ? projectedIncome(playerEconomyLevel + 1) - projectedIncome(playerEconomyLevel)
         : 0;
     economyLabel.setString(playerEconomyLevel < config::MaxEconomyLevel
-        ? ("Cost " + std::to_string(economyUpgradeCost(PLAYER))
-            + " | +" + std::to_string(nextEconomyGain) + "/tick +drone")
-        : ("Max | " + std::to_string(resourceIncome(PLAYER)) + "/tick"));
+        ? (std::to_string(economyUpgradeCost(PLAYER)) + " CMD | +"
+            + std::to_string(nextEconomyGain) + " FLOW | +1 drone")
+        : ("MAX ECONOMY | " + std::to_string(resourceIncome(PLAYER)) + " FLOW"));
 
-    sf::Text upgradeCost("Cost " + std::to_string(upgradeCostForNextLevel(PLAYER)) + " | 3 mechanic cards", myfont, 9);
+    sf::Text upgradeCost(std::to_string(upgradeCostForNextLevel(PLAYER)) + " CMD | choose 1 of 3 tactics", myfont, 8);
     upgradeCost.setFillColor(sf::Color(244, 221, 150));
     upgradeCost.setOutlineColor(sf::Color(18, 15, 10, 190));
     upgradeCost.setOutlineThickness(0.7f);
-    upgradeCost.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), config::EndTurnButtonY + config::SideButtonHeight - 2.f);
+    upgradeCost.setPosition(static_cast<float>(config::PanelX + config::PanelPadding + 5), config::EndTurnButtonY + 32.f);
 
     const bool canBuildBarracks = commandForTeam(PLAYER) >= buildingCommandCost(building::Barracks)
         && totalBuildingCount(PLAYER, building::Barracks) < buildingCap(PLAYER, building::Barracks);
@@ -408,8 +465,7 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower)) + "/"
         + std::to_string(buildingCap(PLAYER, building::DefenseTower)) + " | anti-rush", config::BuildTowerY);
 
-    const auto drawButtonBackplate = [&target](int buttonY, bool available) {
-        const float h = static_cast<float>(config::SideButtonHeight);
+    const auto drawButtonBackplate = [&target](int buttonY, bool available, float h = static_cast<float>(config::SideButtonHeight)) {
         sf::RectangleShape plate(sf::Vector2f(static_cast<float>(config::SideButtonWidth) + 8.f, h));
         plate.setPosition(static_cast<float>(config::ButtonX - 4), static_cast<float>(buttonY));
         plate.setFillColor(available ? sf::Color(70, 53, 31, 70) : sf::Color(10, 14, 12, 56));
@@ -418,9 +474,9 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         target.draw(plate);
     };
     drawButtonBackplate(config::EconomyButtonY, commandForTeam(PLAYER) >= economyUpgradeCost(PLAYER)
-        && playerEconomyLevel < config::MaxEconomyLevel);
+        && playerEconomyLevel < config::MaxEconomyLevel, 32.f);
     drawButtonBackplate(config::EndTurnButtonY, commandForTeam(PLAYER) >= upgradeCostForNextLevel(PLAYER)
-        && playerUpgradeLevel < config::MaxTechLevel);
+        && playerUpgradeLevel < config::MaxTechLevel, 32.f);
     drawButtonBackplate(config::BuildBarracksY, canBuildBarracks);
     drawButtonBackplate(config::BuildInfantryY, canQueueUnit(PLAYER, UName::INFANTARY));
     drawButtonBackplate(config::BuildShooterY, canQueueUnit(PLAYER, UName::SHOOTER));
@@ -447,6 +503,7 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         const bool enabled = canUpgradeUnitMastery(PLAYER, unitName);
         const bool locked = !isUnitUnlocked(PLAYER, unitName);
         const int level = unitMasteryLevel(PLAYER, unitName);
+        const int nextCost = unitMasteryUpgradeCost(PLAYER, unitName);
         const int bonus = static_cast<int>(std::round(static_cast<float>(level)
             * config::MasteryStatBonusPerLevel * 100.f));
 
@@ -457,41 +514,39 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
 
         sf::RectangleShape pill(sf::Vector2f(rect.width, rect.height));
         pill.setPosition(rect.left, rect.top);
-        pill.setFillColor(enabled ? sf::Color(210, 147, 44, 246)
+        pill.setFillColor(enabled ? sf::Color(77, 61, 35, 246)
             : (locked ? sf::Color(46, 50, 46, 232) : sf::Color(71, 62, 43, 232)));
-        pill.setOutlineColor(enabled ? sf::Color(255, 240, 158)
+        pill.setOutlineColor(enabled ? sf::Color(222, 174, 78)
             : (locked ? sf::Color(86, 96, 84) : sf::Color(161, 124, 61)));
-        pill.setOutlineThickness(enabled ? 2.f : 1.2f);
+        pill.setOutlineThickness(enabled ? 1.5f : 1.2f);
         target.draw(pill);
 
         sf::RectangleShape shine(sf::Vector2f(rect.width - 10.f, 4.f));
         shine.setPosition(rect.left + 5.f, rect.top + 5.f);
-        shine.setFillColor(enabled ? sf::Color(255, 250, 200, 86) : sf::Color(255, 255, 255, 22));
+        shine.setFillColor(enabled ? sf::Color(255, 229, 139, 44) : sf::Color(255, 255, 255, 22));
         target.draw(shine);
 
         if (enabled) {
             sf::RectangleShape leftPulse(sf::Vector2f(3.f, rect.height - 10.f));
             leftPulse.setPosition(rect.left + 5.f, rect.top + 5.f);
-            leftPulse.setFillColor(sf::Color(255, 239, 147, 140));
+            leftPulse.setFillColor(sf::Color(244, 189, 79, 205));
             target.draw(leftPulse);
         }
 
-        sf::Text upText(locked ? "LOCK" : ("M" + std::to_string(level)), myfont, locked ? 9 : 11);
-        upText.setFillColor(enabled ? sf::Color(45, 29, 12) : sf::Color(212, 199, 158));
-        upText.setPosition(rect.left + (locked ? 14.f : 22.f), rect.top + 2.f);
+        sf::Text upText(locked
+            ? "LOCKED"
+            : ("M" + std::to_string(level) + " > M" + std::to_string(level + 1)), myfont, locked ? 8 : 9);
+        upText.setFillColor(enabled ? sf::Color(255, 226, 143) : sf::Color(212, 199, 158));
+        upText.setPosition(rect.left + (locked ? 17.f : 10.f), rect.top + 1.f);
         target.draw(upText);
 
-        sf::Text bonusText("+" + std::to_string(bonus) + "%", myfont, 9);
-        bonusText.setFillColor(enabled ? sf::Color(46, 31, 17) : sf::Color(190, 184, 154));
-        bonusText.setPosition(rect.left + 15.f, rect.top + 17.f);
+        const std::string detail = locked
+            ? ("TECH " + std::to_string(unitDefinition(unitName).requiredTechLevel))
+            : ("+" + std::to_string(bonus) + "% | " + std::to_string(nextCost));
+        sf::Text bonusText(detail, myfont, 8);
+        bonusText.setFillColor(enabled ? sf::Color(235, 218, 170) : sf::Color(190, 184, 154));
+        bonusText.setPosition(rect.left + (locked ? 17.f : 9.f), rect.top + 16.f);
         target.draw(bonusText);
-
-        if (enabled) {
-            sf::Text plusText("+", myfont, 11);
-            plusText.setFillColor(sf::Color(63, 40, 18));
-            plusText.setPosition(rect.left + 5.f, rect.top + 2.f);
-            target.draw(plusText);
-        }
     };
     drawMasteryButton(UName::INFANTARY, config::BuildInfantryY);
     drawMasteryButton(UName::SHOOTER, config::BuildShooterY);

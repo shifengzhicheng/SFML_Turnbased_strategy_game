@@ -57,8 +57,7 @@ void MoveableUnit::configureFromDefinition(const UnitDefinition& definition)
 	unitName = definition.unitName;
 	myinfo.Health = definition.maxHealth;
 	Health = definition.maxHealth;
-	art::makeUnitTexture(mytexture, definition.artKind, myteam == PLAYER ? art::Team::Player : art::Team::Enemy);
-	setTexture(mytexture);
+	setTexture(art::unitTexture(definition.artKind, myteam == PLAYER ? art::Team::Player : art::Team::Enemy));
 	UnitText.setString(std::to_string(definition.maxHealth) + "/" + std::to_string(definition.maxHealth));
 	placeUnitSprite(*this, x, y, config::UnitSpriteScale);
 	placeHealthLabel(UnitText, x, y);
@@ -142,6 +141,11 @@ int MoveableUnit::myattack()
 		return 0;
 	}
 	return attackmethod->damage;
+}
+
+int MoveableUnit::maxHealth() const
+{
+	return myinfo.Health;
 }
 
 int MoveableUnit::myAttackRange() const

@@ -98,6 +98,7 @@ public:
     int playerEconomyLevel = 0;
     int aiEconomyLevel = 0;
     bool perkOverlayVisible = false;
+    int hoveredRewardChoice = -1;
     bool autoChooseRewards = false;
     int rewardSequence = 0;
     bool rewardChoicesGenerated = false;
@@ -153,6 +154,7 @@ public:
     
 
     sf::RenderWindow window;
+    sf::RenderTarget* renderTargetOverride = nullptr;
 
     void loadpic();
 
@@ -183,6 +185,11 @@ public:
     void GameInput(sf::Vector2i mousePos, sf::Event event);
 
     void Draw();
+    void Draw(sf::RenderTarget& target);
+    sf::RenderTarget& renderTarget();
+    const sf::RenderTarget& renderTarget() const;
+    sf::View logicalView(sf::Vector2f offset = sf::Vector2f()) const;
+    sf::Vector2i logicalMousePosition(sf::Vector2i windowPixel) const;
     void DrawSidePanel();
     void DrawSidePanel(sf::RenderTarget& target);
     void paintLanePathTiles();
@@ -195,7 +202,9 @@ public:
     void drawWorkerSprite(const Worker& workerUnit);
     void drawTutorialOverlay();
     void drawRewardOverlay();
-    void addAttackEffect(sf::Vector2f start, sf::Vector2f end, sf::Color color);
+    void addAttackEffect(sf::Vector2f start, sf::Vector2f end, sf::Color color,
+                         AttackEffectStyle style = AttackEffectStyle::Beam);
+    void addUnitAttackEffect(int unitName, sf::Vector2f start, sf::Vector2f end, sf::Color color);
     void addFloatingText(sf::Vector2f position, const std::string& value, sf::Color color, unsigned int size = 15);
     void startScreenShake(float durationSeconds, float intensity);
     sf::Vector2f currentShakeOffset() const;

@@ -47,6 +47,7 @@ set(SFML_TBS_GAME_SOURCES
     src/GameRewards.cpp
     src/GameSelection.cpp
     src/GameUnitMastery.cpp
+    src/GameViewport.cpp
     src/GameLifecycle.cpp
     src/GameEffectsFacade.cpp
     src/GameHudRender.cpp
@@ -78,6 +79,7 @@ set(SFML_TBS_GAME_SOURCES
     src/UnitTypes.cpp
     src/UnitUpgradeDefinition.cpp
     src/UnitVisual.cpp
+    src/Viewport.cpp
     src/Worker.cpp
 )
 
@@ -126,6 +128,16 @@ add_executable(sfml_tbs_map_preview EXCLUDE_FROM_ALL
 )
 target_link_libraries(sfml_tbs_map_preview PRIVATE sfml_tbs_game)
 
+add_executable(sfml_tbs_gameplay_preview EXCLUDE_FROM_ALL
+    tools/gameplay_preview.cpp
+)
+target_link_libraries(sfml_tbs_gameplay_preview PRIVATE sfml_tbs_game)
+
+add_executable(sfml_tbs_frontend_preview EXCLUDE_FROM_ALL
+    tools/frontend_preview.cpp
+)
+target_link_libraries(sfml_tbs_frontend_preview PRIVATE sfml_tbs_game)
+
 add_executable(sfml_tbs_balance_lab EXCLUDE_FROM_ALL
     tools/balance_lab.cpp
 )
@@ -136,6 +148,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(sfml_tbs_art_preview PRIVATE -Wno-deprecated-declarations)
     target_compile_options(sfml_tbs_sidebar_preview PRIVATE -Wno-deprecated-declarations)
     target_compile_options(sfml_tbs_map_preview PRIVATE -Wno-deprecated-declarations)
+    target_compile_options(sfml_tbs_gameplay_preview PRIVATE -Wno-deprecated-declarations)
+    target_compile_options(sfml_tbs_frontend_preview PRIVATE -Wno-deprecated-declarations)
     target_compile_options(sfml_tbs_balance_lab PRIVATE -Wno-deprecated-declarations)
 endif()
 
@@ -197,4 +211,15 @@ if(BUILD_TESTING)
         target_compile_options(sfml_tbs_unit_definition_tests PRIVATE -Wno-deprecated-declarations)
     endif()
     add_test(NAME unit_definition_tests COMMAND sfml_tbs_unit_definition_tests)
+
+    add_executable(sfml_tbs_viewport_tests
+        tests/viewport_tests.cpp
+        src/Viewport.cpp
+    )
+    target_include_directories(sfml_tbs_viewport_tests PRIVATE src)
+    target_link_libraries(sfml_tbs_viewport_tests PRIVATE sfml-graphics sfml-window sfml-system)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_compile_options(sfml_tbs_viewport_tests PRIVATE -Wno-deprecated-declarations)
+    endif()
+    add_test(NAME viewport_tests COMMAND sfml_tbs_viewport_tests)
 endif()

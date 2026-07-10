@@ -106,20 +106,37 @@ namespace
 
     void drawPathGround(sf::RenderTarget& target, sf::Vector2f origin, int x, int y)
     {
-        drawGrassBase(target, origin, x, y, sf::Color(144, 172, 101));
-        const sf::Color dirt(176, 137, 78);
-        const sf::Color dirtLight(217, 176, 96);
-        const sf::Color dirtDark(112, 86, 55);
-        drawPixelRect(target, origin, 0.f, 6.f, SqureSize, 12.f, sf::Color(86, 71, 48, 82));
-        drawPixelRect(target, origin, 0.f, 7.f, SqureSize, 10.f, dirt);
-        drawPixelRect(target, origin, 0.f, 7.f, SqureSize, 2.f, sf::Color(dirtLight.r, dirtLight.g, dirtLight.b, 118));
-        drawPixelRect(target, origin, 0.f, 15.f, SqureSize, 2.f, sf::Color(dirtDark.r, dirtDark.g, dirtDark.b, 92));
-        drawPixelRect(target, origin, 0.f, 5.f, SqureSize, 1.f, sf::Color(218, 205, 119, 54));
-        drawPixelRect(target, origin, 0.f, 18.f, SqureSize, 1.f, sf::Color(57, 101, 58, 60));
+        const int shade = terrainHash(x, y, 39) % 5;
+        const sf::Color packed = mixColor(sf::Color(165, 137, 82),
+                                          shade < 2 ? sf::Color(110, 102, 69) : sf::Color(207, 174, 101),
+                                          shade < 2 ? 0.13f : 0.09f);
+        drawPixelRect(target, origin, 0.f, 0.f, SqureSize, SqureSize, packed);
 
-        const float pebbleX = static_cast<float>(3 + terrainHash(x, y, 40) % 15);
-        drawPixelRect(target, origin, pebbleX, 10.f, 3.f, 2.f, sf::Color(235, 203, 122, 130));
-        drawPixelRect(target, origin, static_cast<float>(8 + terrainHash(x, y, 41) % 11), 14.f, 2.f, 1.f, sf::Color(91, 71, 46, 92));
+        // Broad patches cross the whole tile visually, so connected route cells
+        // read as one road rather than a stack of narrow horizontal planks.
+        const float patchX = static_cast<float>(terrainHash(x, y, 40) % 13);
+        const float patchY = static_cast<float>(2 + terrainHash(x, y, 41) % 13);
+        drawPixelRect(target, origin, patchX, patchY, 10.f, 6.f,
+                      sf::Color(105, 91, 59, 26));
+        drawPixelRect(target, origin,
+                      static_cast<float>(4 + terrainHash(x, y, 42) % 11),
+                      static_cast<float>(12 + terrainHash(x, y, 43) % 7),
+                      8.f, 4.f, sf::Color(232, 203, 129, 28));
+
+        const float pebbleX = static_cast<float>(3 + terrainHash(x, y, 44) % 16);
+        const float pebbleY = static_cast<float>(4 + terrainHash(x, y, 45) % 14);
+        drawPixelRect(target, origin, pebbleX, pebbleY, 3.f, 2.f, sf::Color(225, 196, 124, 116));
+        drawPixelRect(target, origin,
+                      static_cast<float>(2 + terrainHash(x, y, 46) % 18),
+                      static_cast<float>(3 + terrainHash(x, y, 47) % 17),
+                      2.f, 1.f, sf::Color(82, 72, 52, 105));
+        if (terrainHash(x, y, 48) % 4 == 0) {
+            drawPixelRect(target, origin,
+                          static_cast<float>(terrainHash(x, y, 49) % 19),
+                          static_cast<float>(terrainHash(x, y, 50) % 19),
+                          5.f, 2.f, sf::Color(81, 121, 65, 48));
+        }
+        drawPixelFrame(target, origin, sf::Color(244, 222, 153, 16), sf::Color(74, 66, 48, 22));
     }
 
     void drawRiverGround(sf::RenderTarget& target, sf::Vector2f origin, int x, int y)

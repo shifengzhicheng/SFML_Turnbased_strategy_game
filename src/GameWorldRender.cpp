@@ -33,7 +33,7 @@ void Game::drawGridOverlay()
         lines.append(sf::Vertex(sf::Vector2f(static_cast<float>(width), static_cast<float>(y)), color));
     }
 
-    window.draw(lines);
+    renderTarget().draw(lines);
 }
 
 void Game::drawLaneGuides()
@@ -46,7 +46,8 @@ void Game::drawLaneGuides()
         const int steps = std::max(std::abs(b.x - a.x), std::abs(b.y - a.y)) * 2 + 1;
         const float markerSize = active ? SqureSize * 0.48f : SqureSize * 0.34f;
         for (int i = 0; i <= steps; ++i) {
-            if (!active && i % 2 != 0) {
+            const int spacing = active ? 2 : 3;
+            if (i % spacing != 0) {
                 continue;
             }
             const float t = static_cast<float>(i) / static_cast<float>(steps);
@@ -61,7 +62,7 @@ void Game::drawLaneGuides()
             marker.setFillColor(fill);
             marker.setOutlineColor(outline);
             marker.setOutlineThickness(active ? 1.f : 0.f);
-            window.draw(marker);
+            renderTarget().draw(marker);
         }
     };
 
@@ -89,11 +90,11 @@ void Game::drawLaneGuides()
             flag.setFillColor(active ? sf::Color(255, 224, 105, 215) : sf::Color(151, 198, 126, 118));
             flag.setOutlineColor(sf::Color(46, 60, 42, 160));
             flag.setOutlineThickness(1.f);
-            window.draw(flag);
+            renderTarget().draw(flag);
             sf::RectangleShape flagTail(sf::Vector2f(active ? 4.f : 3.f, active ? 8.f : 6.f));
             flagTail.setPosition(center + sf::Vector2f(-1.5f, 3.f));
             flagTail.setFillColor(sf::Color(46, 60, 42, active ? 180 : 112));
-            window.draw(flagTail);
+            renderTarget().draw(flagTail);
         }
 
         sf::Text laneText(labels[i], myfont, 11);
@@ -102,7 +103,7 @@ void Game::drawLaneGuides()
         laneText.setOutlineThickness(1.f);
         const Point labelPoint = route[1];
         laneText.setPosition((labelPoint.x - 1) * SqureSize, (labelPoint.y - 1.25f) * SqureSize);
-        window.draw(laneText);
+        renderTarget().draw(laneText);
     }
 }
 
@@ -118,7 +119,7 @@ void Game::drawResourceNode(const ResourceNode& node)
     shadow.setScale(1.15f, 0.26f);
     shadow.setPosition(origin + sf::Vector2f(-2.f, 16.f));
     shadow.setFillColor(sf::Color(31, 22, 9, 95));
-    window.draw(shadow);
+    renderTarget().draw(shadow);
 
     sf::CircleShape aura(16.f, 32);
     aura.setOrigin(16.f, 16.f);
@@ -127,7 +128,7 @@ void Game::drawResourceNode(const ResourceNode& node)
     aura.setFillColor(sf::Color(226, 180, 63, static_cast<sf::Uint8>(glow)));
     aura.setOutlineColor(sf::Color(255, 226, 117, 118));
     aura.setOutlineThickness(1.f);
-    window.draw(aura);
+    renderTarget().draw(aura);
 
     const auto drawCrystal = [this, origin](sf::Vector2f tip, sf::Vector2f left, sf::Vector2f right,
                                             sf::Vector2f foot, sf::Color body, sf::Color light) {
@@ -139,13 +140,13 @@ void Game::drawResourceNode(const ResourceNode& node)
         crystal.setFillColor(body);
         crystal.setOutlineColor(sf::Color(89, 61, 24, 210));
         crystal.setOutlineThickness(1.f);
-        window.draw(crystal);
+        renderTarget().draw(crystal);
 
         sf::Vertex shine[] = {
             sf::Vertex(origin + tip + sf::Vector2f(1.f, 3.f), light),
             sf::Vertex(origin + foot + sf::Vector2f(-1.f, -3.f), sf::Color(light.r, light.g, light.b, 60))
         };
-        window.draw(shine, 2, sf::Lines);
+        renderTarget().draw(shine, 2, sf::Lines);
     };
 
     drawCrystal(sf::Vector2f(12.f, -7.f), sf::Vector2f(6.f, 7.f), sf::Vector2f(16.f, 6.f), sf::Vector2f(11.f, 20.f),
@@ -155,17 +156,6 @@ void Game::drawResourceNode(const ResourceNode& node)
     drawCrystal(sf::Vector2f(18.f, 3.f), sf::Vector2f(14.f, 10.f), sf::Vector2f(22.f, 11.f), sf::Vector2f(18.f, 19.f),
                 sf::Color(255, 207, 80), sf::Color(255, 249, 166, 190));
 
-    sf::RectangleShape labelBg(sf::Vector2f(30.f, 12.f));
-    labelBg.setPosition(origin + sf::Vector2f(9.f, -20.f));
-    labelBg.setFillColor(sf::Color(40, 32, 19, 188));
-    labelBg.setOutlineColor(sf::Color(255, 225, 128, 150));
-    labelBg.setOutlineThickness(1.f);
-    window.draw(labelBg);
-
-    sf::Text label("CMD", myfont, 8);
-    label.setFillColor(sf::Color(255, 235, 145));
-    label.setPosition(labelBg.getPosition() + sf::Vector2f(4.f, 1.f));
-    window.draw(label);
 }
 
 void Game::drawResourceNodes()
@@ -184,11 +174,11 @@ void Game::drawBuildings()
             sf::RectangleShape barBg(sf::Vector2f(18.f, 3.f));
             barBg.setPosition(origin + sf::Vector2f(1.f, -5.f));
             barBg.setFillColor(sf::Color(25, 25, 22, 170));
-            window.draw(barBg);
+            renderTarget().draw(barBg);
             sf::RectangleShape bar(sf::Vector2f(18.f * pct, 3.f));
             bar.setPosition(barBg.getPosition());
             bar.setFillColor(building.team == PLAYER ? sf::Color(218, 255, 134) : sf::Color(149, 203, 255));
-            window.draw(bar);
+            renderTarget().draw(bar);
         }
         else if (building.type == building::Barracks && building.production.activeUnit >= 0) {
             const float trainSeconds = unitTrainSeconds(building.production.activeUnit) * teamTrainTimeMultiplier(building.team);
@@ -196,7 +186,7 @@ void Game::drawBuildings()
             sf::RectangleShape bar(sf::Vector2f(18.f * pct, 2.f));
             bar.setPosition(origin + sf::Vector2f(1.f, -4.f));
             bar.setFillColor(sf::Color(255, 218, 112));
-            window.draw(bar);
+            renderTarget().draw(bar);
         }
         if (building.complete && building.type == building::Barracks && building.production.load() > 0) {
             sf::Text queueText("Q" + std::to_string(building.production.load()), myfont, 9);
@@ -204,7 +194,7 @@ void Game::drawBuildings()
             queueText.setOutlineColor(sf::Color(44, 32, 24, 210));
             queueText.setOutlineThickness(0.8f);
             queueText.setPosition(origin + sf::Vector2f(2.f, 10.f));
-            window.draw(queueText);
+            renderTarget().draw(queueText);
         }
 
         if (building.maxHealth > 0 && building.health < building.maxHealth) {
@@ -212,11 +202,11 @@ void Game::drawBuildings()
             sf::RectangleShape hpBg(sf::Vector2f(18.f, 2.f));
             hpBg.setPosition(origin + sf::Vector2f(1.f, 18.f));
             hpBg.setFillColor(sf::Color(42, 23, 20, 190));
-            window.draw(hpBg);
+            renderTarget().draw(hpBg);
             sf::RectangleShape hpBar(sf::Vector2f(18.f * pct, 2.f));
             hpBar.setPosition(hpBg.getPosition());
             hpBar.setFillColor(sf::Color(112, 230, 118));
-            window.draw(hpBar);
+            renderTarget().draw(hpBar);
         }
     }
 }
@@ -231,25 +221,25 @@ void Game::drawWorkerSprite(const Worker& workerUnit)
     sf::RectangleShape shadow(sf::Vector2f(16.f, 3.f));
     shadow.setPosition(origin + sf::Vector2f(2.f, 17.f));
     shadow.setFillColor(sf::Color(12, 17, 13, 78));
-    window.draw(shadow);
+    renderTarget().draw(shadow);
 
     sf::RectangleShape body(sf::Vector2f(8.f, 10.f));
     body.setPosition(origin + sf::Vector2f(6.f, 8.f));
     body.setFillColor(outline);
-    window.draw(body);
+    renderTarget().draw(body);
     body.setSize(sf::Vector2f(6.f, 8.f));
     body.setPosition(origin + sf::Vector2f(7.f, 9.f));
     body.setFillColor(cloth);
-    window.draw(body);
+    renderTarget().draw(body);
 
     sf::RectangleShape head(sf::Vector2f(6.f, 5.f));
     head.setPosition(origin + sf::Vector2f(7.f, 4.f));
     head.setFillColor(sf::Color(226, 178, 123));
-    window.draw(head);
+    renderTarget().draw(head);
     sf::RectangleShape helm(sf::Vector2f(8.f, 3.f));
     helm.setPosition(origin + sf::Vector2f(6.f, 2.f));
     helm.setFillColor(sf::Color(242, 202, 87));
-    window.draw(helm);
+    renderTarget().draw(helm);
 
     if (workerUnit.state == worker::Building) {
         sf::RectangleShape handle(sf::Vector2f(11.f, 2.f));
@@ -257,13 +247,13 @@ void Game::drawWorkerSprite(const Worker& workerUnit)
         handle.setPosition(origin + sf::Vector2f(12.f, 7.f + swing));
         handle.setRotation(32.f + swing * 5.f);
         handle.setFillColor(sf::Color(102, 68, 40));
-        window.draw(handle);
+        renderTarget().draw(handle);
         sf::RectangleShape headTool(sf::Vector2f(5.f, 2.f));
         headTool.setOrigin(1.f, 1.f);
         headTool.setPosition(origin + sf::Vector2f(19.f, 11.f + swing));
         headTool.setRotation(32.f + swing * 5.f);
         headTool.setFillColor(sf::Color(232, 224, 189));
-        window.draw(headTool);
+        renderTarget().draw(headTool);
     }
 }
 

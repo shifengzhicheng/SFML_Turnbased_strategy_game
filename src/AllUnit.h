@@ -46,8 +46,7 @@ public:
 	int myteam;
 	int Health;
 	int entityId = 0;
-	sf::Texture mytexture;
-	sf::Text UnitText;
+		sf::Text UnitText;
 	int unitName = UName::BASE;
 	virtual ~Unit() = default;
 	virtual void updatemystate()=0;
@@ -89,8 +88,9 @@ public:
 	bool isdead();
 	virtual void move(Point p);
 	virtual void updatemystate();
-	int myattack();
-	int myAttackRange() const;
+		int myattack();
+		int maxHealth() const;
+		int myAttackRange() const;
 	void scaleMaxHealth(float multiplier);
 	float realtimeMoveStepSeconds() const;
 	float realtimeAttackCooldownSeconds() const;

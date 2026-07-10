@@ -4,11 +4,22 @@
 #include <string>
 #include <vector>
 
+enum class AttackEffectStyle
+{
+    Beam,
+    Slash,
+    Arrow,
+    Charge,
+    Shell,
+    Heavy
+};
+
 struct AttackEffect
 {
-    sf::RectangleShape beam;
-    sf::RectangleShape impact;
+    sf::Vector2f start;
+    sf::Vector2f end;
     sf::Color color = sf::Color::White;
+    AttackEffectStyle style = AttackEffectStyle::Beam;
     sf::Clock lifetime;
     float durationSeconds = 0.35f;
 };
@@ -26,12 +37,13 @@ class Effects
 {
 public:
     void clear();
-    void addAttack(sf::Vector2f start, sf::Vector2f end, sf::Color color);
+    void addAttack(sf::Vector2f start, sf::Vector2f end, sf::Color color,
+                   AttackEffectStyle style = AttackEffectStyle::Beam);
     void addFloatingText(const sf::Font& font, sf::Vector2f position, const std::string& value,
                          sf::Color color, unsigned int size);
     void startShake(float durationSeconds, float intensity);
     sf::Vector2f shakeOffset() const;
-    void draw(sf::RenderWindow& window);
+    void draw(sf::RenderTarget& target);
 
 private:
     std::vector<AttackEffect> attacks;
@@ -40,6 +52,6 @@ private:
     float shakeDurationSeconds = 0.f;
     float shakeIntensity = 0.f;
 
-    void drawAttacks(sf::RenderWindow& window);
-    void drawFloatingTexts(sf::RenderWindow& window);
+    void drawAttacks(sf::RenderTarget& target);
+    void drawFloatingTexts(sf::RenderTarget& target);
 };

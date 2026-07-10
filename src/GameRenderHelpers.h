@@ -29,17 +29,17 @@ namespace game_internal
         text.setPosition(x, y);
     }
 
-    inline void drawUnitBase(sf::RenderWindow& window, Point point, sf::Color color)
+    inline void drawUnitBase(sf::RenderTarget& target, Point point, sf::Color color)
     {
         const sf::Vector2f origin(point.x * config::TileSize, point.y * config::TileSize);
         sf::RectangleShape shadow(sf::Vector2f(18.f, 4.f));
         shadow.setPosition(origin + sf::Vector2f(1.f, 16.f));
         shadow.setFillColor(sf::Color(color.r, color.g, color.b, 86));
-        window.draw(shadow);
+        target.draw(shadow);
         sf::RectangleShape core(sf::Vector2f(12.f, 2.f));
         core.setPosition(origin + sf::Vector2f(4.f, 17.f));
         core.setFillColor(sf::Color(color.r, color.g, color.b, 150));
-        window.draw(core);
+        target.draw(core);
     }
 
     inline sf::Color ownerColor(int owner)

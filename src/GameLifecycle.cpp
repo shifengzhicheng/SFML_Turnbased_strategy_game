@@ -18,7 +18,7 @@ using namespace game_internal;
 
 bool Game::MousePosChanged()
 {
-    Vector2i mouse = sf::Mouse::getPosition(window);
+    Vector2i mouse = logicalMousePosition(sf::Mouse::getPosition(window));
     int x = mouse.x / SqureSize;
     int y = mouse.y / SqureSize;
     if (MousePoint.x != x || MousePoint.y != y) {
@@ -159,6 +159,7 @@ void Game::clear()
     debugSummaryTimer = 0.f;
     towerPlacementMode = false;
     perkOverlayVisible = false;
+    hoveredRewardChoice = -1;
     rewardSequence = 0;
     rewardChoicesGenerated = false;
     currentMatchSeed = matchSeedOverride;
@@ -353,12 +354,10 @@ void Game::setBase()
     stampBase(Blue_baseP, AI);
 
     Base_red = make_unique<DisMoveableUnit>(Red_baseP.x, Red_baseP.y, PLAYER, this);
-    art::makeUnitTexture(Base_red->mytexture, art::UnitKind::Base, art::Team::Player);
-    Base_red->setTexture(Base_red->mytexture);
+    Base_red->setTexture(art::unitTexture(art::UnitKind::Base, art::Team::Player));
 
     Base_blue = make_unique<DisMoveableUnit>(Blue_baseP.x, Blue_baseP.y, AI, this);
-    art::makeUnitTexture(Base_blue->mytexture, art::UnitKind::Base, art::Team::Enemy);
-    Base_blue->setTexture(Base_blue->mytexture);
+    Base_blue->setTexture(art::unitTexture(art::UnitKind::Base, art::Team::Enemy));
 }
 
 void Game::placeResourceNodes()

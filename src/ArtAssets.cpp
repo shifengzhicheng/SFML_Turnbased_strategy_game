@@ -3,7 +3,9 @@
 #include "Config.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <stdexcept>
 
 namespace art
 {
@@ -85,7 +87,7 @@ namespace art
         }
 
         drawTextCentered(canvas, font, "PROJECT WAR", 56, sf::Color(255, 246, 208), sf::FloatRect(95.f, 82.f, 520.f, 80.f));
-        drawTextCentered(canvas, font, "fast turns / clean tactics / hard hits", 20, sf::Color(220, 233, 201), sf::FloatRect(120.f, 158.f, 470.f, 36.f));
+        drawTextCentered(canvas, font, "three lanes / smart builds / automatic war", 20, sf::Color(220, 233, 201), sf::FloatRect(120.f, 158.f, 500.f, 36.f));
         canvas.display();
         commitTexture(texture, canvas);
     }
@@ -111,6 +113,33 @@ namespace art
             return;
         }
         commitTexture(texture, canvas);
+    }
+
+    const sf::Texture& unitTexture(UnitKind kind, Team team)
+    {
+        constexpr std::size_t kindCount = 6;
+        constexpr std::size_t teamCount = 3;
+        const std::size_t kindIndex = static_cast<std::size_t>(kind);
+        const std::size_t teamIndex = static_cast<std::size_t>(team);
+        if (kindIndex >= kindCount || teamIndex >= teamCount) {
+            throw std::out_of_range("invalid cached unit texture key");
+        }
+
+        struct Cache
+        {
+            std::array<sf::Texture, kindCount * teamCount> textures;
+            std::array<bool, kindCount * teamCount> ready{};
+        };
+        static Cache cache;
+
+        // Unit creation and rendering remain on the SFML context thread. Lazy
+        // creation avoids allocating all variants in headless simulations.
+        const std::size_t index = kindIndex * teamCount + teamIndex;
+        if (!cache.ready[index]) {
+            makeUnitTexture(cache.textures[index], kind, team);
+            cache.ready[index] = true;
+        }
+        return cache.textures[index];
     }
 
     void makeButtonTexture(sf::Texture& texture, const sf::Font& font, const std::string& label,

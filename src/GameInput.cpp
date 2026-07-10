@@ -16,25 +16,6 @@ using namespace sf;
 using namespace std;
 using namespace game_internal;
 
-namespace
-{
-    sf::Vector2i toLogicalMouse(const sf::RenderWindow& window, sf::Vector2i pixel)
-    {
-        const sf::Vector2u size = window.getSize();
-        if (size.x == 0 || size.y == 0
-            || (size.x == config::WindowWidth && size.y == config::WindowHeight)) {
-            return pixel;
-        }
-
-        // Defensive fallback: if the OS ever resizes the window despite the
-        // fixed style, keep input in the same logical coordinate system as
-        // rendering instead of using stretched window pixels.
-        return sf::Vector2i(
-            static_cast<int>(std::round(static_cast<float>(pixel.x) * static_cast<float>(config::WindowWidth) / static_cast<float>(size.x))),
-            static_cast<int>(std::round(static_cast<float>(pixel.y) * static_cast<float>(config::WindowHeight) / static_cast<float>(size.y))));
-    }
-}
-
 void Game::startInput(Vector2i mousePos, Event event) {
     startBtn.setPosition(470.f, 410.f);
     startHelpBtn.setPosition(710.f, 410.f);
@@ -177,17 +158,16 @@ void Game::Input()
     while (window.pollEvent(event))
     {
         if (event.type == Event::Resized) {
-            window.setSize(sf::Vector2u(config::WindowWidth, config::WindowHeight));
-            window.setView(sf::View(sf::FloatRect(0.f, 0.f, config::WindowWidth, config::WindowHeight)));
+            window.setView(logicalView());
             continue;
         }
 
-        sf::Vector2i mousePos = toLogicalMouse(window, sf::Mouse::getPosition(window));
+        sf::Vector2i mousePos = logicalMousePosition(sf::Mouse::getPosition(window));
         if (event.type == Event::MouseButtonPressed || event.type == Event::MouseButtonReleased) {
-            mousePos = toLogicalMouse(window, sf::Vector2i(event.mouseButton.x, event.mouseButton.y));
+            mousePos = logicalMousePosition(sf::Vector2i(event.mouseButton.x, event.mouseButton.y));
         }
         else if (event.type == Event::MouseMoved) {
-            mousePos = toLogicalMouse(window, sf::Vector2i(event.mouseMove.x, event.mouseMove.y));
+            mousePos = logicalMousePosition(sf::Vector2i(event.mouseMove.x, event.mouseMove.y));
         }
         if (event.type == Event::Closed) {
             window.close();
@@ -330,6 +310,16 @@ void Game::handleRewardInput(sf::Vector2i mousePos, sf::Event event)
 {
     if (!perkOverlayVisible) {
         return;
+    }
+
+    hoveredRewardChoice = -1;
+    const sf::Vector2f hoverPoint(static_cast<float>(mousePos.x), static_cast<float>(mousePos.y));
+    for (int i = 0; i < static_cast<int>(perkChoices.size()); ++i) {
+        const sf::FloatRect card(235.f + static_cast<float>(i) * 278.f, 295.f, 250.f, 170.f);
+        if (card.contains(hoverPoint)) {
+            hoveredRewardChoice = i;
+            break;
+        }
     }
 
     if (event.type == sf::Event::KeyPressed) {

@@ -19,7 +19,7 @@ using namespace game_internal;
 
 namespace
 {
-    constexpr sf::Uint32 FixedWindowStyle = sf::Style::Titlebar | sf::Style::Close;
+    constexpr sf::Uint32 WindowStyle = sf::Style::Titlebar | sf::Style::Resize | sf::Style::Close;
 }
 
 Game::Game() :
@@ -28,10 +28,10 @@ Game::Game() :
     horizontalTiles(width / SqureSize),
     debugLogging(std::getenv("TBS_LOG") != nullptr)
 {
-    // Gameplay, pixel art, and hit testing all use one fixed logical canvas.
-    // Keep the OS window non-resizable so SFML never stretches tiles or UI.
-    window.create(sf::VideoMode{ config::WindowWidth, config::WindowHeight }, "Project_War", FixedWindowStyle);
-    window.setView(sf::View(sf::FloatRect(0.f, 0.f, config::WindowWidth, config::WindowHeight)));
+    // Rendering and hit testing share a fixed logical canvas. The OS window can
+    // resize freely; letterboxing preserves square tiles and exact UI hitboxes.
+    window.create(sf::VideoMode{ config::WindowWidth, config::WindowHeight }, "Project War", WindowStyle);
+    window.setView(logicalView());
     window.setFramerateLimit(60);
     Initial();
 }

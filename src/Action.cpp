@@ -135,7 +135,7 @@ namespace
 		}
 		target->playFlash(secondary ? sf::Color(255, 183, 116, 255) : sf::Color(255, 146, 112, 255), secondary ? 0.15f : 0.22f);
 		target->playAction(sf::Vector2f(-attackVector.x, -attackVector.y), secondary ? 0.15f : 0.22f);
-		game.addAttackEffect(unitCenter(attacker), targetCenter, beamColor);
+			game.addUnitAttackEffect(attacker->unitName, unitCenter(attacker), targetCenter, beamColor);
 		game.addFloatingText(targetCenter + sf::Vector2f(0.f, secondary ? -10.f : -16.f),
 			(secondary ? "~" : "-") + std::to_string(finalDamage),
 			damageResult.counter ? sf::Color(255, 222, 90) : sf::Color(255, 106, 82),
@@ -205,7 +205,7 @@ bool Attacker::isInMyAttackRange(MoveableUnit* me, Unit* u) {
 }
 
 void Attacker::drawAttackline(MoveableUnit* me, Unit* u, sf::Color color) {
-	mygame->addAttackEffect(unitCenter(me), unitCenter(u), color);
+	mygame->addUnitAttackEffect(me->unitName, unitCenter(me), unitCenter(u), color);
 }
 
 void Attacker::Attack(MoveableUnit* me, Unit* u)

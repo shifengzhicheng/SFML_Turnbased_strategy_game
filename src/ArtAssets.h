@@ -35,6 +35,7 @@ namespace art
 
     void makeIntroTexture(sf::Texture& texture, const sf::Font& font);
     void makeUnitTexture(sf::Texture& texture, UnitKind kind, Team team);
+    const sf::Texture& unitTexture(UnitKind kind, Team team);
     void makeButtonTexture(sf::Texture& texture, const sf::Font& font, const std::string& label,
                            ButtonState state, sf::Vector2u size, UnitKind icon = UnitKind::None,
                            Team team = Team::Neutral);
