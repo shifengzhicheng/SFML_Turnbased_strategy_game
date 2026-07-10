@@ -3,6 +3,9 @@
 namespace realtime
 {
     inline constexpr bool Enabled = true;
+    inline constexpr float SimulationStepSeconds = 1.f / 60.f;
+    inline constexpr float MaxFrameAdvanceSeconds = 0.25f;
+    inline constexpr int MaxSimulationStepsPerFrame = 20;
     inline constexpr float EconomyTickSeconds = 3.1f;
     inline constexpr float AIThinkSeconds = 5.0f;
     inline constexpr int AIUnitsPerBurst = 1;

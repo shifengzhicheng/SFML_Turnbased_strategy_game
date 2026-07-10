@@ -234,7 +234,7 @@ namespace
         constexpr float maxSeconds = 150.f;
         float elapsed = 0.f;
         while (elapsed < maxSeconds && !game.myunits.empty() && !game.enemys.empty()) {
-            game.updateRealtime(dt);
+            game.advanceRealtime(dt);
             elapsed += dt;
         }
 
@@ -267,6 +267,7 @@ int main(int argc, char* argv[])
     constexpr float mixUpgradeShare = 0.15f;
 
     Game game;
+    game.pathfinding.setExecutionMode(PathfindingService::ExecutionMode::Synchronous);
     game.window.setVisible(false);
 
     if (csv) {

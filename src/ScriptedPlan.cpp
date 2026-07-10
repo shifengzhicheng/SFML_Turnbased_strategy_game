@@ -402,7 +402,7 @@ int runScriptedSimulation(Game& game, ScriptedPlan scriptedPlan, bool simulatePl
                 playerQueue.update(game);
             }
         }
-        game.updateRealtime(dt);
+        game.advanceRealtime(dt);
     }
     game.logDebugSummary();
     if (simulatePlayer) {

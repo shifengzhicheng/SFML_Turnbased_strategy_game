@@ -90,6 +90,7 @@ int runPolicyTrainingCommand(const CliOptions& options)
 int runSimulationCommand(const CliOptions& options)
 {
     Game game;
+    game.pathfinding.setExecutionMode(PathfindingService::ExecutionMode::Synchronous);
     game.debugLogging = true;
     game.autoChooseRewards = true;
     game.window.setVisible(false);

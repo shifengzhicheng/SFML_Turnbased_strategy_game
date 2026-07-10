@@ -135,6 +135,7 @@ void Game::loadMediaData()
 
 void Game::clear()
 {
+    pathfinding.clearPending();
     effects.clear();
     gameWin = false;
     gameOver = false;
@@ -150,6 +151,7 @@ void Game::clear()
     playerEmergencyTrainTimer = 0.f;
     aiEmergencyTrainTimer = 0.f;
     gameTimeSeconds = 0.f;
+    realtimeAccumulator = 0.0;
     debugSummaryTimer = 0.f;
     towerPlacementMode = false;
     perkOverlayVisible = false;

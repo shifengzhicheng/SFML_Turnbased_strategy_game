@@ -48,6 +48,23 @@ void Game::updateRealtime(float dt)
     updateDebugSummary(dt);
 }
 
+void Game::advanceRealtime(float elapsedSeconds)
+{
+    const double fixedStep = static_cast<double>(realtime::SimulationStepSeconds);
+    realtimeAccumulator += static_cast<double>(std::clamp(elapsedSeconds, 0.f, realtime::MaxFrameAdvanceSeconds));
+
+    int steps = 0;
+    while (realtimeAccumulator + 1e-9 >= fixedStep && steps < realtime::MaxSimulationStepsPerFrame) {
+        updateRealtime(realtime::SimulationStepSeconds);
+        realtimeAccumulator -= fixedStep;
+        ++steps;
+    }
+
+    if (steps == realtime::MaxSimulationStepsPerFrame && realtimeAccumulator >= fixedStep) {
+        realtimeAccumulator = std::fmod(realtimeAccumulator, fixedStep);
+    }
+}
+
 void Game::updateComebackTimers(float dt)
 {
     playerBaseShieldTimer = std::max(0.f, playerBaseShieldTimer - dt);
@@ -123,7 +140,7 @@ void Game::updateDebugSummary(float dt)
 void Game::logicBeforeDraw()
 {
     if (!perkOverlayVisible) {
-        updateRealtime(std::min(realtimeFrameClock.restart().asSeconds(), 0.05f));
+        advanceRealtime(realtimeFrameClock.restart().asSeconds());
     }
     else {
         realtimeFrameClock.restart();

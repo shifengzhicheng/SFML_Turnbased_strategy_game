@@ -171,6 +171,14 @@ if(BUILD_TESTING)
     target_include_directories(sfml_tbs_realtime_config_tests PRIVATE src)
     add_test(NAME realtime_config_tests COMMAND sfml_tbs_realtime_config_tests)
 
+    add_executable(sfml_tbs_pathfinding_service_tests
+        tests/pathfinding_service_tests.cpp
+        src/Astar.cpp
+        src/PathfindingService.cpp
+    )
+    target_include_directories(sfml_tbs_pathfinding_service_tests PRIVATE src)
+    add_test(NAME pathfinding_service_tests COMMAND sfml_tbs_pathfinding_service_tests)
+
     add_executable(sfml_tbs_game_operation_tests
         tests/game_operation_tests.cpp
     )

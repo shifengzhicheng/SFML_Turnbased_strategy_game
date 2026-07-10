@@ -80,6 +80,7 @@ namespace
 int main()
 {
     Game game;
+    game.pathfinding.setExecutionMode(PathfindingService::ExecutionMode::Synchronous);
     game.window.setVisible(false);
     game.debugLogging = false;
     game.autoChooseRewards = true;

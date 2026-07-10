@@ -81,6 +81,7 @@ public:
     float playerEmergencyTrainTimer = 0.f;
     float aiEmergencyTrainTimer = 0.f;
     float gameTimeSeconds = 0.f;
+    double realtimeAccumulator = 0.0;
     float debugSummaryTimer = 0.f;
     AIController aiController;
     PathfindingService pathfinding;
@@ -162,6 +163,7 @@ public:
     void logicAfterDraw();
     void logicBeforeInput();
     void updateRealtime(float dt);
+    void advanceRealtime(float elapsedSeconds);
     void updateRealtimeEconomy(float dt);
     void updateDebugSummary(float dt);
     void updateTimedRewards();

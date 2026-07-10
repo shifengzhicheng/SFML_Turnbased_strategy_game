@@ -202,6 +202,7 @@ void runPolicyTraining(int episodes, float seconds, float dt, unsigned int seed)
     TrainablePolicy aiPolicy(seed + 31);
     std::mt19937 rng(seed);
     Game game;
+    game.pathfinding.setExecutionMode(PathfindingService::ExecutionMode::Synchronous);
     game.window.setVisible(false);
     game.autoChooseRewards = true;
     game.debugLogging = false;
@@ -233,7 +234,7 @@ void runPolicyTraining(int episodes, float seconds, float dt, unsigned int seed)
                 PolicyChoice choice = aiPolicy.choose(game, AI, rng, exploration);
                 aiPolicy.record(choice.action, game.executeOperation(AI, choice.operation));
             }
-            game.updateRealtime(dt);
+            game.advanceRealtime(dt);
         }
 
         const float reward = sideScore(game, PLAYER);

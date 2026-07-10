@@ -5,7 +5,6 @@
 #include <condition_variable>
 #include <deque>
 #include <mutex>
-#include <queue>
 #include <thread>
 #include <vector>
 
@@ -33,22 +32,33 @@ struct PathResult
 class PathfindingService
 {
 public:
+    enum class ExecutionMode
+    {
+        Asynchronous,
+        Synchronous
+    };
+
     PathfindingService();
     ~PathfindingService();
 
     PathfindingService(const PathfindingService&) = delete;
     PathfindingService& operator=(const PathfindingService&) = delete;
 
+    void setExecutionMode(ExecutionMode mode);
+    void clearPending();
     void submit(PathRequest request);
     std::vector<PathResult> collectResults();
 
 private:
     void workerLoop();
 
-    std::mutex mutex;
+    static PathResult solve(PathRequest request);
+
+    mutable std::mutex mutex;
     std::condition_variable cv;
     bool stopping = false;
-    std::queue<PathRequest> requests;
+    ExecutionMode executionMode = ExecutionMode::Asynchronous;
+    std::deque<PathRequest> requests;
     std::vector<PathResult> results;
     std::thread worker;
 };
