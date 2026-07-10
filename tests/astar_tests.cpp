@@ -1,10 +1,19 @@
 #include "Astar.h"
 
-#include <cassert>
+#include <cstdlib>
+#include <iostream>
 #include <vector>
 
 namespace
 {
+    void require(bool condition, const char* message)
+    {
+        if (!condition) {
+            std::cerr << message << '\n';
+            std::exit(1);
+        }
+    }
+
     std::vector<std::vector<int>> grid(int width, int height)
     {
         return std::vector<std::vector<int>>(height, std::vector<int>(width, 0));
@@ -22,9 +31,9 @@ int main()
         Astar astar(maze);
         const auto path = astar.GetPath(Point(0, 0), Point(2, 0), false);
 
-        assert(!path.empty());
-        assert(path.front().x == 0 && path.front().y == 0);
-        assert(path.back().x == 2 && path.back().y == 0);
+        require(!path.empty(), "straight path should exist");
+        require(path.front().x == 0 && path.front().y == 0, "path should include its start");
+        require(path.back().x == 2 && path.back().y == 0, "path should reach its goal");
     }
 
     {
@@ -34,7 +43,7 @@ int main()
 
         Astar astar(maze);
         const auto path = astar.GetPath(Point(0, 0), Point(1, 1), true);
-        assert(path.empty());
+        require(path.empty(), "blocked diagonal corner should be unreachable");
     }
 
     {
@@ -42,7 +51,7 @@ int main()
 
         Astar astar(maze);
         const auto path = astar.GetPath(Point(0, 0), Point(1, 1), true);
-        assert(path.size() == 2);
+        require(path.size() == 2, "open diagonal move should use one step");
     }
 
     {
@@ -51,7 +60,7 @@ int main()
 
         Astar astar(maze);
         const auto path = astar.GetPath(Point(0, 0), Point(1, 1), false);
-        assert(path.empty());
+        require(path.empty(), "cardinal mode should reject a diagonal-only route");
     }
 
     return 0;

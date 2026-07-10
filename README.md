@@ -82,6 +82,7 @@ ctest --test-dir build --output-on-failure
 - 兵营和防御塔由按钮自动放在基地/兵线附近，玩家只需要选 Top/Mid/Bot 后造兵。
 - 生产建筑被拆会触发补救：返还部分 CMD、临时 HQ 护盾和少量基地修复，降低一波崩盘的挫败感。
 - 兵种移动速度差异明显：骑兵最快适合绕线/切后排，攻城车最慢但射程略远于防御塔，需要前排保护才能稳定拆塔。
+- 7 分 30 秒后进入可见加时，建筑伤害和 HQ 压力逐步提高；14 分钟仍未结束时触发双方对称的 `FINAL`，所有兵线越过外围目标直攻 HQ，避免僵局拖过 15 分钟。
 - AI 使用策略模型做正式决策，会在开局兵营、经济/科技、兵种混编、防守塔和攻城反塔之间按局势打分切换。
 - 开始界面只保留 `START` / `HELP` 两个入口；结算界面只保留 `PLAY AGAIN`，减少无关按钮干扰。
 
@@ -115,3 +116,5 @@ cmake --build build --target sfml_tbs_gameplay_preview sfml_tbs_frontend_preview
 原仓库中的 Visual Studio 工程文件、Windows `.exe/.dll/.lib/.pdb/.obj` 产物、重复 Debug/Release 资源目录已清理。当前构建不依赖系统安装的 SFML，也不保留旧 Windows 二进制兜底。
 
 `third_party/SFML` 保持官方 submodule 内容，当前锁定在 SFML `2.6.2`。项目自身只通过 CMake 链接 `sfml-graphics`、`sfml-window`、`sfml-system`，未启用 SFML audio/network。
+
+`.github/workflows/build.yml` 会在 macOS、Linux 和 Windows 上从该 submodule 构建并运行同一套测试；Linux CI 通过 `xvfb` 提供 SFML 图形上下文。

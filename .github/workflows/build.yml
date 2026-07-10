@@ -1,0 +1,44 @@
+name: Cross-platform build
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Check out source and SFML
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Linux graphics dependencies
+        if: runner.os == 'Linux'
+        run: >-
+          sudo apt-get update && sudo apt-get install -y
+          libx11-dev libxrandr-dev libxcursor-dev libudev-dev
+          libgl1-mesa-dev libegl1-mesa-dev libfreetype6-dev xvfb xauth
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build --config Release --parallel 4
+
+      - name: Test Linux
+        if: runner.os == 'Linux'
+        run: xvfb-run -a ctest --test-dir build -C Release --output-on-failure
+
+      - name: Test macOS and Windows
+        if: runner.os != 'Linux'
+        run: ctest --test-dir build -C Release --output-on-failure

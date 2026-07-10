@@ -20,7 +20,7 @@ namespace realtime
     inline constexpr float ShooterStepSeconds = 0.82f;
     inline constexpr float CavalryStepSeconds = 0.34f;
     inline constexpr float SiegeStepSeconds = 1.58f;
-    inline constexpr float GuardianStepSeconds = 0.96f;
+    inline constexpr float GuardianStepSeconds = 1.04f;
 
     static_assert(CavalryStepSeconds < InfantryStepSeconds);
     static_assert(InfantryStepSeconds < ShooterStepSeconds);
