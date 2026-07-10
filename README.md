@@ -1,4 +1,4 @@
-# SFML Turnbased Strategy Game
+# Command Lines
 
 一个使用 SFML 2.x 实现的实时 rogue RTS 自走棋游戏。玩家升级单一 CMD 经济、选择兵线并排队生产单位；工蜂、寻路、战斗和基地附近建筑摆放会自动执行。原工程是 Visual Studio/Win32 项目；当前仓库已整理为跨平台 CMake 工程，并通过 `third_party/SFML` submodule 从 SFML 源码编译依赖。
 
@@ -48,7 +48,7 @@ Windows 多配置生成器通常在：
 
 ## 测试
 
-当前包含 A*、随机地图约束和实时兵种速度层级测试：
+当前测试覆盖 A*、异步寻路交接、随机地图约束、操作规则、兵种定义和窗口坐标映射：
 
 ```bash
 ctest --test-dir build --output-on-failure
@@ -77,7 +77,7 @@ ctest --test-dir build --output-on-failure
 ## 当前玩法
 
 - 资源只有一种：`CMD`。CMD 来自自然增长和击杀赏金，击杀赏金按敌方单位造价比例返还。
-- `ECONOMY` 按钮会提高自然 CMD 增长，并增加基地附近可见工蜂数量；地图上的 CMD 标记只是读图锚点，不再需要占矿或抢矿。
+- `ECONOMY` 按钮会提高自然 CMD 增长，并增加基地附近可见工蜂数量；地图水晶只是视觉锚点，不需要点击或占领。
 - `UPGRADE` 提升科技等级，并触发三选一 rogue 战术强化；双方基地状态会显示已选强化。
 - 兵营和防御塔由按钮自动放在基地/兵线附近，玩家只需要选 Top/Mid/Bot 后造兵。
 - 生产建筑被拆会触发补救：返还部分 CMD、临时 HQ 护盾和少量基地修复，降低一波崩盘的挫败感。
@@ -88,19 +88,27 @@ ctest --test-dir build --output-on-failure
 ## 项目结构
 
 - `src/`：游戏源码
-- `tests/`：基础逻辑测试，覆盖 A* 寻路边界、随机地图连通性和兵种移动速度层级
-- `data/`：运行资源；`data/ttf/arial.ttf` 是必需字体，`data/art/svg/` 是美术源稿/参考稿，当前可执行文件不直接读取这些 SVG
-- `docs/`：设计和重构记录；`docs/realtime_refactor_plan.md` 偏历史路线图，当前玩法说明以本 README 和游戏内 `HELP` 为准
-- `tools/`：辅助开发工具，例如生成美术预览的 `sfml_tbs_art_preview`
+- `tests/`：确定性寻路、地图、操作规则、数值定义和响应式坐标回归测试
+- `data/`：运行资源；当前只保留必需字体 `data/ttf/arial.ttf`
+- `tools/`：平衡实验、地图/单位/侧栏预览以及完整前端离屏截图工具
 - `third_party/SFML/`：SFML 2.6.2 submodule，跨平台从源码编译
 - `CMakeLists.txt`：跨平台构建入口
 
-## 保留说明
+## 开发预览
 
-- `tests/` 不参与正式运行，但建议保留；每次改寻路、地图、AI 节奏或移动速度后都应跑 `ctest` 防回归。
-- `data/ttf/arial.ttf` 是启动游戏和预览工具的运行时依赖，不能删除；构建会把整个 `data/` 复制到可执行文件目录。
-- `data/art/svg/` 目前不是运行时依赖，保留它是为了后续继续打磨单位、按钮、攻击特效等矢量源稿；若确定完全改成代码生成美术，可以单独清理这一子目录。
-- `docs/realtime_refactor_plan.md` 不是玩家手册，主要用于追踪从回合制改实时自走棋的历史决策；如果继续迭代，建议把它更新成当前的 `game_design` 文档。
+美术由 SFML 程序化生成，预览目标不会进入默认构建。需要检查实际像素时运行：
+
+```bash
+cmake --build build --target sfml_tbs_art_preview sfml_tbs_map_preview sfml_tbs_sidebar_preview
+cmake --build build --target sfml_tbs_gameplay_preview sfml_tbs_frontend_preview
+./build/sfml_tbs_art_preview build/art_preview.png
+./build/sfml_tbs_map_preview build/map_preview.png
+./build/sfml_tbs_sidebar_preview build/sidebar_preview.png
+./build/sfml_tbs_gameplay_preview build/gameplay_preview.png
+./build/sfml_tbs_frontend_preview build
+```
+
+窗口可以自由缩放；渲染和输入共享固定逻辑画布并使用 letterbox 映射，因此格子比例和按钮命中不会随窗口尺寸变化。
 
 ## 说明
 

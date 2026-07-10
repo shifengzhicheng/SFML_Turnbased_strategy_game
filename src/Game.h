@@ -12,7 +12,6 @@
 #include "SFML/System.hpp"
 #include "AllUnit.h"
 #include "Tile.h"
-#include "Astar.h"
 #include "Button.h"
 #include "Map.h"
 #include "Effects.h"
@@ -30,21 +29,15 @@ class Game
 {
 public:
     sf::Text Globle_text;
-    sf::Text CommandText;
     bool gameWin;
 
     mapgenerator gm;
 
     sf::Font myfont;
 
-    sf::Clock clock;
     sf::Clock realtimeFrameClock;
 
-    Point MousePoint;
-
     Unit* MosOnUnit;
-
-    bool MousePosChanged();
 
     int horizontalTiles;
     
@@ -57,8 +50,6 @@ public:
 
     Point Blue_baseP;
 
-    sf::Keyboard::Key keyCode;
-
     std::list<std::unique_ptr<MoveableUnit>> myunits;
 
     std::list<std::unique_ptr<MoveableUnit>> enemys;
@@ -70,7 +61,6 @@ public:
     int playerCommand = config::StartingCommand;
     int aiCommand = config::StartingCommand;
     bool tutorialVisible = false;
-    bool towerPlacementMode = false;
     bool debugLogging = false;
     bool externalAIControl = false;
     float playerIncomeTimer = 0.f;
@@ -135,19 +125,9 @@ public:
     sf::Texture tBarracks, tBarracksHover, tBarracksClick;
     sf::Texture tHelp, tHelpHover, tHelpClick;
     sf::Texture tTower, tTowerHover, tTowerClick;
-    sf::Texture background;
-    sf::Sprite back;
     sf::RectangleShape sidePanel;
     sf::Text panelTitle;
-    sf::Text panelHint;
-    sf::Text infantryLabel;
-    sf::Text shooterLabel;
-    sf::Text cavalryLabel;
-    sf::Text siegeLabel;
-    sf::Text guardianLabel;
     sf::Text economyLabel;
-    sf::Text barracksLabel;
-    sf::Text towerLabel;
 
     Game();
     ~Game();
@@ -161,8 +141,6 @@ public:
     std::vector<std::vector<int> > maze;
     std::vector<MapPos> tiles;
 
-    Astar astar;
-
     int gameSceneState;
     bool gameOver;
 
@@ -171,8 +149,6 @@ public:
     void loadMediaData();
 
     void logicBeforeDraw();
-    void logicAfterDraw();
-    void logicBeforeInput();
     void updateRealtime(float dt);
     void advanceRealtime(float elapsedSeconds);
     void updateRealtimeEconomy(float dt);
@@ -237,7 +213,6 @@ public:
     void updateEmergencyBaseTraining(float dt);
     void cleanupDestroyedBuildings();
     void cleanupDestroyedUnits();
-    void handleRealtimeMapClick(sf::Vector2i mousePos, sf::Event event);
     int resourceIncome(int team) const;
     int economyLevelForTeam(int team) const;
     int economyUpgradeCost(int team) const;

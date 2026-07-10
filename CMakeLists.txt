@@ -75,6 +75,7 @@ set(SFML_TBS_GAME_SOURCES
     src/Tile.cpp
     src/UnitDefinition.cpp
     src/UnitFactory.cpp
+    src/UnitRender.cpp
     src/UnitStatsResolver.cpp
     src/UnitTypes.cpp
     src/UnitUpgradeDefinition.cpp
@@ -222,4 +223,13 @@ if(BUILD_TESTING)
         target_compile_options(sfml_tbs_viewport_tests PRIVATE -Wno-deprecated-declarations)
     endif()
     add_test(NAME viewport_tests COMMAND sfml_tbs_viewport_tests)
+
+    add_executable(sfml_tbs_button_tests
+        tests/button_tests.cpp
+    )
+    target_link_libraries(sfml_tbs_button_tests PRIVATE sfml_tbs_game)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_compile_options(sfml_tbs_button_tests PRIVATE -Wno-deprecated-declarations)
+    endif()
+    add_test(NAME button_tests COMMAND sfml_tbs_button_tests)
 endif()

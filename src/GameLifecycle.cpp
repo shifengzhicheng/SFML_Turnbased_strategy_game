@@ -16,22 +16,8 @@ using namespace sf;
 using namespace std;
 using namespace game_internal;
 
-bool Game::MousePosChanged()
-{
-    Vector2i mouse = logicalMousePosition(sf::Mouse::getPosition(window));
-    int x = mouse.x / SqureSize;
-    int y = mouse.y / SqureSize;
-    if (MousePoint.x != x || MousePoint.y != y) {
-        MousePoint.x = x;
-        MousePoint.y = y;
-        return true;
-    }
-    return false;
-}
-
 void Game::loadpic()
 {
-    art::makeIntroTexture(background, myfont);
     art::makeButtonTexture(tStartBtnNormal, myfont, "START", art::ButtonState::Normal, sf::Vector2u(210, 72));
     art::makeButtonTexture(tStartBtnHover, myfont, "START", art::ButtonState::Hover, sf::Vector2u(210, 72));
     art::makeButtonTexture(tStartBtnClick, myfont, "START", art::ButtonState::Pressed, sf::Vector2u(210, 72));
@@ -87,7 +73,6 @@ void Game::loadpic()
     barracksBtn.setTextures(tBarracks, tBarracksHover, tBarracksClick);
     helpBtn.setTextures(tHelp, tHelpHover, tHelpClick);
     towerBtn.setTextures(tTower, tTowerHover, tTowerClick);
-    back.setTexture(background);
 }
 
 void Game::Initial()
@@ -98,17 +83,8 @@ void Game::Initial()
     gameOver = false;
     const float panelTextX = static_cast<float>(config::PanelX + config::PanelPadding);
     setupText(Globle_text, myfont, 17, sf::Color(229, 221, 189), "GameStart", panelTextX, 48.f);
-    setupText(CommandText, myfont, 14, sf::Color(255, 218, 112), "", panelTextX, 176.f);
     setupText(panelTitle, myfont, 19, sf::Color(255, 246, 208), "WAR ROOM", panelTextX, 16.f);
-    setupText(panelHint, myfont, 12, sf::Color(211, 199, 165), "Pick lane, queue units", panelTextX, 184.f);
     setupText(economyLabel, myfont, 10, sf::Color(228, 218, 185), "natural CMD", panelTextX, config::EconomyButtonY - 12.f);
-    setupText(barracksLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(buildingCommandCost(building::Barracks)) + " auto near base", panelTextX, config::BuildBarracksY + 43.f);
-    setupText(infantryLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(unitCost(UName::INFANTARY)) + " core / steady", panelTextX, config::BuildInfantryY + 43.f);
-    setupText(shooterLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(unitCost(UName::SHOOTER)) + " ranged / slow", panelTextX, config::BuildShooterY + 43.f);
-    setupText(cavalryLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(unitCost(UName::CAVALRY)) + " fast dive", panelTextX, config::BuildCavalryY + 43.f);
-    setupText(siegeLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(unitCost(UName::SIEGE)) + " slow anti-tower", panelTextX, config::BuildSiegeY + 43.f);
-    setupText(guardianLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(unitCost(UName::GUARDIAN)) + " heavy / slow", panelTextX, config::BuildGuardianY + 43.f);
-    setupText(towerLabel, myfont, 10, sf::Color(228, 218, 185), std::to_string(buildingCommandCost(building::DefenseTower)) + " auto lane fort", panelTextX, config::BuildTowerY + 43.f);
 
     sidePanel.setSize(sf::Vector2f(config::PanelWidth, config::WindowHeight));
     sidePanel.setPosition(config::PanelX, 0.f);
@@ -157,7 +133,6 @@ void Game::clear()
     gameTimeSeconds = 0.f;
     realtimeAccumulator = 0.0;
     debugSummaryTimer = 0.f;
-    towerPlacementMode = false;
     perkOverlayVisible = false;
     hoveredRewardChoice = -1;
     rewardSequence = 0;
@@ -233,8 +208,6 @@ void Game::clear()
     setBase();
     placeResourceNodes();
     createStartingWorkers();
-
-    astar = Astar(maze);
 
 }
 

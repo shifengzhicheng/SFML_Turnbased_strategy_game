@@ -8,6 +8,7 @@ void Button::setTextures(const Texture& _tNormal, const Texture& _tClick) {
 	tClick = _tClick;
 	setTexture(tNormal, true);
 	btnState = NORMAL;
+	pressedInside = false;
 }
 void Button::setTextures(const Texture& _tNormal, const Texture& _tHover, const Texture& _tClick) {
 	tNormal = _tNormal;
@@ -15,9 +16,13 @@ void Button::setTextures(const Texture& _tNormal, const Texture& _tHover, const 
 	tClick = _tClick;
 	setTexture(tNormal, true);
 	btnState = NORMAL;
+	pressedInside = false;
 }
 void Button::setState(int state)
 {
+	if (btnState == state) {
+		return;
+	}
 	btnState = state;
 	switch (btnState) {
 	case NORMAL:
@@ -37,34 +42,22 @@ int Button::checkMouse(Vector2i mouse, Event event) {
 	if (getTexture() == nullptr) {
 		return btnState;
 	}
-	if (mouse.x >= 0 && mouse.x <= config::WindowWidth && mouse.y >= 0 && mouse.y <= config::WindowHeight) {
-		if (getGlobalBounds().contains(static_cast<float>(mouse.x), static_cast<float>(mouse.y))) {
-			if (event.type == Event::EventType::MouseButtonPressed && event.mouseButton.button == Mouse::Left) {
-				if (btnState == NORMAL) {
-					setState(CLICK);
-				}
-				else if (btnState == RELEASE) {
-					setState(NORMAL);
-				}
-			}
-			else if(event.type == Event::EventType::MouseButtonReleased && event.mouseButton.button == Mouse::Left)
-			{
-				setState(RELEASE);
-			}
-			else {
-				if (btnState != CLICK) {
-					setState(HOVER);
-				}
-			}
-		}
-		else {
-			if (event.type == Event::EventType::MouseButtonReleased && event.mouseButton.button == Mouse::Left) {
-				setState(NORMAL);
-			}
-			else if (btnState == HOVER) {
-				setState(NORMAL);
-			}
-		}
+	const bool inCanvas = mouse.x >= 0 && mouse.x <= config::WindowWidth
+		&& mouse.y >= 0 && mouse.y <= config::WindowHeight;
+	const bool inside = inCanvas
+		&& getGlobalBounds().contains(static_cast<float>(mouse.x), static_cast<float>(mouse.y));
+
+	if (event.type == Event::MouseButtonPressed && event.mouseButton.button == Mouse::Left) {
+		pressedInside = inside;
+		setState(inside ? CLICK : NORMAL);
+	}
+	else if (event.type == Event::MouseButtonReleased && event.mouseButton.button == Mouse::Left) {
+		const bool activate = pressedInside && inside;
+		pressedInside = false;
+		setState(activate ? RELEASE : (inside ? HOVER : NORMAL));
+	}
+	else if (!pressedInside) {
+		setState(inside ? HOVER : NORMAL);
 	}
 	return btnState;
 }

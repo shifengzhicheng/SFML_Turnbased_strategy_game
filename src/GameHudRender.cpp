@@ -435,36 +435,6 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         && totalBuildingCount(PLAYER, building::DefenseTower) < buildingCap(PLAYER, building::DefenseTower);
     towerBtn.setColor(canQueueTower ? sf::Color::White : sf::Color(255, 255, 255, 130));
 
-    const auto setLabel = [this](sf::Text& text, const std::string& value, int buttonY) {
-        text.setCharacterSize(8);
-        text.setFillColor(sf::Color(235, 225, 190));
-        text.setOutlineColor(sf::Color(12, 15, 13, 210));
-        text.setOutlineThickness(0.7f);
-        text.setPosition(static_cast<float>(config::PanelX + config::PanelPadding), static_cast<float>(buttonY + config::SideButtonHeight - 1));
-        text.setString(value);
-    };
-    setLabel(barracksLabel, "cap "
-        + std::to_string(totalBuildingCount(PLAYER, building::Barracks)) + "/"
-        + std::to_string(buildingCap(PLAYER, building::Barracks)) + " | auto base", config::BuildBarracksY);
-    const auto masteryLabel = [this](int unitName, const std::string& role) {
-        const int level = unitMasteryLevel(PLAYER, unitName);
-        const int bonus = static_cast<int>(std::round(static_cast<float>(level) * config::MasteryStatBonusPerLevel * 100.f));
-        if (!isUnitUnlocked(PLAYER, unitName)) {
-            return "locked | " + role;
-        }
-        return "M" + std::to_string(level)
-            + " +" + std::to_string(bonus) + "%"
-            + " | next " + std::to_string(unitMasteryUpgradeCost(PLAYER, unitName));
-    };
-    setLabel(infantryLabel, masteryLabel(UName::INFANTARY, "front"), config::BuildInfantryY);
-    setLabel(shooterLabel, masteryLabel(UName::SHOOTER, "multi"), config::BuildShooterY);
-    setLabel(cavalryLabel, masteryLabel(UName::CAVALRY, "dive"), config::BuildCavalryY);
-    setLabel(siegeLabel, masteryLabel(UName::SIEGE, "breach"), config::BuildSiegeY);
-    setLabel(guardianLabel, masteryLabel(UName::GUARDIAN, "tank"), config::BuildGuardianY);
-    setLabel(towerLabel, "cap "
-        + std::to_string(totalBuildingCount(PLAYER, building::DefenseTower)) + "/"
-        + std::to_string(buildingCap(PLAYER, building::DefenseTower)) + " | anti-rush", config::BuildTowerY);
-
     const auto drawButtonBackplate = [&target](int buttonY, bool available, float h = static_cast<float>(config::SideButtonHeight)) {
         sf::RectangleShape plate(sf::Vector2f(static_cast<float>(config::SideButtonWidth) + 8.f, h));
         plate.setPosition(static_cast<float>(config::ButtonX - 4), static_cast<float>(buttonY));

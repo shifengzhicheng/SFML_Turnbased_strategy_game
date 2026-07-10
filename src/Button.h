@@ -19,6 +19,9 @@ public:
 	void setTextures(const sf::Texture&, const sf::Texture&, const sf::Texture&);
 	void setState(int state);
 	void offset(double _x, double _y) {
-		setPosition(getPosition().x + _x, getPosition().y + _y);
-	}
+			setPosition(getPosition().x + _x, getPosition().y + _y);
+		}
+
+private:
+	bool pressedInside = false;
 };

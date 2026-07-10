@@ -33,7 +33,6 @@ namespace art
     sf::Color teamColor(Team team);
     sf::Color teamAccent(Team team);
 
-    void makeIntroTexture(sf::Texture& texture, const sf::Font& font);
     void makeUnitTexture(sf::Texture& texture, UnitKind kind, Team team);
     const sf::Texture& unitTexture(UnitKind kind, Team team);
     void makeButtonTexture(sf::Texture& texture, const sf::Font& font, const std::string& label,

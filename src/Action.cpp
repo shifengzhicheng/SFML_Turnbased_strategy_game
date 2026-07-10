@@ -2,6 +2,7 @@
 #include "Action.h"
 #include "Config.h"
 #include "Game.h"
+#include "GameGeometry.h"
 #include "UnitGeometry.h"
 
 #include <algorithm>
@@ -11,8 +12,6 @@
 
 namespace
 {
-	constexpr int SqureSize = config::TileSize;
-
 	bool isCombatUnit(int unitName)
 	{
 		return unitName == UName::SHOOTER
@@ -20,16 +19,6 @@ namespace
 			|| unitName == UName::CAVALRY
 			|| unitName == UName::SIEGE
 			|| unitName == UName::GUARDIAN;
-	}
-
-	sf::Vector2f unitCenter(Unit* unit)
-	{
-		const auto bounds = unit->getGlobalBounds();
-		if (bounds.width > 0.f && bounds.height > 0.f) {
-			return sf::Vector2f(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
-		}
-		const float baseOffset = unit->unitName == UName::BASE ? SqureSize : SqureSize / 2.f;
-		return sf::Vector2f(unit->x * SqureSize + baseOffset, unit->y * SqureSize + baseOffset);
 	}
 
 	struct DamageResult
@@ -126,16 +115,16 @@ namespace
 			defender->rememberAttacker(*attacker);
 		}
 
-		const sf::Vector2f targetCenter = unitCenter(target);
+			const sf::Vector2f targetCenter = game_internal::unitCenter(*target);
 		const sf::Color beamColor = attackEffectColor(attacker->unitName, damageResult, secondary);
-		const sf::Vector2f attackVector = unitCenter(target) - unitCenter(attacker);
+			const sf::Vector2f attackVector = game_internal::unitCenter(*target) - game_internal::unitCenter(*attacker);
 		attacker->playFlash(sf::Color(255, 245, 180, 255), secondary ? 0.10f : 0.16f);
 		if (!secondary) {
 			attacker->playAction(attackVector, 0.18f);
 		}
 		target->playFlash(secondary ? sf::Color(255, 183, 116, 255) : sf::Color(255, 146, 112, 255), secondary ? 0.15f : 0.22f);
 		target->playAction(sf::Vector2f(-attackVector.x, -attackVector.y), secondary ? 0.15f : 0.22f);
-			game.addUnitAttackEffect(attacker->unitName, unitCenter(attacker), targetCenter, beamColor);
+			game.addUnitAttackEffect(attacker->unitName, game_internal::unitCenter(*attacker), targetCenter, beamColor);
 		game.addFloatingText(targetCenter + sf::Vector2f(0.f, secondary ? -10.f : -16.f),
 			(secondary ? "~" : "-") + std::to_string(finalDamage),
 			damageResult.counter ? sf::Color(255, 222, 90) : sf::Color(255, 106, 82),
@@ -205,7 +194,7 @@ bool Attacker::isInMyAttackRange(MoveableUnit* me, Unit* u) {
 }
 
 void Attacker::drawAttackline(MoveableUnit* me, Unit* u, sf::Color color) {
-	mygame->addUnitAttackEffect(me->unitName, unitCenter(me), unitCenter(u), color);
+	mygame->addUnitAttackEffect(me->unitName, game_internal::unitCenter(*me), game_internal::unitCenter(*u), color);
 }
 
 void Attacker::Attack(MoveableUnit* me, Unit* u)

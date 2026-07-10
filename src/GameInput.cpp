@@ -45,31 +45,7 @@ void Game::startInput(Vector2i mousePos, Event event) {
     }
 }
 
-void Game::handleRealtimeMapClick(Vector2i mousePos, Event event)
-{
-    if (event.type != Event::EventType::MouseButtonPressed || event.mouseButton.button != Mouse::Left) {
-        return;
-    }
-    if (mousePos.x < 0 || mousePos.x >= width || mousePos.y < 0 || mousePos.y >= height) {
-        return;
-    }
-
-    const int tileX = mousePos.x / SqureSize;
-    const int tileY = mousePos.y / SqureSize;
-    for (const auto& node : resources) {
-        if (isResourceClick(node, tileX, tileY)) {
-            addFloatingText(sf::Vector2f(node.point.x * SqureSize, node.point.y * SqureSize - 14.f),
-                            "Income: ECONOMY button", sf::Color(255, 226, 112), 12);
-            return;
-        }
-    }
-
-    // Economy is now a single natural-income track upgraded from the side
-    // panel. Map clicks are reserved for selection and lane reading.
-}
-
 void Game::GameInput(Vector2i mousePos, Event event) {
-    const bool mouseInMap = mousePos.x >= 0 && mousePos.x < width && mousePos.y >= 0 && mousePos.y < height;
     if (perkOverlayVisible) {
         handleRewardInput(mousePos, event);
         return;
@@ -124,7 +100,6 @@ void Game::GameInput(Vector2i mousePos, Event event) {
     if (tutorialVisible) {
         return;
     }
-    handleRealtimeMapClick(mousePos, event);
     if (Base_red) {
         Base_red->checkMouse(mousePos, event);
     }
@@ -133,22 +108,6 @@ void Game::GameInput(Vector2i mousePos, Event event) {
     }
     for (auto& u : enemys) {
         u->checkHover(mousePos, event);
-    }
-    if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::T))
-    {
-        setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::Tree);
-    }
-    if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::M))
-    {
-        setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::Mount);
-    }
-    if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
-    {
-        setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::River);
-    }
-    if (mouseInMap && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E))
-    {
-        setTileID(mousePos.x / SqureSize, mousePos.y / SqureSize, tile::Empty);
     }
 }
 
@@ -237,7 +196,7 @@ void Game::handleBuildButtons(Vector2i mousePos, Event event)
         return;
     }
 
-    if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
+    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
         const std::pair<int, int> masteryButtons[] = {
             {UName::INFANTARY, config::BuildInfantryY},
             {UName::SHOOTER, config::BuildShooterY},

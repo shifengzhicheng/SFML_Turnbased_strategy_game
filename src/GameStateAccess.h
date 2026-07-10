@@ -3,7 +3,6 @@
 #include "BuildingDefinition.h"
 #include "Game.h"
 #include "RealtimeConfig.h"
-#include "ResourceNode.h"
 #include "Tile.h"
 #include "UnitDefinition.h"
 
@@ -73,8 +72,4 @@ namespace game_internal
         return realtime::InfantryTrainSeconds;
     }
 
-    inline bool isResourceClick(const ResourceNode& node, int tileX, int tileY)
-    {
-        return node.point.x == tileX && node.point.y == tileY;
-    }
 }

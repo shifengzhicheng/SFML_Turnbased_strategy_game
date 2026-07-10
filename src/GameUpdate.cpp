@@ -15,17 +15,10 @@ using namespace sf;
 using namespace std;
 using namespace game_internal;
 
-void Game::logicBeforeInput()
-{
-    syncMazeFromTiles();
-    astar.setMaze(maze);
-}
-
 void Game::updateRealtime(float dt)
 {
     gameTimeSeconds += dt;
     syncMazeFromTiles();
-    astar.setMaze(maze);
     applyPathResults();
     cleanupDestroyedBuildings();
     updateComebackTimers(dt);
@@ -198,10 +191,6 @@ void Game::cleanupDestroyedUnits()
     removeDead(enemys, PLAYER);
 }
 
-void Game::logicAfterDraw()
-{
-}
-
 void Game::run()
 {
 
@@ -209,19 +198,12 @@ void Game::run()
     {
 
         window.clear();
-        if(gameSceneState==SCENE_GAME)
-            logicBeforeInput();
-
-
         Input();
 
         if (gameSceneState == SCENE_GAME)
             logicBeforeDraw();
 
         Draw();
-
-        logicAfterDraw();
-
 
         window.display();
 
