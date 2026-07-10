@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(SFML_Turnbased_Strategy_Game LANGUAGES CXX)
+project(Command_Lines LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

@@ -218,7 +218,7 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
                 continue;
             }
             if (!text.empty()) {
-                text += " ";
+                text += "  ";
             }
             text += perkShortName(type);
             text += std::to_string(level);
@@ -315,19 +315,19 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
     drawStatChip(statusX + 75.f, 172.f, 70.f, "ECON", std::to_string(playerEconomyLevel) + "/" + std::to_string(config::MaxEconomyLevel), sf::Color(136, 214, 116));
     drawStatChip(statusX + 150.f, 172.f, 70.f, "ARMY", std::to_string(myunits.size()), sf::Color(222, 86, 68));
 
-    sf::RectangleShape buffStrip(sf::Vector2f(220.f, 8.f));
-    buffStrip.setPosition(statusX, 190.f);
+    sf::RectangleShape buffStrip(sf::Vector2f(220.f, 13.f));
+    buffStrip.setPosition(statusX, 187.f);
     buffStrip.setFillColor(sf::Color(17, 24, 21, 180));
     buffStrip.setOutlineColor(inspectingEnemyBase ? sf::Color(80, 140, 206, 120) : sf::Color(212, 152, 60, 120));
     buffStrip.setOutlineThickness(1.f);
     target.draw(buffStrip);
 
-    sf::Text perkText(std::string(inspectingEnemyBase ? "ENEMY" : "YOUR") + " Lv" + std::to_string(shownLevel)
-        + " BUFFS " + clampText(perkLine(), 27), myfont, 7);
+    sf::Text perkText(std::string(inspectingEnemyBase ? "AI L" : "YOU L") + std::to_string(shownLevel)
+        + " / " + clampText(perkLine(), 31), myfont, 9);
     perkText.setFillColor(inspectingEnemyBase ? sf::Color(149, 203, 255) : sf::Color(255, 226, 142));
     perkText.setOutlineColor(sf::Color(11, 14, 12, 200));
     perkText.setOutlineThickness(0.6f);
-    perkText.setPosition(statusX + 5.f, 189.f);
+    perkText.setPosition(statusX + 5.f, 187.f);
     target.draw(perkText);
 
     int playerLaneCounts[lane::Count] = {};

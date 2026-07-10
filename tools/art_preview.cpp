@@ -116,14 +116,14 @@ int main(int argc, char** argv)
         tileSample.drawObject(canvas, sf::RenderStates::Default);
     }
 
-    sf::Texture infantry, shooter, cavalry, siege, guardian, enemy, endTurn, infButton, shoButton, cavButton, siegeButton, guardianButton;
+    sf::Texture infantry, shooter, cavalry, siege, guardian, enemy, upgrade, infButton, shoButton, cavButton, siegeButton, guardianButton;
     art::makeUnitTexture(infantry, art::UnitKind::Infantry, art::Team::Player);
     art::makeUnitTexture(shooter, art::UnitKind::Shooter, art::Team::Player);
     art::makeUnitTexture(cavalry, art::UnitKind::Cavalry, art::Team::Player);
     art::makeUnitTexture(siege, art::UnitKind::Siege, art::Team::Player);
     art::makeUnitTexture(guardian, art::UnitKind::Guardian, art::Team::Player);
     art::makeUnitTexture(enemy, art::UnitKind::Shooter, art::Team::Enemy);
-    art::makeButtonTexture(endTurn, font, "END TURN", art::ButtonState::Hover, sf::Vector2u(128, 44));
+    art::makeButtonTexture(upgrade, font, "UPGRADE", art::ButtonState::Hover, sf::Vector2u(128, 44));
     art::makeButtonTexture(infButton, font, "INF", art::ButtonState::Normal, sf::Vector2u(128, 42), art::UnitKind::Infantry, art::Team::Player);
     art::makeButtonTexture(shoButton, font, "BOW", art::ButtonState::Hover, sf::Vector2u(128, 42), art::UnitKind::Shooter, art::Team::Player);
     art::makeButtonTexture(cavButton, font, "CAV", art::ButtonState::Pressed, sf::Vector2u(128, 42), art::UnitKind::Cavalry, art::Team::Player);
@@ -187,7 +187,7 @@ int main(int argc, char** argv)
     drawLabel(canvas, font, "Queue units,", 660.f, 170.f);
     drawLabel(canvas, font, "mastery spikes", 660.f, 190.f);
 
-    sf::Sprite b1(endTurn), b2(infButton), b3(shoButton), b4(cavButton), b5(siegeButton), b6(guardianButton);
+    sf::Sprite b1(upgrade), b2(infButton), b3(shoButton), b4(cavButton), b5(siegeButton), b6(guardianButton);
     b1.setPosition(666.f, 226.f);
     b2.setPosition(666.f, 278.f);
     b3.setPosition(666.f, 326.f);
