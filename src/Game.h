@@ -242,6 +242,9 @@ public:
     float siegeDamageTakenMultiplier(int team, int unitName) const;
     float baseDamageTakenMultiplier(int attackerUnitName, int defenderTeam) const;
     float structureDamageEscalation() const;
+    bool finalAssaultActive() const;
+    float finalAssaultMoveStepMultiplier() const;
+    float finalAssaultAttackCooldownMultiplier() const;
     float baseShieldSecondsForTeam(int team) const;
     float teamTrainTimeMultiplier(int team) const;
     float miningIncomeMultiplier(int team) const;

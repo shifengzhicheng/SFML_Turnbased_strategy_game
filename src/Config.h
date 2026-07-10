@@ -111,6 +111,12 @@ namespace config
     inline constexpr float TechOvertimeDiscountStart = 540.f;
     inline constexpr float TechOvertimeDiscountPerMinute = 0.10f;
     inline constexpr float TechOvertimeDiscountFloor = 0.55f;
+    // At fourteen minutes both armies stop clearing peripheral structures and
+    // commit to the HQ. The symmetric tempo increase resolves stalled games
+    // without granting either side hidden combat stats.
+    inline constexpr float FinalAssaultStartSeconds = 840.f;
+    inline constexpr float FinalAssaultMoveStepMultiplier = 0.72f;
+    inline constexpr float FinalAssaultAttackCooldownMultiplier = 0.82f;
     inline constexpr int BuildInfluenceRadius = 13;
     inline constexpr int InfantryCost = 30;
     inline constexpr int ShooterCost = 31;

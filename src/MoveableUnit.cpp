@@ -165,10 +165,11 @@ void MoveableUnit::scaleMaxHealth(float multiplier)
 
 float MoveableUnit::realtimeMoveStepSeconds() const
 {
+	float baseSeconds = realtime::InfantryStepSeconds;
 	if (const UnitDefinition* definition = findUnitDefinition(unitName)) {
-		return definition->moveStepSeconds;
+		baseSeconds = definition->moveStepSeconds;
 	}
-	return realtime::InfantryStepSeconds;
+	return baseSeconds * (mygame != nullptr ? mygame->finalAssaultMoveStepMultiplier() : 1.f);
 }
 
 float MoveableUnit::realtimeAttackCooldownSeconds() const
@@ -177,7 +178,11 @@ float MoveableUnit::realtimeAttackCooldownSeconds() const
 	if (const UnitDefinition* definition = findUnitDefinition(unitName)) {
 		baseSeconds = definition->attackCooldownSeconds;
 	}
-	return baseSeconds * mygame->unitAttackCooldownMultiplier(myteam, unitName);
+	if (mygame == nullptr) {
+		return baseSeconds;
+	}
+	return baseSeconds * mygame->unitAttackCooldownMultiplier(myteam, unitName)
+		* mygame->finalAssaultAttackCooldownMultiplier();
 }
 
 void MoveableUnit::rememberAttacker(const MoveableUnit& attacker)

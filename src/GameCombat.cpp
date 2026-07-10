@@ -175,6 +175,10 @@ void Game::updateBaseDefenses(float dt)
 
 Building* Game::chooseBuildingTarget(MoveableUnit& unit)
 {
+    if (finalAssaultActive()) {
+        return nullptr;
+    }
+
     Building* best = nullptr;
     int bestScore = std::numeric_limits<int>::max();
     const Point current(unit.x, unit.y);
@@ -264,6 +268,13 @@ Point Game::chooseStrategicRallyPoint(MoveableUnit& unit)
     if (enemyProductionBroken && onEnemyHalf) {
         unit.nextRallyStage = 3;
         return Point(-1, -1);
+    }
+
+    if (finalAssaultActive()) {
+        // Preserve each lane's final approach, but skip home-side waypoints so
+        // newly trained heavy units can still reach the HQ before sudden death
+        // becomes another prolonged production cycle.
+        unit.nextRallyStage = std::max(unit.nextRallyStage, lane_geometry::RallyStageCount - 1);
     }
 
     // Rally progress is one-way per unit. Early lane gates require both forward

@@ -227,6 +227,21 @@ float Game::structureDamageEscalation() const
                     1.f + overtimeMinutes * config::EscalationDamagePerMinute);
 }
 
+bool Game::finalAssaultActive() const
+{
+    return gameTimeSeconds >= config::FinalAssaultStartSeconds;
+}
+
+float Game::finalAssaultMoveStepMultiplier() const
+{
+    return finalAssaultActive() ? config::FinalAssaultMoveStepMultiplier : 1.f;
+}
+
+float Game::finalAssaultAttackCooldownMultiplier() const
+{
+    return finalAssaultActive() ? config::FinalAssaultAttackCooldownMultiplier : 1.f;
+}
+
 float Game::baseShieldSecondsForTeam(int team) const
 {
     return team == PLAYER ? playerBaseShieldTimer : aiBaseShieldTimer;

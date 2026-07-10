@@ -142,6 +142,11 @@ namespace
         return unit.myteam == PLAYER ? game.Blue_baseP : game.Red_baseP;
     }
 
+    Unit* enemyBaseTarget(Game& game, const MoveableUnit& unit)
+    {
+        return unit.myteam == PLAYER ? game.Base_blue.get() : game.Base_red.get();
+    }
+
     Point chooseApproachPoint(Game& game, MoveableUnit& unit, Unit* target)
     {
         const Point targetPoint = target != nullptr ? Point(target->x, target->y) : fallbackEnemyBase(game, unit);
@@ -286,7 +291,12 @@ namespace
         }
 
         const CombatBehaviorDefinition& behavior = combatBehavior(unit.unitName);
-        Unit* target = chooseTarget(game, unit, TargetScope::Nearby);
+        const bool finalAssault = game.finalAssaultActive();
+        // Sudden death is a readable HQ race: both armies stop trading in the
+        // midfield, while towers and each HQ still defend the final approach.
+        Unit* target = finalAssault
+            ? enemyBaseTarget(game, unit)
+            : chooseTarget(game, unit, TargetScope::Nearby);
         Building* buildingTarget = game.chooseBuildingTarget(unit);
         if (game.gameTimeSeconds + 0.001f < unit.deploymentReadyTime && target == nullptr) {
             unit.UnitState = UState::UNITNORMAL;
@@ -356,7 +366,7 @@ namespace
             target = chooseTarget(game, unit, TargetScope::Global);
         }
         const Point goal = rallyPoint.x >= 0
-            ? (target != nullptr ? chooseApproachPoint(game, unit, target) : rallyPoint)
+            ? (finalAssault ? rallyPoint : (target != nullptr ? chooseApproachPoint(game, unit, target) : rallyPoint))
             : (buildingTarget != nullptr ? game.findAttackStandPoint(unit, *buildingTarget) : chooseApproachPoint(game, unit, target));
         refreshPathIfNeeded(game, unit, goal);
         const Point current(unit.x, unit.y);

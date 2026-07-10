@@ -142,6 +142,9 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         if (outgoing > 0) {
             return std::string("Enemy HQ pressured by ") + std::to_string(outgoing) + " units";
         }
+        if (finalAssaultActive()) {
+            return std::string("Final assault: all lanes commit to HQ");
+        }
         if (gameTimeSeconds >= config::EscalationStartSeconds) {
             const int pressurePercent = static_cast<int>(std::round(structureDamageEscalation() * 100.f));
             return std::string("Overtime structure damage ") + std::to_string(pressurePercent) + "%";
@@ -179,9 +182,11 @@ void Game::DrawSidePanel(sf::RenderTarget& target)
         - std::fmod(std::max(0.f, gameTimeSeconds), config::ArmyWaveIntervalSeconds);
     const int waveRemaining = static_cast<int>(std::ceil(waveRemainingRaw));
     const bool overtime = gameTimeSeconds >= config::EscalationStartSeconds;
-    const std::string liveStatus = overtime
-        ? ("OT " + std::to_string(static_cast<int>(std::round(structureDamageEscalation() * 100.f))) + "%")
-        : ("WAVE " + std::to_string(waveRemaining) + "s");
+    const std::string liveStatus = finalAssaultActive()
+        ? "FINAL"
+        : (overtime
+            ? ("OT " + std::to_string(static_cast<int>(std::round(structureDamageEscalation() * 100.f))) + "%")
+            : ("WAVE " + std::to_string(waveRemaining) + "s"));
     sf::RectangleShape liveBadge(sf::Vector2f(100.f, 17.f));
     liveBadge.setPosition(static_cast<float>(config::PanelX + config::PanelWidth - 116), 29.f);
     liveBadge.setFillColor(sf::Color(27, 35, 31, 235));

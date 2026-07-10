@@ -121,6 +121,17 @@ int main()
             "base protection should fade into bounded late-game structure escalation");
     require(game.structureDamageEscalation() <= config::EscalationDamageCap,
             "late-game structure escalation should respect its cap");
+    game.gameTimeSeconds = config::FinalAssaultStartSeconds - 0.01f;
+    require(!game.finalAssaultActive()
+                && std::abs(game.finalAssaultMoveStepMultiplier() - 1.f) < 0.0001f
+                && std::abs(game.finalAssaultAttackCooldownMultiplier() - 1.f) < 0.0001f,
+            "final-assault tempo should remain inactive before its visible deadline");
+    game.gameTimeSeconds = config::FinalAssaultStartSeconds;
+    require(game.finalAssaultActive()
+                && std::abs(game.finalAssaultMoveStepMultiplier() - config::FinalAssaultMoveStepMultiplier) < 0.0001f
+                && std::abs(game.finalAssaultAttackCooldownMultiplier()
+                    - config::FinalAssaultAttackCooldownMultiplier) < 0.0001f,
+            "final assault should activate its shared movement and attack tempo at the deadline");
 
     game.clear();
     game.gameTimeSeconds = config::EscalationStartSeconds + 60.f;
@@ -859,6 +870,11 @@ int main()
             "overtime HQ assault unit should spawn inside the command zone");
     require(game.chooseBuildingTarget(*game.myunits.back()) == nullptr,
             "overtime units inside the HQ zone should stop chasing replacement structures");
+    game.gameTimeSeconds = config::FinalAssaultStartSeconds;
+    game.myunits.back()->x = game.Blue_baseP.x - config::OvertimeHQAssaultRadius - 8;
+    game.myunits.back()->y = game.Blue_baseP.y;
+    require(game.chooseBuildingTarget(*game.myunits.back()) == nullptr,
+            "final-assault units should ignore peripheral structures from anywhere on the map");
 
     game.clear();
     for (int x = 10; x <= 14; ++x) {
@@ -920,6 +936,14 @@ int main()
     Point secondTopRally = game.chooseStrategicRallyPoint(*topLaneUnit);
     require(secondTopRally.x == topMid.x && secondTopRally.y == topMid.y && topLaneUnit->nextRallyStage == 1,
             "reaching the lane exit should advance to the central lane anchor");
+    const Point topFinalRally = game.laneRallyPoint(PLAYER, lane::Top, lane_geometry::RallyStageCount - 1);
+    clearArea(game, topFinalRally, 2);
+    topLaneUnit->nextRallyStage = 0;
+    game.gameTimeSeconds = config::FinalAssaultStartSeconds;
+    const Point finalAssaultRally = game.chooseStrategicRallyPoint(*topLaneUnit);
+    require(finalAssaultRally.x == topFinalRally.x && finalAssaultRally.y == topFinalRally.y
+                && topLaneUnit->nextRallyStage == lane_geometry::RallyStageCount - 1,
+            "final assault should skip old waypoints but preserve the selected lane's enemy-side approach");
 
     game.clear();
     const Point botEnemyRally = game.laneRallyPoint(PLAYER, lane::Bot, lane_geometry::RallyStageCount - 1);
@@ -938,6 +962,25 @@ int main()
     Point rallyAfterDetour = game.chooseStrategicRallyPoint(*botLaneUnit);
     require(rallyAfterDetour.x < 0,
             "committed bot-lane units should not re-request old rally points after a detour");
+
+    game.clear();
+    const Point finalDuelPoint(game.horizontalTiles / 2, static_cast<int>(game.maze.size()) / 2);
+    clearArea(game, finalDuelPoint, 2);
+    require(game.createUnit(PLAYER, UName::INFANTARY, finalDuelPoint.x, finalDuelPoint.y, lane::Mid)
+                && game.createUnit(AI, UName::INFANTARY, finalDuelPoint.x + 1, finalDuelPoint.y, lane::Mid),
+            "final-assault target test units should spawn next to each other");
+    MoveableUnit* finalPlayerUnit = game.myunits.back().get();
+    MoveableUnit* finalAiUnit = game.enemys.back().get();
+    finalPlayerUnit->deploymentReadyTime = 0.f;
+    finalAiUnit->deploymentReadyTime = 0.f;
+    finalPlayerUnit->realtimeAttackTimer = 10.f;
+    finalAiUnit->realtimeAttackTimer = 10.f;
+    game.gameTimeSeconds = config::FinalAssaultStartSeconds;
+    const int finalPlayerHealth = finalPlayerUnit->Health;
+    const int finalAiHealth = finalAiUnit->Health;
+    realtime::updateAutoCombat(game, 0.1f);
+    require(finalPlayerUnit->Health == finalPlayerHealth && finalAiUnit->Health == finalAiHealth,
+            "final-assault armies should pass nearby enemies and commit to the opposing HQ");
 
     game.clear();
     for (int y = 14; y <= 16; ++y) {
