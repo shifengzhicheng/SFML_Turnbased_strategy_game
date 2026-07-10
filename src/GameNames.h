@@ -37,11 +37,11 @@ namespace game_internal
     {
         switch (type) {
         case perk::Fortitude:
-            return "Guardians taunt nearby enemies.\nHigher levels harden them versus siege.";
+            return "Guardians taunt and take 7% less damage.\nHigher levels harden and unlock a cleave.";
         case perk::Volley:
             return "Shooters chain shots.\nLv2/Lv4 extend range, capped at 5.";
         case perk::Charge:
-            return "Cavalry gains shock tactics.\nLv2 ignores Infantry counter.";
+            return "Cavalry charge hits 42% harder.\nLv2 ignores Infantry counter.";
         case perk::SiegeCraft:
             return "Siege splash chips escorts.\nHigher levels improve breach pressure.";
         case perk::TowerCraft:
@@ -54,7 +54,7 @@ namespace game_internal
             return "Instant 80+12/LEVEL CMD.\nBuild or queue now.";
         case perk::Drill:
         default:
-            return "Infantry gains shield drill.\nLv2 resists shooters, Lv3 cleaves.";
+            return "Infantry takes 10% less damage.\nLv2 resists shooters, Lv3 cleaves.";
         }
     }
 

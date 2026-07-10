@@ -52,18 +52,20 @@ namespace
 		// than being invalidated by siege splash.
 		if (attacker->unitName == UName::SIEGE && defender->unitName == UName::GUARDIAN) {
 			result.amount = static_cast<int>(std::round(static_cast<float>(baseDamage)
-				* 0.85f
+				* config::GuardianSiegeDamageMultiplier
 				* game.siegeDamageTakenMultiplier(defender->myteam, defender->unitName)));
 			result.resisted = true;
 		}
 		else if (game.counterApplies(attacker->myteam, attacker->unitName, defender->myteam, defender->unitName)) {
-			result.amount = static_cast<int>(std::round(static_cast<float>(baseDamage) * 1.60f));
+			result.amount = static_cast<int>(std::round(static_cast<float>(baseDamage) * config::CounterDamageMultiplier));
 			result.counter = true;
 		}
 		else if (game.counterApplies(defender->myteam, defender->unitName, attacker->myteam, attacker->unitName)) {
-			result.amount = static_cast<int>(std::round(static_cast<float>(baseDamage) * 0.74f));
+			result.amount = static_cast<int>(std::round(static_cast<float>(baseDamage) * config::CounteredDamageMultiplier));
 			result.resisted = true;
 		}
+		result.amount = static_cast<int>(std::round(static_cast<float>(result.amount)
+			* game.unitDamageTakenMultiplier(defender->myteam, defender->unitName)));
 		result.amount = std::max(1, result.amount);
 		return result;
 	}
@@ -108,7 +110,8 @@ namespace
 		}
 	}
 
-	int dealDamage(Game& game, MoveableUnit* attacker, Unit* target, int baseDamage, float finalScale, bool secondary)
+	int dealDamage(Game& game, MoveableUnit* attacker, Unit* target, int baseDamage,
+				   float finalScale, bool secondary, bool charged)
 	{
 		const DamageResult damageResult = calculateDamage(game, attacker, target, baseDamage);
 		int finalDamage = std::max(1, static_cast<int>(std::round(
@@ -143,6 +146,9 @@ namespace
 			}
 			else if (damageResult.resisted) {
 				game.addFloatingText(targetCenter + sf::Vector2f(0.f, -32.f), "RESIST", sf::Color(156, 205, 255), 12);
+			}
+			if (charged) {
+				game.addFloatingText(targetCenter + sf::Vector2f(0.f, -48.f), "CHARGE!", sf::Color(255, 190, 86), 14);
 			}
 		}
 		if (target->Health <= 0) {
@@ -208,17 +214,21 @@ void Attacker::Attack(MoveableUnit* me, Unit* u)
 		return;
 	}
 	if (isInMyAttackRange(me, u)) {
-		dealDamage(*mygame, me, u, damage, 1.f, false);
+		const bool charged = me->unitName == UName::CAVALRY
+			&& me->tilesMovedSinceAttack >= config::CavalryChargeTiles;
+		const float primaryScale = charged ? mygame->cavalryChargeDamageMultiplier(me->myteam) : 1.f;
+		dealDamage(*mygame, me, u, damage, primaryScale, false, charged);
 		const int extraTargets = mygame->additionalAttackTargets(me->myteam, me->unitName);
 		const float splashScale = mygame->additionalTargetDamageMultiplier(me->myteam, me->unitName);
 		if (extraTargets > 0 && splashScale > 0.f) {
 			for (Unit* target : pickAdditionalTargets(*mygame, me, u, extraTargets)) {
 				if (target->Health > 0) {
-					dealDamage(*mygame, me, target, damage, splashScale, true);
+					dealDamage(*mygame, me, target, damage, splashScale, true, false);
 				}
 			}
 		}
 
 		mygame->startScreenShake(0.13f, screenShakeForUnit(me->unitName));
+		me->tilesMovedSinceAttack = 0;
 	}
 }

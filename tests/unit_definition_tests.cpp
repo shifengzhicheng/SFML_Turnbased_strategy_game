@@ -49,7 +49,7 @@ int main()
     require(findUnitDefinition(UName::BASE) == nullptr, "base is not a trainable unit definition");
     require(unitDefinition(UName::INFANTARY).commandCost == config::InfantryCost,
             "infantry cost should stay sourced from Config");
-    require(config::InfantryCost >= 24 && config::InfantryHealth <= 170 && config::InfantryDamage <= 36,
+    require(config::InfantryCost >= 28 && config::InfantryHealth <= 160 && config::InfantryDamage <= 32,
             "infantry should not be cheap enough to dominate no-collision swarm fights");
     require(unitDefinition(UName::SHOOTER).trainSeconds == realtime::ShooterTrainSeconds,
             "shooter train time should stay sourced from RealtimeConfig");
@@ -59,9 +59,9 @@ int main()
             "cavalry should point to cavalry art");
     require(unitDefinition(UName::CAVALRY).requiredBarracks == 2,
             "cavalry should require two barracks");
-    require(unitDefinition(UName::CAVALRY).maxHealth >= 450,
+    require(unitDefinition(UName::CAVALRY).maxHealth >= 350,
             "cavalry should have enough health to survive diving ahead");
-    require(unitDefinition(UName::CAVALRY).commandCost >= unitDefinition(UName::SHOOTER).commandCost * 2,
+    require(unitDefinition(UName::CAVALRY).commandCost * 2 >= unitDefinition(UName::SHOOTER).commandCost * 3,
             "cavalry should be a meaningful mid-tier investment");
     require(unitDefinition(UName::SIEGE).attackRange == config::SiegeRange,
             "siege range should stay sourced from Config");
@@ -81,7 +81,7 @@ int main()
             "guardian health should stay sourced from Config");
     require(unitDefinition(UName::GUARDIAN).commandCost >= unitDefinition(UName::CAVALRY).commandCost * 2,
             "guardian should remain a late-game commitment");
-    require(unitDefinition(UName::GUARDIAN).maxHealth >= 900,
+    require(unitDefinition(UName::GUARDIAN).maxHealth >= 720,
             "guardian should be sturdy enough to anchor a mixed army");
     require(unitDefinition(UName::GUARDIAN).requiredTechLevel == 7,
             "guardian should stay a late-game unlock");

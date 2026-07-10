@@ -13,6 +13,8 @@ struct UnitMechanics
     bool ignoresShooterCounter = false;
     bool ignoresInfantryCounter = false;
     bool tauntsNearbyEnemies = false;
+    float damageTakenMultiplier = 1.f;
+    float chargeDamageMultiplier = 1.f;
     float siegeDamageTakenMultiplier = 1.f;
     float buildingDamageMultiplier = 1.f;
 };

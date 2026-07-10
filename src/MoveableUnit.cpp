@@ -108,8 +108,13 @@ bool MoveableUnit::isdead()
 void MoveableUnit::move(Point p)
 {
 	if (mygame->canUnitStepInto(*this, p)) {
+		const bool changedCell = x != p.x || y != p.y;
 		y = p.y;
 		x = p.x;
+		if (changedCell) {
+			stationarySeconds = 0.f;
+			tilesMovedSinceAttack = std::min(20, tilesMovedSinceAttack + 1);
+		}
 		placeUnitSprite(*this, x, y, config::UnitSpriteScale);
 		placeHealthLabel(UnitText, x, y);
 	}

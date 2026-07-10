@@ -303,7 +303,7 @@ void Game::autoAttackBuilding(MoveableUnit& unit, Building& building)
         typeFactor = 0.82f;
     }
     else if (unit.unitName == UName::SIEGE) {
-        typeFactor = 2.18f * unitBuildingDamageMultiplier(unit.myteam, unit.unitName);
+        typeFactor = 2.50f * unitBuildingDamageMultiplier(unit.myteam, unit.unitName);
     }
     else if (unit.unitName == UName::GUARDIAN) {
         typeFactor = 1.24f;

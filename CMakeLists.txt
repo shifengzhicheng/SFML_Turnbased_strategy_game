@@ -64,6 +64,7 @@ set(SFML_TBS_GAME_SOURCES
     src/Building.cpp
     src/BuildingDefinition.cpp
     src/Button.cpp
+    src/CombatBehavior.cpp
     src/Effects.cpp
     src/Map.cpp
     src/MoveableUnit.cpp

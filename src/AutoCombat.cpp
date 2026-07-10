@@ -1,6 +1,7 @@
 #include "AutoCombat.h"
 
 #include "AllUnit.h"
+#include "CombatBehavior.h"
 #include "Game.h"
 #include "RealtimeConfig.h"
 #include "UnitGeometry.h"
@@ -68,11 +69,23 @@ namespace
 
     int targetScore(Game& game, MoveableUnit& unit, Unit* candidate)
     {
-        int score = distanceSquared(unit, *candidate);
+        int score = distanceSquared(unit, *candidate) + combatTargetBias(unit.unitName, candidate->unitName);
         if (game.unitTauntsNearbyEnemies(candidate->myteam, candidate->unitName)) {
             // Guardian taunt is a mechanism perk: nearby armies naturally snap
             // to the tank unless an aggro target is already forcing retaliation.
             score -= 80;
+        }
+        if (combatBehavior(unit.unitName).role == CombatRole::Guardian) {
+            const auto& allies = unit.myteam == PLAYER ? game.myunits : game.enemys;
+            for (const auto& ally : allies) {
+                if (ally.get() == &unit || (ally->unitName != UName::SHOOTER && ally->unitName != UName::SIEGE)) {
+                    continue;
+                }
+                if (distanceSquared(Point(candidate->x, candidate->y), Point(ally->x, ally->y)) <= 9) {
+                    score -= 45;
+                    break;
+                }
+            }
         }
         return score;
     }
@@ -229,6 +242,32 @@ namespace
         return best;
     }
 
+    Point chooseRetreatStep(Game& game, MoveableUnit& unit, const Unit& target)
+    {
+        const Point current(unit.x, unit.y);
+        const Point threat(target.x, target.y);
+        const std::array<Point, 4> candidates = {{
+            Point(current.x + 1, current.y),
+            Point(current.x - 1, current.y),
+            Point(current.x, current.y + 1),
+            Point(current.x, current.y - 1),
+        }};
+
+        Point best(-1, -1);
+        int bestDistance = distanceSquared(current, threat);
+        for (const Point candidate : candidates) {
+            if (!game.canUnitStepInto(unit, candidate)) {
+                continue;
+            }
+            const int candidateDistance = distanceSquared(candidate, threat);
+            if (candidateDistance > bestDistance) {
+                bestDistance = candidateDistance;
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
     void updateUnit(Game& game, MoveableUnit& unit, float dt)
     {
         if (unit.Health <= 0) {
@@ -238,6 +277,7 @@ namespace
         unit.realtimeAttackTimer += dt;
         unit.realtimeMoveTimer += dt;
         unit.realtimePathTimer += dt;
+        unit.stationarySeconds += dt;
         if (unit.aggroSeconds > 0.f) {
             unit.aggroSeconds = std::max(0.f, unit.aggroSeconds - dt);
             if (unit.aggroSeconds == 0.f) {
@@ -245,28 +285,51 @@ namespace
             }
         }
 
+        const CombatBehaviorDefinition& behavior = combatBehavior(unit.unitName);
         Unit* target = chooseTarget(game, unit, TargetScope::Nearby);
-        if (target != nullptr && unit.canAutoAttack(target)) {
+        Building* buildingTarget = game.chooseBuildingTarget(unit);
+        const bool prioritizesBuilding = behavior.prioritizesStructures
+            && buildingTarget != nullptr
+            && unit.aggroSeconds <= 0.f;
+
+        if (!prioritizesBuilding && target != nullptr && unit.canAutoAttack(target)) {
             unit.UnitState = UState::UNITNORMAL;
             unit.mypath.clear();
             unit.pendingPathRequest = 0;
-            // Do not bank movement time while attacking; otherwise a unit can
-            // sprint through several frames immediately after its target dies.
-            unit.realtimeMoveTimer = 0.f;
-            if (unit.realtimeAttackTimer >= unit.realtimeAttackCooldownSeconds()) {
+            const bool deployed = unit.stationarySeconds >= behavior.deploymentSeconds;
+            if (deployed && unit.realtimeAttackTimer >= unit.realtimeAttackCooldownSeconds()) {
                 unit.realtimeAttackTimer = 0.f;
                 unit.autoAttack(target);
+            }
+
+            const int preferredRange = std::max(1, behavior.preferredRange);
+            const bool tooClose = distanceSquared(unit, *target) < preferredRange * preferredRange;
+            if (behavior.kitesAtCloseRange && tooClose
+                && unit.realtimeMoveTimer >= unit.realtimeMoveStepSeconds()) {
+                const Point retreat = chooseRetreatStep(game, unit, *target);
+                if (retreat.x >= 0) {
+                    unit.realtimeMoveTimer -= unit.realtimeMoveStepSeconds();
+                    tryMove(game, unit, retreat);
+                }
+                else {
+                    unit.realtimeMoveTimer = std::min(unit.realtimeMoveTimer, unit.realtimeMoveStepSeconds());
+                }
+            }
+            else {
+                // Melee units should not bank movement while exchanging hits.
+                unit.realtimeMoveTimer = 0.f;
             }
             return;
         }
 
-        Building* buildingTarget = game.chooseBuildingTarget(unit);
-        if (buildingTarget != nullptr && game.canAttackBuilding(unit, *buildingTarget)) {
+        if (buildingTarget != nullptr && game.canAttackBuilding(unit, *buildingTarget)
+            && (prioritizesBuilding || target == nullptr)) {
             unit.UnitState = UState::UNITNORMAL;
             unit.mypath.clear();
             unit.pendingPathRequest = 0;
             unit.realtimeMoveTimer = 0.f;
-            if (unit.realtimeAttackTimer >= unit.realtimeAttackCooldownSeconds()) {
+            const bool deployed = unit.stationarySeconds >= behavior.deploymentSeconds;
+            if (deployed && unit.realtimeAttackTimer >= unit.realtimeAttackCooldownSeconds()) {
                 unit.realtimeAttackTimer = 0.f;
                 game.autoAttackBuilding(unit, *buildingTarget);
             }
@@ -278,6 +341,9 @@ namespace
         }
         unit.realtimeMoveTimer -= unit.realtimeMoveStepSeconds();
 
+        if (prioritizesBuilding) {
+            target = nullptr;
+        }
         const Point rallyPoint = game.chooseStrategicRallyPoint(unit);
         if (target == nullptr && rallyPoint.x < 0) {
             target = chooseTarget(game, unit, TargetScope::Global);

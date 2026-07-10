@@ -49,8 +49,7 @@ namespace
     {
         return (attacker == UName::SHOOTER && defender == UName::INFANTARY)
             || (attacker == UName::INFANTARY && defender == UName::CAVALRY)
-            || (attacker == UName::CAVALRY && (defender == UName::SHOOTER || defender == UName::SIEGE))
-            || (attacker == UName::GUARDIAN && defender == UName::CAVALRY);
+            || (attacker == UName::CAVALRY && (defender == UName::SHOOTER || defender == UName::SIEGE));
     }
 }
 
@@ -105,6 +104,19 @@ float Game::unitBuildingDamageMultiplier(int team, int unitName) const
         return 1.f;
     }
     return resolvedStatsForTeam(*this, team, unitName).buildingDamageMultiplier;
+}
+
+float Game::unitDamageTakenMultiplier(int team, int unitName) const
+{
+    if (!isTrainableUnit(unitName)) {
+        return 1.f;
+    }
+    return unitMechanicsFor(unitName, perkLevelsForTeam(*this, team)).damageTakenMultiplier;
+}
+
+float Game::cavalryChargeDamageMultiplier(int team) const
+{
+    return unitMechanicsFor(UName::CAVALRY, perkLevelsForTeam(*this, team)).chargeDamageMultiplier;
 }
 
 int Game::unitAttackRange(int team, int unitName) const

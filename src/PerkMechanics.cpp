@@ -11,6 +11,7 @@ UnitMechanics unitMechanicsFor(int unitName, const std::array<int, perk::Count>&
     switch (unitName) {
     case UName::INFANTARY: {
         const int drill = perkLevels[static_cast<std::size_t>(perk::Drill)];
+        mechanics.damageTakenMultiplier = drill >= 4 ? 0.82f : (drill >= 1 ? 0.90f : 1.f);
         mechanics.ignoresShooterCounter = drill >= 2;
         mechanics.additionalAttackTargets = drill >= 3 ? 1 : 0;
         mechanics.additionalTargetDamageMultiplier = drill >= 5 ? 0.48f : 0.32f;
@@ -26,14 +27,18 @@ UnitMechanics unitMechanicsFor(int unitName, const std::array<int, perk::Count>&
     }
     case UName::CAVALRY: {
         const int charge = perkLevels[static_cast<std::size_t>(perk::Charge)];
+        mechanics.chargeDamageMultiplier = charge >= 5 ? 1.75f
+            : (charge >= 3 ? 1.58f : (charge >= 1 ? 1.42f : config::CavalryBaseChargeDamageMultiplier));
         mechanics.ignoresInfantryCounter = charge >= 2;
         break;
     }
     case UName::GUARDIAN: {
         const int fortitude = perkLevels[static_cast<std::size_t>(perk::Fortitude)];
         mechanics.tauntsNearbyEnemies = fortitude >= 1;
+        mechanics.damageTakenMultiplier = fortitude >= 5 ? 0.76f
+            : (fortitude >= 2 ? 0.86f : (fortitude >= 1 ? 0.93f : 1.f));
         mechanics.siegeDamageTakenMultiplier = fortitude >= 3 ? 0.62f : (fortitude >= 2 ? 0.75f : 1.f);
-        mechanics.additionalAttackTargets = fortitude >= 3 ? 2 : 1;
+        mechanics.additionalAttackTargets = fortitude >= 3 ? 1 : 0;
         mechanics.additionalTargetDamageMultiplier = fortitude >= 4 ? 0.42f : 0.28f;
         break;
     }

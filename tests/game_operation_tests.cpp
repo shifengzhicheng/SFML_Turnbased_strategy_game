@@ -3,6 +3,7 @@
 #include "BuildingDefinition.h"
 #include "LaneGeometry.h"
 #include "PolicyModel.h"
+#include "PerkMechanics.h"
 #include "RealtimeConfig.h"
 #include "SidebarLayout.h"
 #include "UnitDefinition.h"
@@ -321,6 +322,28 @@ int main()
     game.applyPerk(PLAYER, perk::Mining);
     require(game.resourceIncome(PLAYER) >= incomeBeforeMining + 6,
             "Mining perk should make economy upgrades visibly stronger");
+    const float infantryDamageTakenBefore = game.unitDamageTakenMultiplier(PLAYER, UName::INFANTARY);
+    game.applyPerk(PLAYER, perk::Drill);
+    require(game.unitDamageTakenMultiplier(PLAYER, UName::INFANTARY) < infantryDamageTakenBefore,
+            "Drill level 1 should immediately harden Infantry");
+    game.applyPerk(PLAYER, perk::Fortitude);
+    require(game.unitTauntsNearbyEnemies(PLAYER, UName::GUARDIAN)
+                && game.unitDamageTakenMultiplier(PLAYER, UName::GUARDIAN) < 1.f,
+            "Fortitude level 1 should immediately add Guardian taunt and mitigation");
+    const float baseChargeMultiplier = game.cavalryChargeDamageMultiplier(PLAYER);
+    game.applyPerk(PLAYER, perk::Charge);
+    require(game.cavalryChargeDamageMultiplier(PLAYER) > baseChargeMultiplier,
+            "Charge level 1 should immediately improve charge damage");
+    const int siegeTargetsBefore = game.additionalAttackTargets(PLAYER, UName::SIEGE);
+    game.applyPerk(PLAYER, perk::SiegeCraft);
+    require(game.additionalAttackTargets(PLAYER, UName::SIEGE) > siegeTargetsBefore,
+            "Siege Craft level 1 should immediately widen splash");
+    const TowerMechanics towerBefore = towerMechanicsFor(game.playerPerkLevels);
+    game.applyPerk(PLAYER, perk::TowerCraft);
+    const TowerMechanics towerAfter = towerMechanicsFor(game.playerPerkLevels);
+    require(!towerBefore.prioritizesSiege && towerAfter.prioritizesSiege
+                && towerAfter.splashDamage > towerBefore.splashDamage,
+            "Tower Craft level 1 should immediately improve tower targeting and splash");
     game.applyPerk(PLAYER, perk::Volley);
     require(game.additionalAttackTargets(PLAYER, UName::SHOOTER) == 1,
             "Volley should change shooter mechanics by adding a secondary target");
@@ -349,12 +372,16 @@ int main()
     game.perkOverlayVisible = true;
     game.playerRewardRerolls = 1;
     game.buildRewardChoices();
-    const int firstRewardType = game.perkChoices.front().type;
+    const std::array<PerkChoice, 3> firstRewardChoices = game.perkChoices;
     game.rerollRewardChoices();
     require(game.playerRewardRerolls == 0,
             "reward refresh should consume the free reroll");
-    require(game.perkChoices.front().type != firstRewardType,
-            "reward refresh should produce a different tactic rotation");
+    for (const auto& refreshed : game.perkChoices) {
+        require(std::none_of(firstRewardChoices.begin(), firstRewardChoices.end(), [&refreshed](const PerkChoice& previous) {
+                    return previous.type == refreshed.type;
+                }),
+                "reward refresh should replace every card while the pool permits it");
+    }
 
     game.clear();
     game.playerCommand = 1000;
@@ -433,8 +460,14 @@ int main()
     MoveableUnit* secondaryGuardianTarget = game.enemys.back().get();
     const int secondaryBeforeGuardian = secondaryGuardianTarget->Health;
     baselineGuardian->autoAttack(primaryGuardianTarget);
+    require(secondaryGuardianTarget->Health == secondaryBeforeGuardian,
+            "baseline guardian should not receive a free cleave before Fortitude upgrades");
+    game.applyPerk(PLAYER, perk::Fortitude);
+    game.applyPerk(PLAYER, perk::Fortitude);
+    game.applyPerk(PLAYER, perk::Fortitude);
+    baselineGuardian->autoAttack(primaryGuardianTarget);
     require(secondaryGuardianTarget->Health < secondaryBeforeGuardian,
-            "baseline guardian should cleave adjacent units to anchor against swarms");
+            "Fortitude level 3 should unlock Guardian cleave");
 
     game.clear();
     for (int x = 10; x <= 12; ++x) {
@@ -467,6 +500,75 @@ int main()
     const int immuneDamage = cavalryBeforeImmuneHit - counterCavalry->Health;
     require(immuneDamage > 0 && immuneDamage < counteredDamage,
             "Charge level 2 should stop Infantry from countering Cavalry");
+
+    game.clear();
+    for (int x = 9; x <= 12; ++x) {
+        game.setTileID(x, 10, tile::Empty);
+    }
+    require(game.createUnit(PLAYER, UName::CAVALRY, 10, 10, lane::Mid)
+                && game.createUnit(AI, UName::INFANTARY, 11, 10, lane::Mid),
+            "charge damage test units should spawn");
+    MoveableUnit* chargingCavalry = game.myunits.back().get();
+    MoveableUnit* chargeTarget = game.enemys.back().get();
+    const int chargeTargetStartHealth = chargeTarget->Health;
+    chargingCavalry->autoAttack(chargeTarget);
+    const int normalCavalryDamage = chargeTargetStartHealth - chargeTarget->Health;
+    chargingCavalry->tilesMovedSinceAttack = config::CavalryChargeTiles;
+    const int healthBeforeCharge = chargeTarget->Health;
+    chargingCavalry->autoAttack(chargeTarget);
+    const int chargedCavalryDamage = healthBeforeCharge - chargeTarget->Health;
+    require(chargedCavalryDamage > normalCavalryDamage,
+            "Cavalry should deal a stronger hit after crossing the charge threshold");
+    require(chargingCavalry->tilesMovedSinceAttack == 0,
+            "a Cavalry attack should consume its accumulated charge distance");
+
+    game.clear();
+    clearArea(game, Point(10, 10), 3);
+    require(game.createUnit(PLAYER, UName::SHOOTER, 10, 10, lane::Mid)
+                && game.createUnit(AI, UName::INFANTARY, 11, 10, lane::Mid),
+            "kiting test units should spawn");
+    MoveableUnit* kitingShooter = game.myunits.back().get();
+    kitingShooter->realtimeMoveTimer = kitingShooter->realtimeMoveStepSeconds();
+    realtime::updateAutoCombat(game, 0.01f);
+    require(kitingShooter->x == 9 && kitingShooter->y == 10,
+            "Shooters should step away from enemies that enter their preferred range");
+
+    game.clear();
+    for (int x = 9; x <= 15; ++x) {
+        game.setTileID(x, 12, tile::Empty);
+    }
+    require(game.createUnit(PLAYER, UName::SIEGE, 10, 12, lane::Mid)
+                && game.createUnit(AI, UName::INFANTARY, 14, 12, lane::Mid),
+            "deployment test units should spawn");
+    MoveableUnit* deployingSiege = game.myunits.back().get();
+    MoveableUnit* deploymentTarget = game.enemys.back().get();
+    deployingSiege->realtimeAttackTimer = deployingSiege->realtimeAttackCooldownSeconds();
+    const int healthBeforeDeployment = deploymentTarget->Health;
+    realtime::updateAutoCombat(game, realtime::SiegeDeploymentSeconds * 0.5f);
+    require(deploymentTarget->Health == healthBeforeDeployment,
+            "Siege should not fire before completing its stationary deployment");
+    realtime::updateAutoCombat(game, realtime::SiegeDeploymentSeconds * 0.6f);
+    require(deploymentTarget->Health < healthBeforeDeployment,
+            "Siege should fire once its deployment delay has elapsed");
+
+    game.clear();
+    for (int x = 9; x <= 15; ++x) {
+        game.setTileID(x, 14, tile::Empty);
+    }
+    require(game.createUnit(PLAYER, UName::SIEGE, 10, 14, lane::Mid)
+                && game.createUnit(AI, UName::INFANTARY, 13, 14, lane::Mid),
+            "structure-priority test units should spawn");
+    MoveableUnit* structureSiege = game.myunits.back().get();
+    MoveableUnit* ignoredEscort = game.enemys.back().get();
+    game.buildings.push_back(makeCompletedBuilding(1901, AI, building::DefenseTower, Point(14, 14)));
+    Building& priorityTower = game.buildings.back();
+    const int towerHealthBefore = priorityTower.health;
+    const int escortHealthBefore = ignoredEscort->Health;
+    structureSiege->stationarySeconds = realtime::SiegeDeploymentSeconds;
+    structureSiege->realtimeAttackTimer = structureSiege->realtimeAttackCooldownSeconds();
+    realtime::updateAutoCombat(game, 0.01f);
+    require(priorityTower.health < towerHealthBefore && ignoredEscort->Health == escortHealthBefore,
+            "unprovoked Siege should prioritize a reachable structure over nearby units");
 
     game.clear();
     for (int x = 10; x <= 16; ++x) {

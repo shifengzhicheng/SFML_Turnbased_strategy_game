@@ -173,6 +173,7 @@ void runPolicyTraining(int episodes, float seconds, float dt, unsigned int seed)
     TrainablePolicy aiPolicy(seed + 31);
     std::mt19937 rng(seed);
     Game game;
+    game.matchSeedOverride = seed;
     game.pathfinding.setExecutionMode(PathfindingService::ExecutionMode::Synchronous);
     game.window.setVisible(false);
     game.autoChooseRewards = true;

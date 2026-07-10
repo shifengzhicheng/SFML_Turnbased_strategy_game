@@ -4,6 +4,7 @@
 #include <iostream>
 #include <list>
 #include <memory>
+#include <random>
 #include <string>
 #include <vector>
 #include "SFML/Graphics.hpp"
@@ -95,6 +96,9 @@ public:
     bool perkOverlayVisible = false;
     bool autoChooseRewards = false;
     int rewardSequence = 0;
+    bool rewardChoicesGenerated = false;
+    unsigned int matchSeedOverride = 0;
+    std::mt19937 rewardRng{0xC0FFEEu};
     int playerRewardRerolls = 0;
     int playerSelectedLane = lane::Mid;
     int aiSelectedLane = lane::Mid;
@@ -235,6 +239,8 @@ public:
     float unitHealthMultiplier(int team, int unitName) const;
     float unitAttackCooldownMultiplier(int team, int unitName) const;
     float unitBuildingDamageMultiplier(int team, int unitName) const;
+    float unitDamageTakenMultiplier(int team, int unitName) const;
+    float cavalryChargeDamageMultiplier(int team) const;
     int unitAttackRange(int team, int unitName) const;
     int unitMasteryLevel(int team, int unitName) const;
     int unitMasteryUpgradeCost(int team, int unitName) const;

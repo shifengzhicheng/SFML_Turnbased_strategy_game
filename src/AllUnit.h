@@ -77,8 +77,10 @@ public:
 	int pendingPathRequest = 0;
 	Point pendingPathGoal;
 	int nextRallyStage = 0;
-	int aggroTargetId = 0;
-	float aggroSeconds = 0.f;
+		int aggroTargetId = 0;
+		float aggroSeconds = 0.f;
+		float stationarySeconds = 0.f;
+		int tilesMovedSinceAttack = 0;
 
 	std::deque<Point> mypath;
 

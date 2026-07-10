@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <limits>
 #include <utility>
+#include <vector>
 
 using namespace sf;
 using namespace std;
@@ -26,7 +27,7 @@ int Game::perkLevel(int team, int type) const
 
 void Game::buildRewardChoices()
 {
-    const int rotation[] = {
+    const int rewardPool[] = {
         perk::Drill,
         perk::Fortitude,
         perk::Volley,
@@ -37,26 +38,33 @@ void Game::buildRewardChoices()
         perk::SiegeCraft,
         perk::TowerCraft
     };
-    const int rotationSize = static_cast<int>(sizeof(rotation) / sizeof(rotation[0]));
-    bool used[perk::Count] = {};
-    int cursor = rewardSequence % rotationSize;
-
-    for (auto& choice : perkChoices) {
-        int selected = perk::WarChest;
-        for (int attempts = 0; attempts < rotationSize * 2; ++attempts) {
-            const int candidate = rotation[(cursor + attempts) % rotationSize];
-            if (!used[candidate] && perkLevel(PLAYER, candidate) < maxPerkLevel(candidate)) {
-                selected = candidate;
-                cursor = (cursor + attempts + 1) % rotationSize;
-                break;
-            }
+    std::vector<int> candidates;
+    for (int type : rewardPool) {
+        if (perkLevel(PLAYER, type) < maxPerkLevel(type)) {
+            candidates.push_back(type);
         }
-        used[selected] = true;
+    }
+    std::shuffle(candidates.begin(), candidates.end(), rewardRng);
+
+    if (rewardChoicesGenerated && candidates.size() > perkChoices.size()) {
+        std::array<bool, perk::Count> previous{};
+        for (const auto& choice : perkChoices) {
+            previous[static_cast<std::size_t>(choice.type)] = true;
+        }
+        std::stable_partition(candidates.begin(), candidates.end(), [&previous](int type) {
+            return !previous[static_cast<std::size_t>(type)];
+        });
+    }
+
+    for (std::size_t i = 0; i < perkChoices.size(); ++i) {
+        const int selected = i < candidates.size() ? candidates[i] : perk::WarChest;
+        auto& choice = perkChoices[i];
         choice.type = selected;
         choice.title = perkTitle(selected);
         choice.description = perkDescription(selected);
     }
 
+    rewardChoicesGenerated = true;
     ++rewardSequence;
 }
 
@@ -72,8 +80,7 @@ void Game::rerollRewardChoices()
 
     --playerRewardRerolls;
     buildRewardChoices();
-    // Rerolling advances the deterministic reward sequence, so the player can
-    // fish for a build-defining spike without adding hidden randomness.
+    // A reroll excludes the previous cards when the remaining pool permits it.
     addFloatingText(sf::Vector2f(236.f, 486.f), "Tactics refreshed", sf::Color(218, 255, 134), 12);
 }
 

@@ -156,6 +156,21 @@ void Game::clear()
     towerPlacementMode = false;
     perkOverlayVisible = false;
     rewardSequence = 0;
+    rewardChoicesGenerated = false;
+    unsigned int rewardSeed = matchSeedOverride;
+    if (rewardSeed == 0) {
+        if (const char* seedValue = std::getenv("TBS_MAP_SEED")) {
+            char* end = nullptr;
+            const unsigned long parsed = std::strtoul(seedValue, &end, 10);
+            if (end != seedValue && *end == '\0') {
+                rewardSeed = static_cast<unsigned int>(parsed);
+            }
+        }
+    }
+    if (rewardSeed == 0) {
+        rewardSeed = std::random_device{}();
+    }
+    rewardRng.seed(rewardSeed ^ (static_cast<unsigned int>(pathGeneration) * 0x9E3779B9u));
     playerRewardRerolls = 0;
     playerSelectedLane = lane::Mid;
     aiSelectedLane = lane::Mid;
